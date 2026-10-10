@@ -10,3 +10,13 @@ export { PageHeader, type PageHeaderProps } from './PageHeader';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { AtivoBadge, type AtivoBadgeProps } from './AtivoBadge';
 export { AvatarStack, type AvatarStackProps } from './AvatarStack';
+export {
+  EtapaBadge,
+  SituacaoPrazoBadge,
+  SituacaoFinanceiraBadge,
+  TipoCondicaoBadge,
+  type DefBadgeProps,
+} from './DefBadges';
+export { AndamentoServicos, type AndamentoServicosProps } from './AndamentoServicos';
+export { CondicaoPagamento, type CondicaoPagamentoProps } from './CondicaoPagamento';
+export { AlertaMovimentacao, type AlertaMovimentacaoProps } from './AlertaMovimentacao';

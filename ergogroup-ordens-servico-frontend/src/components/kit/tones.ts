@@ -1,4 +1,7 @@
 import {
+  Banknote,
+  CalendarCheck,
+  CalendarX,
   ChevronUp,
   ChevronsUp,
   CircleCheck,
@@ -6,7 +9,12 @@ import {
   CircleDot,
   CircleSlash,
   Clock,
+  Inbox,
+  Layers,
   Minus,
+  Repeat,
+  TriangleAlert,
+  UserCheck,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -84,6 +92,51 @@ export const COBRANCA_DEFS = {
 } satisfies Record<string, ToneDef>;
 
 export type CobrancaSituacao = keyof typeof COBRANCA_DEFS;
+
+/**
+ * Etapa do serviço no fluxo de execução (ADR 0006, 1), calculada pelo backend:
+ * aberto sem tarefa = na fila; aberto com tarefa = distribuído.
+ */
+export const ETAPA_DEFS = {
+  na_fila: { tone: 'warning', icon: Inbox, label: 'Na fila' },
+  distribuido: { tone: 'neutral', icon: UserCheck, label: 'Distribuído' },
+  em_execucao: { tone: 'info', icon: CircleDot, label: 'Em execução' },
+  concluido: { tone: 'success', icon: CircleCheck, label: 'Concluído' },
+  cancelado: { tone: 'neutral', icon: CircleSlash, label: 'Cancelado' },
+} satisfies Record<string, ToneDef>;
+
+export type EtapaDef = keyof typeof ETAPA_DEFS;
+
+/** Situação de prazo calculada pelo backend. Sem prazo é permitido, mas aparece como alerta (ADR 0006, 5). */
+export const SITUACAO_PRAZO_DEFS = {
+  atrasado: { tone: 'danger', icon: TriangleAlert, label: 'Atrasado' },
+  vence_7_dias: { tone: 'warning', icon: Clock, label: 'Vence em 7 dias' },
+  depois: { tone: 'neutral', icon: CalendarCheck, label: 'No prazo' },
+  sem_prazo: { tone: 'warning', icon: CalendarX, label: 'Sem prazo' },
+} satisfies Record<string, ToneDef>;
+
+/** Situação da OS no financeiro (`/api/financeiro/cobrancas/`). Nomes provisórios (ADR 0007). */
+export const SITUACAO_FINANCEIRA_DEFS = {
+  previsao: { tone: 'neutral', icon: CircleDashed, label: 'Previsão' },
+  a_faturar: { tone: 'warning', icon: Clock, label: 'A faturar' },
+  faturadas: { tone: 'success', icon: CircleCheck, label: 'Faturada' },
+} satisfies Record<string, ToneDef>;
+
+/** Tipo da condição de pagamento (ADR 0007). */
+export const TIPO_CONDICAO_DEFS = {
+  a_vista: { tone: 'neutral', icon: Banknote, label: 'À vista' },
+  parcelado: { tone: 'info', icon: Layers, label: 'Parcelado' },
+  recorrente: { tone: 'info', icon: Repeat, label: 'Recorrente' },
+} satisfies Record<string, ToneDef>;
+
+/** Motivos da ciência do alerta sem movimentação (`MotivoCiencia` no backend). */
+export const MOTIVO_CIENCIA_LABEL = {
+  cliente: 'Aguardando o cliente',
+  documentacao: 'Aguardando documentação',
+  agendamento: 'Aguardando agendamento',
+  terceiro: 'Aguardando terceiro',
+  outro: 'Outro',
+} as const;
 
 /** Status de cadastro (setor, função, pessoa). */
 export const ATIVO_DEFS = {
