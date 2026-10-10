@@ -91,7 +91,9 @@ Nenhuma tela usa a camada nova ainda: ela entra na R3 em diante.
 
 ---
 
-### R1 — Fluxos e navegação (documento)
+### R1 — Fluxos e navegação (documento) — entregue, aguardando validação
+
+Entregue em 10/10/2026: [`fluxos-e-navegacao.md`](./fluxos-e-navegacao.md). As perguntas para validar estão na seção 9 dele. Os briefs antigos foram marcados como em revisão.
 
 Entrega: `docs/ui/fluxos-e-navegacao.md`, para validação sua.
 

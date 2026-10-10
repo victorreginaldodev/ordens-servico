@@ -1,5 +1,7 @@
 # UI/UX Brief — Listagem de Ordens de Serviço
 
+> **Em revisão (10/10/2026):** este brief usa o modelo antigo (tipos de usuário, contrato, horas e complexidade). Fica superado por [`fluxos-e-navegacao.md`](./fluxos-e-navegacao.md) quando aquele documento for aprovado.
+
 > Documento para geração de UI com ferramenta de design assistida por IA.
 > Contexto: sistema web interno de gestão de Ordens de Serviço — Ergogroup OS.
 > Este brief herda tipografia, cor, componentes e personas de [`identidade-visual-brief.md`](./identidade-visual-brief.md) — leia-o primeiro.
