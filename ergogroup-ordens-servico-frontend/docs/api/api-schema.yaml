@@ -7,9 +7,9 @@ paths:
   /api/analise/financeiro/:
     get:
       operationId: analise_financeiro_retrieve
-      description: KPIs de cobrança, ticket médio, vendas mensais e ranking de clientes.
-        Indisponível (403) para os perfis Sub-Líder Técnico, Técnico, Gestor Administrativo
-        e Administrativo.
+      description: KPIs de cobrança, ticket médio, vendas mensais e ranking de clientes;
+        a faturar, faturado e previsão por tipo de condição e a receita recorrente
+        mensal. Exige a permissão `financeiro.ver_valores` (403 sem ela).
       summary: Análise financeira
       tags:
       - analise
@@ -63,6 +63,7 @@ paths:
           enum:
           - atualizacao
           - backfill
+          - ciencia_alerta
           - cobranca_realizada
           - contrato
           - criacao
@@ -162,6 +163,7 @@ paths:
           enum:
           - atualizacao
           - backfill
+          - ciencia_alerta
           - cobranca_realizada
           - contrato
           - criacao
@@ -242,6 +244,7 @@ paths:
           enum:
           - atualizacao
           - backfill
+          - ciencia_alerta
           - cobranca_realizada
           - contrato
           - criacao
@@ -311,15 +314,29 @@ paths:
   /api/catalogo/catalogos/:
     get:
       operationId: catalogo_catalogos_list
-      description: Retorna a lista de catálogos com seus subitens. Suporta busca por
-        nome ou descrição.
+      description: Retorna a lista de catálogos com seus subitens. O `setor` de cada
+        catálogo é o setor responsável por executar o serviço. Suporta busca por nome
+        ou descrição e filtros por setor e status.
       summary: Listar catálogos
       parameters:
+      - in: query
+        name: ativo
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: Filtrar por status. Para a criação de OS, use `ativo=true`.
       - in: query
         name: q
         schema:
           type: string
         description: Busca por nome ou descrição (parcial).
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: Filtrar pelo setor responsável pela execução.
       tags:
       - catalogo
       security:
@@ -337,7 +354,9 @@ paths:
           description: ''
     post:
       operationId: catalogo_catalogos_create
-      description: Cria um novo catálogo.
+      description: Cria um novo catálogo. O setor responsável pela execução é obrigatório
+        e precisa estar ativo. A resposta traz `avisos` quando o setor ainda não tem
+        quem o organize.
       summary: Criar catálogo
       tags:
       - catalogo
@@ -634,7 +653,8 @@ paths:
           description: ''
     delete:
       operationId: catalogo_catalogos_destroy
-      description: Remove permanentemente um catálogo e todos os seus subitens.
+      description: Remove permanentemente um catálogo e todos os seus subitens. Retorna
+        409 se o catálogo estiver vinculado a serviços; nesse caso, desative-o (`ativo=false`).
       summary: Remover catálogo
       parameters:
       - in: path
@@ -1028,6 +1048,32 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/comercial/vendas/{id}/:
+    get:
+      operationId: comercial_vendas_retrieve
+      description: Quem vendeu e quando, o andamento e, por serviço, o setor, a etapa,
+        quem executou e quando. Condições, liberação e lançamento só aparecem para
+        quem tem `financeiro.ver_valores`. Acessa quem vê a OS.
+      summary: Resumo da venda
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - comercial
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumoDaVenda'
+          description: ''
   /api/contas/auth/login/:
     post:
       operationId: contas_auth_login_create
@@ -1103,6 +1149,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/UsuarioDetail'
           description: ''
+  /api/contas/auth/password/reset/:
+    post:
+      operationId: contas_auth_password_reset_create
+      description: Envia e-mail com link para redefinição de senha caso o e-mail pertença
+        a um usuário ativo.
+      summary: Solicitar redefinição de senha
+      tags:
+      - contas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+          description: ''
+        '400':
+          description: No response body
+  /api/contas/auth/password/reset/confirm/:
+    post:
+      operationId: contas_auth_password_reset_confirm_create
+      description: Define uma nova senha para o usuário usando o token de recuperação
+        enviado por e-mail.
+      summary: Confirmar redefinição de senha
+      tags:
+      - contas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+          description: ''
+        '400':
+          description: No response body
   /api/contas/auth/refresh/:
     post:
       operationId: contas_auth_refresh_create
@@ -1138,7 +1246,7 @@ paths:
     get:
       operationId: contas_usuarios_list
       description: Retorna a lista paginada de usuários com campos resumidos. Suporta
-        busca textual e filtragem por tipo e status.
+        busca textual e filtragem por setor, função e status.
       summary: Listar usuários
       parameters:
       - in: query
@@ -1150,27 +1258,21 @@ paths:
           - 'true'
         description: Filtrar por status de ativação.
       - in: query
+        name: funcao
+        schema:
+          type: integer
+        description: Filtrar pelos usuários que exercem uma função.
+      - in: query
         name: q
         schema:
           type: string
         description: Busca por nome completo ou e-mail (parcial, sem distinção de
           maiúsculas).
       - in: query
-        name: tipo
+        name: setor
         schema:
-          type: string
-          enum:
-          - administrativo
-          - comercial
-          - diretor
-          - financeiro
-          - gestor_administrativo
-          - gestor_comercial
-          - gestor_financeiro
-          - gestor_tecnico
-          - sub_gestor_tecnico
-          - tecnico
-        description: Filtrar por tipo de usuário.
+          type: integer
+        description: Filtrar pelos usuários vinculados a um setor.
       tags:
       - contas
       security:
@@ -1188,7 +1290,11 @@ paths:
           description: ''
     post:
       operationId: contas_usuarios_create
-      description: Cria um novo usuário. Requer perfil Gestor ou superior.
+      description: 'Cria um usuário e, opcionalmente, o seu vínculo (`vinculos`: lista
+        com no máximo um item, com `setor` e `funcao`; cada usuário pertence a um
+        único setor). Exige `usuarios.gerenciar`, e só é possível atribuir funções
+        cujas permissões você tem no setor. Sem vínculos, o usuário só acessa o que
+        é dele.'
       summary: Criar usuário
       tags:
       - contas
@@ -1316,6 +1422,8 @@ paths:
     delete:
       operationId: contas_usuarios_destroy
       description: Remove permanentemente um usuário. Requer perfil Gestor ou superior.
+        Retorna 409 se o usuário for responsável por tarefas ou OS operacionais; nesse
+        caso, desative-o.
       summary: Remover usuário
       parameters:
       - in: path
@@ -1447,14 +1555,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/UsuarioDetail'
           description: ''
-  /api/contas/usuarios/tipos/:
+  /api/execucao/alertas/:
     get:
-      operationId: contas_usuarios_tipos_list
-      description: Retorna todos os tipos de usuário disponíveis no sistema com seus
-        rótulos.
-      summary: Listar tipos de usuário
+      operationId: execucao_alertas_list
+      description: Serviços ativos atrasados ou sem movimentação há N dias (`DIAS_ALERTA_SEM_MOVIMENTACAO`),
+        com os motivos e a ciência vigente. Os atrasados vêm primeiro.
+      summary: Alertas do setor
+      parameters:
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: ID do setor.
+        required: true
       tags:
-      - contas
+      - execução
       security:
       - jwtAuth: []
       - basicAuth: []
@@ -1466,7 +1581,414 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TipoOpcao'
+                  $ref: '#/components/schemas/Alerta'
+          description: ''
+  /api/execucao/andamento/:
+    get:
+      operationId: execucao_andamento_list
+      description: Tarefas ativas do setor, as mais urgentes primeiro. A tela agrupa
+        por responsável.
+      summary: Em andamento no setor
+      parameters:
+      - in: query
+        name: responsavel
+        schema:
+          type: integer
+        description: Filtrar pelo responsável.
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: ID do setor.
+        required: true
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinhaDeTarefa'
+          description: ''
+  /api/execucao/concluidos/:
+    get:
+      operationId: execucao_concluidos_retrieve
+      description: Serviços do setor concluídos entre `de` e `ate`, com quem concluiu
+        e se foi dentro do prazo.
+      summary: Concluídos no período
+      parameters:
+      - in: query
+        name: ate
+        schema:
+          type: string
+        description: 'Data final (AAAA-MM-DD). Padrão: hoje.'
+      - in: query
+        name: de
+        schema:
+          type: string
+        description: 'Data inicial (AAAA-MM-DD). Padrão: primeiro dia do mês atual.'
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: ID do setor.
+        required: true
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concluidos'
+          description: ''
+  /api/execucao/equipe/:
+    get:
+      operationId: execucao_equipe_list
+      description: 'Por membro do setor: itens ativos por situação de prazo, em alerta
+        e idade do mais antigo. Inclui quem ainda tem tarefa ativa no setor sem ser
+        membro. Serve também de lista de responsáveis na distribuição (só os membros
+        podem receber tarefas).'
+      summary: Equipe e carga do setor
+      parameters:
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: ID do setor.
+        required: true
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MembroDaEquipe'
+          description: ''
+  /api/execucao/fila/:
+    get:
+      operationId: execucao_fila_list
+      description: Serviços do setor que chegaram e ainda não foram distribuídos,
+        mais antigos primeiro, com o contexto da venda e os outros serviços da mesma
+        OS. Agrupar por cliente ou por OS é decisão da tela.
+      summary: Fila de triagem do setor
+      parameters:
+      - in: query
+        name: cliente
+        schema:
+          type: integer
+        description: Filtrar pelo cliente.
+      - in: query
+        name: ordem_servico
+        schema:
+          type: integer
+        description: Filtrar pela OS.
+      - in: query
+        name: prioridade
+        schema:
+          type: string
+        description: Filtrar pela prioridade.
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: ID do setor.
+        required: true
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemDaFila'
+          description: ''
+  /api/execucao/meus-servicos/:
+    get:
+      operationId: execucao_meus_servicos_list
+      description: 'O que está com a pessoa, os mais urgentes primeiro. Com `status=concluida`,
+        o histórico do período. Não exige permissão: cada um vê só o que é seu.'
+      summary: Meus serviços
+      parameters:
+      - in: query
+        name: ate
+        schema:
+          type: string
+        description: 'Data final (AAAA-MM-DD). Padrão: hoje.'
+      - in: query
+        name: de
+        schema:
+          type: string
+        description: 'Data inicial (AAAA-MM-DD). Padrão: primeiro dia do mês atual.'
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - concluida
+        description: Histórico de concluídas.
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinhaDeTarefa'
+          description: ''
+  /api/execucao/servicos/{id}/:
+    get:
+      operationId: execucao_servicos_retrieve
+      description: O serviço com tarefas, prazo, alerta e ciência, o contexto da venda
+        (sem valores) e os outros serviços da mesma OS. `pode_distribuir` e `pode_dar_ciencia`
+        dizem quais ações mostrar.
+      summary: Detalhe do serviço
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalheDoServico'
+          description: ''
+  /api/execucao/servicos/{id}/ciencia/:
+    post:
+      operationId: execucao_servicos_ciencia_create
+      description: '"Está tudo bem, deixar assim": silencia o alerta de serviço sem
+        movimentação por mais N dias, com motivo opcional. Pode dar ciência quem tem
+        tarefa no serviço ou quem acompanha o setor.'
+      summary: Estou ciente do alerta
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - execução
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CienciaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CienciaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CienciaRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalheDoServico'
+          description: ''
+  /api/execucao/servicos/{id}/distribuir/:
+    post:
+      operationId: execucao_servicos_distribuir_create
+      description: 'Cria as tarefas do serviço em um passo: responsável e prazo. Uma
+        tarefa distribui para uma pessoa; várias dividem o serviço. Também acrescenta
+        tarefas a um serviço já distribuído. Exige `tarefas.distribuir` no setor do
+        serviço, e cada responsável precisa pertencer ao setor.'
+      summary: Distribuir o serviço
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - execução
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistribuirRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DistribuirRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DistribuirRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalheDoServico'
+          description: ''
+  /api/execucao/setores/:
+    get:
+      operationId: execucao_setores_list
+      description: Setores em que a pessoa tem `servicos.ver_setor` (com `setores.todos`,
+        todos os setores de execução), com os contadores do painel. `organiza` indica
+        se ela pode distribuir no setor.
+      summary: Setores que acompanho
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SetorAcompanhado'
+          description: ''
+  /api/financeiro/cobrancas/:
+    get:
+      operationId: financeiro_cobrancas_retrieve
+      description: 'As OS de uma situação, com tudo o que o financeiro precisa para
+        faturar: `a_faturar` (liberadas e ainda não lançadas, as mais antigas primeiro),
+        `faturadas` (lançadas, as mais recentes primeiro) e `previsao` (ainda não
+        liberadas, as mais perto de liberar primeiro; sem as canceladas). Traz os
+        contadores das três situações sob os mesmos filtros. Exige `financeiro.registrar_cobranca`.'
+      summary: Cobranças
+      parameters:
+      - in: query
+        name: ate
+        schema:
+          type: string
+        description: Vendas até esta data (AAAA-MM-DD).
+      - in: query
+        name: cliente
+        schema:
+          type: integer
+        description: Filtrar pelo cliente.
+      - in: query
+        name: de
+        schema:
+          type: string
+        description: Vendas a partir desta data (AAAA-MM-DD).
+      - in: query
+        name: em_alerta
+        schema:
+          type: string
+          enum:
+          - 'true'
+        description: Só as liberadas há N dias sem lançamento.
+      - in: query
+        name: forma_pagamento
+        schema:
+          type: string
+          enum:
+          - boleto
+          - cheque
+          - credito
+          - debito
+          - dinheiro
+          - outro
+          - pix
+          - transferencia
+      - in: query
+        name: situacao
+        schema:
+          type: string
+          enum:
+          - a_faturar
+          - faturadas
+          - previsao
+        description: 'Padrão: `a_faturar`.'
+      - in: query
+        name: tipo_condicao
+        schema:
+          type: string
+          enum:
+          - a_vista
+          - parcelado
+          - recorrente
+      tags:
+      - financeiro
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cobrancas'
+          description: ''
+  /api/financeiro/ordens/{id}/:
+    get:
+      operationId: financeiro_ordens_retrieve
+      description: Condição, liberação, lançamento e alerta da OS, os serviços com
+        a etapa de cada um e os eventos financeiros (venda, liberação e lançamento).
+        Exige `financeiro.ver_valores`.
+      summary: Situação financeira da OS
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - financeiro
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SituacaoFinanceira'
           description: ''
   /api/ordens-servico/operacionais/:
     get:
@@ -1767,6 +2289,18 @@ paths:
           - 'true'
         description: Filtrar por conclusão.
       - in: query
+        name: etapa
+        schema:
+          type: string
+          enum:
+          - cancelado
+          - concluido
+          - distribuido
+          - em_execucao
+          - na_fila
+        description: 'OS com ao menos um serviço na etapa (ex.: `na_fila` = vendas
+          com algo ainda não distribuído).'
+      - in: query
         name: liberada
         schema:
           type: string
@@ -1774,6 +2308,13 @@ paths:
           - 'false'
           - 'true'
         description: Filtrar por liberação para cobrança.
+      - in: query
+        name: minhas
+        schema:
+          type: string
+          enum:
+          - 'true'
+        description: Se "true", só as vendas registradas pelo usuário.
       - in: query
         name: q
         schema:
@@ -1796,9 +2337,13 @@ paths:
           description: ''
     post:
       operationId: ordens_servico_ordens_create
-      description: Cria uma nova ordem de serviço. O campo `criado_por` é preenchido
-        automaticamente com o usuário autenticado. Se `cobranca_imediata=true`, a
-        OS já é criada com `liberada_para_cobranca=true`.
+      description: 'Cria uma nova ordem de serviço. O campo `criado_por` é preenchido
+        automaticamente com o usuário autenticado. Se `liberar_em=venda`, a OS já
+        é criada com `liberada_para_cobranca=true`; com `liberar_em=conclusao`, é
+        liberada quando todos os serviços terminam. A condição de pagamento é validada
+        pelo `tipo_condicao`: parcelado exige ao menos 2 parcelas e o primeiro vencimento
+        (`data_acordada_cobranca`); recorrente exige o número de meses (`quantidade_parcelas`)
+        e o `dia_vencimento`.'
       summary: Criar ordem de serviço
       tags:
       - ordens-servico
@@ -1948,10 +2493,10 @@ paths:
   /api/ordens-servico/ordens/{id}/cobranca/:
     patch:
       operationId: ordens_servico_ordens_cobranca_partial_update
-      description: Marca a OS como tendo a cobrança realizada, registrando número
-        da NF, data e o usuário responsável. Retorna 400 se a OS não estiver liberada
-        para cobrança.
-      summary: Registrar cobrança da ordem de serviço
+      description: 'Guarda o "check" do financeiro: a OS foi lançada no sistema financeiro
+        externo. Registra a referência do lançamento, a data, a origem (manual) e
+        o usuário. Retorna 400 se a OS não estiver liberada para cobrança.'
+      summary: Registrar o lançamento da ordem de serviço
       parameters:
       - in: path
         name: id
@@ -2011,11 +2556,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/LiberadaCobranca'
           description: ''
+  /api/ordens-servico/ordens/{id}/linha-do-tempo/:
+    get:
+      operationId: ordens_servico_ordens_linha_do_tempo_list
+      description: O que aconteceu, em eventos legíveis e em ordem cronológica, montados
+        a partir da auditoria. Condições de pagamento e a referência do lançamento
+        só para quem tem `financeiro.ver_valores`. Acessa quem vê a OS; inclui os
+        eventos de todos os serviços e tarefas da OS.
+      summary: Linha do tempo da OS
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Ordem de Serviço.
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDaLinhaDoTempo'
+          description: ''
   /api/ordens-servico/servicos/:
     get:
       operationId: ordens_servico_servicos_list
       description: Retorna a lista paginada de serviços com campos resumidos. Suporta
-        filtragem por OS, status e catálogo.
+        filtragem por OS, status, catálogo e setor.
       summary: Listar serviços
       parameters:
       - in: query
@@ -2053,6 +2628,11 @@ paths:
           - media
         description: Filtrar por prioridade.
       - in: query
+        name: setor
+        schema:
+          type: integer
+        description: Filtrar pelo ID do setor.
+      - in: query
         name: status
         schema:
           type: string
@@ -2081,7 +2661,8 @@ paths:
       operationId: ordens_servico_servicos_create
       description: Cria um novo serviço vinculado a uma OS. Campos calculados (`status`,
         `data_inicio`, `data_termino`, `data_conclusao`, `terminado_por`) são somente
-        leitura e gerenciados automaticamente pelas tarefas.
+        leitura e gerenciados automaticamente pelas tarefas. `setor` é somente leitura
+        e copiado do catálogo.
       summary: Criar serviço
       tags:
       - ordens-servico
@@ -2226,6 +2807,36 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/ordens-servico/servicos/{id}/linha-do-tempo/:
+    get:
+      operationId: ordens_servico_servicos_linha_do_tempo_list
+      description: O que aconteceu, em eventos legíveis e em ordem cronológica, montados
+        a partir da auditoria. Condições de pagamento e a referência do lançamento
+        só para quem tem `financeiro.ver_valores`. Acessa quem vê o serviço; traz
+        só o serviço e suas tarefas.
+      summary: Linha do tempo do serviço
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Serviço.
+        required: true
+      tags:
+      - ordens-servico
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDaLinhaDoTempo'
+          description: ''
   /api/ordens-servico/servicos/{id}/sincronizar/:
     post:
       operationId: ordens_servico_servicos_sincronizar_create
@@ -2470,6 +3081,739 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/organizacoes/funcoes/:
+    get:
+      operationId: organizacoes_funcoes_list
+      description: Retorna as funções da organização com as permissões que cada uma
+        concede.
+      summary: Listar funções
+      parameters:
+      - in: query
+        name: ativo
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: Filtrar por status de ativação.
+      - in: query
+        name: organizacao
+        schema:
+          type: integer
+        description: Filtrar pela organização.
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Busca por nome ou descrição (parcial).
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: Só as funções liberadas neste setor.
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Funcao'
+          description: ''
+    post:
+      operationId: organizacoes_funcoes_create
+      description: Cria uma função com nome livre, as permissões marcadas e os setores
+        em que pode ser usada (`setores`, obrigatório). Exige `organizacao.configurar`.
+      summary: Criar função
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuncaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FuncaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FuncaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funcao'
+          description: ''
+  /api/organizacoes/funcoes/{id}/:
+    get:
+      operationId: organizacoes_funcoes_retrieve
+      description: |-
+        Para viewsets: ``permissoes_por_acao = {'create': (Permissao.X,), ...}``. Ações fora do mapa
+        exigem só autenticação; ações no mapa exigem ao menos uma das permissões listadas.
+      summary: Detalhar função
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Função.
+        required: true
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funcao'
+          description: ''
+    put:
+      operationId: organizacoes_funcoes_update
+      description: Substitui os dados e as permissões da função. Exige `organizacao.configurar`.
+      summary: Atualizar função
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Função.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuncaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FuncaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FuncaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funcao'
+          description: ''
+    patch:
+      operationId: organizacoes_funcoes_partial_update
+      description: Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`.
+      summary: Atualizar função parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Função.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFuncaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFuncaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFuncaoRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funcao'
+          description: ''
+    delete:
+      operationId: organizacoes_funcoes_destroy
+      description: Remove a função. Retorna 409 se houver usuários vinculados a ela;
+        nesse caso, desative-a.
+      summary: Remover função
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Função.
+        required: true
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/organizacoes/funcoes/permissoes-disponiveis/:
+    get:
+      operationId: organizacoes_funcoes_permissoes_disponiveis_list
+      description: Lista todas as permissões que podem ser marcadas numa função. `escopo=setor`
+        indica que a permissão vale só nos setores do vínculo; `global`, na organização
+        toda.
+      summary: Catálogo de permissões
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermissaoCatalogo'
+          description: ''
+  /api/organizacoes/membros/:
+    get:
+      operationId: organizacoes_membros_list
+      description: Cada vínculo diz em qual setor o usuário atua e com qual função.
+      summary: Listar vínculos de usuários com setores
+      parameters:
+      - in: query
+        name: funcao
+        schema:
+          type: integer
+        description: Filtrar pela função.
+      - in: query
+        name: setor
+        schema:
+          type: integer
+        description: Filtrar pelo setor.
+      - in: query
+        name: usuario
+        schema:
+          type: integer
+        description: Filtrar pelo usuário.
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MembroSetor'
+          description: ''
+    post:
+      operationId: organizacoes_membros_create
+      description: 'Vincula o usuário a um setor com uma função da mesma organização.
+        Cada usuário pertence a um único setor: para mudar de setor, edite o vínculo
+        existente. Exige `usuarios.gerenciar`.'
+      summary: Vincular usuário a setor
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembroSetorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MembroSetorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MembroSetorRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembroSetor'
+          description: ''
+  /api/organizacoes/membros/{id}/:
+    get:
+      operationId: organizacoes_membros_retrieve
+      description: |-
+        Para viewsets: ``permissoes_por_acao = {'create': (Permissao.X,), ...}``. Ações fora do mapa
+        exigem só autenticação; ações no mapa exigem ao menos uma das permissões listadas.
+      summary: Detalhar vínculo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Membro de setor.
+        required: true
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembroSetor'
+          description: ''
+    put:
+      operationId: organizacoes_membros_update
+      description: Exige `usuarios.gerenciar`.
+      summary: Atualizar vínculo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Membro de setor.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembroSetorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MembroSetorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MembroSetorRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembroSetor'
+          description: ''
+    patch:
+      operationId: organizacoes_membros_partial_update
+      description: Exige `usuarios.gerenciar`.
+      summary: Atualizar vínculo parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Membro de setor.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMembroSetorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMembroSetorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMembroSetorRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembroSetor'
+          description: ''
+    delete:
+      operationId: organizacoes_membros_destroy
+      description: Exige `usuarios.gerenciar`.
+      summary: Remover vínculo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Membro de setor.
+        required: true
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/organizacoes/organizacoes/:
+    get:
+      operationId: organizacoes_organizacoes_list
+      description: Retorna os dados cadastrais das organizações (base da tela de configurações).
+      summary: Listar organizações
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organizacao'
+          description: ''
+    post:
+      operationId: organizacoes_organizacoes_create
+      description: Cria uma organização. Requer perfil Gestor ou superior.
+      summary: Criar organização
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizacaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizacaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrganizacaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacao'
+          description: ''
+  /api/organizacoes/organizacoes/{id}/:
+    get:
+      operationId: organizacoes_organizacoes_retrieve
+      description: Retorna todos os dados cadastrais de uma organização pelo seu ID.
+      summary: Detalhar organização
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Organização.
+        required: true
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacao'
+          description: ''
+    put:
+      operationId: organizacoes_organizacoes_update
+      description: Substitui integralmente os dados de uma organização. Requer perfil
+        Gestor ou superior.
+      summary: Atualizar organização
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Organização.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizacaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizacaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrganizacaoRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacao'
+          description: ''
+    patch:
+      operationId: organizacoes_organizacoes_partial_update
+      description: Atualiza um ou mais campos de uma organização. Requer perfil Gestor
+        ou superior.
+      summary: Atualizar organização parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Organização.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizacaoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizacaoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizacaoRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizacao'
+          description: ''
+  /api/organizacoes/setores/:
+    get:
+      operationId: organizacoes_setores_list
+      description: Retorna os setores da empresa. Suporta busca por nome ou descrição
+        e filtro por status.
+      summary: Listar setores
+      parameters:
+      - in: query
+        name: ativo
+        schema:
+          type: string
+          enum:
+          - 'false'
+          - 'true'
+        description: Filtrar por status de ativação.
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Busca por nome ou descrição (parcial).
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Setor'
+          description: ''
+    post:
+      operationId: organizacoes_setores_create
+      description: Cria um novo setor. O nome deve ser único. Requer perfil Gestor
+        ou superior.
+      summary: Criar setor
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetorRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setor'
+          description: ''
+  /api/organizacoes/setores/{id}/:
+    get:
+      operationId: organizacoes_setores_retrieve
+      description: Retorna todos os campos de um setor pelo seu ID.
+      summary: Detalhar setor
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Setor.
+        required: true
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setor'
+          description: ''
+    put:
+      operationId: organizacoes_setores_update
+      description: Substitui integralmente os dados de um setor. Requer perfil Gestor
+        ou superior.
+      summary: Atualizar setor
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Setor.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetorRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setor'
+          description: ''
+    patch:
+      operationId: organizacoes_setores_partial_update
+      description: Atualiza um ou mais campos de um setor. Requer perfil Gestor ou
+        superior.
+      summary: Atualizar setor parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Setor.
+        required: true
+      tags:
+      - organizacoes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSetorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSetorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSetorRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setor'
+          description: ''
+    delete:
+      operationId: organizacoes_setores_destroy
+      description: Remove permanentemente um setor. Requer perfil Gestor ou superior.
+        Retorna 409 se o setor estiver vinculado a catálogos ou serviços; nesse caso,
+        desative-o.
+      summary: Remover setor
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Setor.
+        required: true
+      tags:
+      - organizacoes
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
 components:
   schemas:
     AcaoEnum:
@@ -2484,6 +3828,7 @@ components:
       - liberacao_cobranca
       - cobranca_realizada
       - contrato
+      - ciencia_alerta
       - backfill
       type: string
       description: |-
@@ -2497,7 +3842,104 @@ components:
         * `liberacao_cobranca` - Liberação de Cobrança
         * `cobranca_realizada` - Cobrança Realizada
         * `contrato` - Contrato
+        * `ciencia_alerta` - Ciência de alerta
         * `backfill` - Backfill
+    Alerta:
+      type: object
+      properties:
+        ordem_servico_id:
+          type: integer
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        data_venda:
+          type: string
+          format: date
+        vendido_por_nome:
+          type: string
+          nullable: true
+        ciencia_vigente:
+          type: boolean
+        alerta_ciente_em:
+          type: string
+          format: date-time
+          nullable: true
+        alerta_ciente_por_nome:
+          type: string
+          nullable: true
+        alerta_ciente_motivo:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MotivoCienciaEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        alerta_ciente_observacao:
+          type: string
+          nullable: true
+        servico_id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        etapa:
+          $ref: '#/components/schemas/EtapaEnum'
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        motivos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MotivosEnum'
+        dias_sem_movimentacao:
+          type: integer
+        responsaveis:
+          type: array
+          items:
+            type: string
+      required:
+      - alerta_ciente_em
+      - alerta_ciente_motivo
+      - alerta_ciente_observacao
+      - alerta_ciente_por_nome
+      - catalogo_nome
+      - ciencia_vigente
+      - cliente_id
+      - cliente_nome
+      - data_venda
+      - descricao
+      - dias_sem_movimentacao
+      - etapa
+      - motivos
+      - ordem_servico_id
+      - prazo
+      - responsaveis
+      - servico_id
+      - vendido_por_nome
+    Andamento:
+      type: object
+      properties:
+        total:
+          type: integer
+        na_fila:
+          type: integer
+        distribuido:
+          type: integer
+        em_execucao:
+          type: integer
+        concluido:
+          type: integer
+        cancelado:
+          type: integer
+      required:
+      - cancelado
+      - concluido
+      - distribuido
+      - em_execucao
+      - na_fila
+      - total
     BlankEnum:
       enum:
       - ''
@@ -2558,32 +4000,34 @@ components:
         id:
           type: integer
           readOnly: true
-        subitens:
-          type: array
-          items:
-            $ref: '#/components/schemas/SubitemCatalogo'
-          readOnly: true
         nome:
           type: string
           maxLength: 100
         descricao:
           type: string
           nullable: true
-        horas_estimadas:
+        setor:
+          type: integer
+          title: Setor responsável pela execução
+          description: Setor responsável por executar este serviço.
+        setor_nome:
           type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          readOnly: true
+        ativo:
+          type: boolean
+          default: true
+          description: Catálogos inativos continuam nos serviços já vendidos, mas
+            não podem ser usados em serviços novos.
+        subitens:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubitemCatalogo'
+          readOnly: true
       required:
       - id
       - nome
+      - setor
+      - setor_nome
       - subitens
     CatalogoOperacional:
       type: object
@@ -2605,7 +4049,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 65535
+          maximum: 9223372036854775807
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -2630,7 +4074,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 65535
+          maximum: 9223372036854775807
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -2646,20 +4090,29 @@ components:
         descricao:
           type: string
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+        setor:
+          type: integer
+          title: Setor responsável pela execução
+          description: Setor responsável por executar este serviço.
+        ativo:
+          type: boolean
+          default: true
+          description: Catálogos inativos continuam nos serviços já vendidos, mas
+            não podem ser usados em serviços novos.
       required:
       - nome
+      - setor
+    CienciaRequest:
+      type: object
+      properties:
+        motivo:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MotivoCienciaEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        observacao:
+          type: string
+          nullable: true
     Cliente:
       type: object
       properties:
@@ -2867,6 +4320,27 @@ components:
       required:
       - mais_cobranca
       - mais_vendas
+    Cobrancas:
+      type: object
+      properties:
+        situacao:
+          $ref: '#/components/schemas/SituacaoEnum'
+        contadores:
+          allOf:
+          - $ref: '#/components/schemas/Contadores'
+          description: As três situações, sob os mesmos filtros.
+        em_alerta:
+          type: integer
+          description: Quantas OS a faturar estão em alerta.
+        ordens:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinhaDeCobranca'
+      required:
+      - contadores
+      - em_alerta
+      - ordens
+      - situacao
     ComplexidadeEnum:
       enum:
       - 1
@@ -2877,6 +4351,130 @@ components:
         * `1` - Baixa
         * `2` - Média
         * `3` - Alta
+    Concluidos:
+      type: object
+      properties:
+        de:
+          type: string
+          format: date
+        ate:
+          type: string
+          format: date
+        servicos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoConcluido'
+      required:
+      - ate
+      - de
+      - servicos
+    CondicoesDaVenda:
+      type: object
+      properties:
+        valor:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        tipo_condicao:
+          $ref: '#/components/schemas/TipoCondicaoEnum'
+        condicao_resumo:
+          type: string
+        forma_pagamento:
+          $ref: '#/components/schemas/FormaPagamentoEnum'
+        quantidade_parcelas:
+          type: integer
+          nullable: true
+        data_acordada_cobranca:
+          type: string
+          format: date
+          nullable: true
+        intervalo_parcelas_dias:
+          type: integer
+          nullable: true
+        dia_fechamento:
+          type: integer
+          nullable: true
+        dia_vencimento:
+          type: integer
+          nullable: true
+        liberar_em:
+          $ref: '#/components/schemas/LiberarEmEnum'
+        nome_contato_envio_nf:
+          type: string
+        contato_envio_nf:
+          type: string
+      required:
+      - condicao_resumo
+      - contato_envio_nf
+      - data_acordada_cobranca
+      - dia_fechamento
+      - dia_vencimento
+      - forma_pagamento
+      - intervalo_parcelas_dias
+      - liberar_em
+      - nome_contato_envio_nf
+      - quantidade_parcelas
+      - tipo_condicao
+      - valor
+      - valor_mensal
+    Contador:
+      type: object
+      properties:
+        quantidade:
+          type: integer
+        valor:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - quantidade
+      - valor
+    Contadores:
+      type: object
+      properties:
+        a_faturar:
+          $ref: '#/components/schemas/Contador'
+        faturadas:
+          $ref: '#/components/schemas/Contador'
+        previsao:
+          $ref: '#/components/schemas/Contador'
+      required:
+      - a_faturar
+      - faturadas
+      - previsao
+    ContextoDaOSDetalhe:
+      type: object
+      properties:
+        ordem_servico_id:
+          type: integer
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        data_venda:
+          type: string
+          format: date
+        vendido_por_nome:
+          type: string
+          nullable: true
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        observacao:
+          type: string
+          nullable: true
+      required:
+      - cliente_id
+      - cliente_nome
+      - data_venda
+      - observacao
+      - ordem_servico_id
+      - prioridade
+      - vendido_por_nome
     Detalhe:
       type: object
       properties:
@@ -2884,6 +4482,117 @@ components:
           type: string
       required:
       - detail
+    DetalheDoServico:
+      type: object
+      properties:
+        ciencia_vigente:
+          type: boolean
+        alerta_ciente_em:
+          type: string
+          format: date-time
+          nullable: true
+        alerta_ciente_por_nome:
+          type: string
+          nullable: true
+        alerta_ciente_motivo:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MotivoCienciaEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        alerta_ciente_observacao:
+          type: string
+          nullable: true
+        id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        setor_id:
+          type: integer
+          nullable: true
+        setor_nome:
+          type: string
+          nullable: true
+        status:
+          type: string
+        etapa:
+          $ref: '#/components/schemas/EtapaEnum'
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        situacao_prazo:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SituacaoPrazoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+        terminado_por_nome:
+          type: string
+          nullable: true
+        criado_em:
+          type: string
+          format: date-time
+        ultima_movimentacao_em:
+          type: string
+          format: date-time
+        dias_sem_movimentacao:
+          type: integer
+        em_alerta:
+          type: boolean
+        tarefas:
+          type: array
+          items:
+            $ref: '#/components/schemas/TarefaDoDetalhe'
+        ordem_servico:
+          $ref: '#/components/schemas/ContextoDaOSDetalhe'
+        outros_servicos_da_os:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutroServicoDaOS'
+        pode_distribuir:
+          type: boolean
+        pode_dar_ciencia:
+          type: boolean
+      required:
+      - alerta_ciente_em
+      - alerta_ciente_motivo
+      - alerta_ciente_observacao
+      - alerta_ciente_por_nome
+      - catalogo_nome
+      - ciencia_vigente
+      - criado_em
+      - data_inicio
+      - data_termino
+      - descricao
+      - dias_sem_movimentacao
+      - em_alerta
+      - etapa
+      - id
+      - ordem_servico
+      - outros_servicos_da_os
+      - pode_dar_ciencia
+      - pode_distribuir
+      - prazo
+      - prioridade
+      - setor_id
+      - setor_nome
+      - situacao_prazo
+      - status
+      - tarefas
+      - terminado_por_nome
+      - ultima_movimentacao_em
     DistribuicaoTempoOS:
       type: object
       properties:
@@ -2903,6 +4612,17 @@ components:
       - de_16_a_30
       - de_31_a_60
       - de_8_a_15
+    DistribuirRequest:
+      type: object
+      properties:
+        tarefas:
+          type: array
+          items:
+            $ref: '#/components/schemas/TarefaDistribuidaRequest'
+          description: Uma tarefa distribui o serviço para uma pessoa; várias dividem
+            o serviço entre pessoas.
+      required:
+      - tarefas
     EntidadeEnum:
       enum:
       - ordem_servico
@@ -2915,6 +4635,138 @@ components:
         * `servico` - Serviço
         * `tarefa` - Tarefa
         * `mini_os` - OS Operacional
+    EscopoEnum:
+      enum:
+      - global
+      - setor
+      type: string
+      description: |-
+        * `global` - global
+        * `setor` - setor
+    EtapaEnum:
+      enum:
+      - na_fila
+      - distribuido
+      - em_execucao
+      - concluido
+      - cancelado
+      type: string
+      description: |-
+        * `na_fila` - na_fila
+        * `distribuido` - distribuido
+        * `em_execucao` - em_execucao
+        * `concluido` - concluido
+        * `cancelado` - cancelado
+    EventoDaLinhaDoTempo:
+      type: object
+      properties:
+        quando:
+          type: string
+          format: date-time
+        quem:
+          type: string
+          nullable: true
+          description: Quem fez a ação; vazio quando foi o sistema.
+        tipo:
+          $ref: '#/components/schemas/EventoDaLinhaDoTempoTipoEnum'
+        texto:
+          type: string
+        ordem_servico_id:
+          type: integer
+          nullable: true
+        servico_id:
+          type: integer
+          nullable: true
+        tarefa_id:
+          type: integer
+          nullable: true
+      required:
+      - ordem_servico_id
+      - quando
+      - quem
+      - servico_id
+      - tarefa_id
+      - texto
+      - tipo
+    EventoDaLinhaDoTempoTipoEnum:
+      enum:
+      - historico_anterior
+      - venda
+      - venda_alterada
+      - condicao_alterada
+      - chegada
+      - distribuicao
+      - reatribuicao
+      - prazo_alterado
+      - tarefa_iniciada
+      - tarefa_concluida
+      - tarefa_cancelada
+      - tarefa_reaberta
+      - tarefa_excluida
+      - ciencia
+      - servico_concluido
+      - servico_cancelado
+      - servico_reaberto
+      - servico_excluido
+      - os_concluida
+      - os_cancelada
+      - os_reaberta
+      - liberacao
+      - lancamento
+      type: string
+      description: |-
+        * `historico_anterior` - historico_anterior
+        * `venda` - venda
+        * `venda_alterada` - venda_alterada
+        * `condicao_alterada` - condicao_alterada
+        * `chegada` - chegada
+        * `distribuicao` - distribuicao
+        * `reatribuicao` - reatribuicao
+        * `prazo_alterado` - prazo_alterado
+        * `tarefa_iniciada` - tarefa_iniciada
+        * `tarefa_concluida` - tarefa_concluida
+        * `tarefa_cancelada` - tarefa_cancelada
+        * `tarefa_reaberta` - tarefa_reaberta
+        * `tarefa_excluida` - tarefa_excluida
+        * `ciencia` - ciencia
+        * `servico_concluido` - servico_concluido
+        * `servico_cancelado` - servico_cancelado
+        * `servico_reaberto` - servico_reaberto
+        * `servico_excluido` - servico_excluido
+        * `os_concluida` - os_concluida
+        * `os_cancelada` - os_cancelada
+        * `os_reaberta` - os_reaberta
+        * `liberacao` - liberacao
+        * `lancamento` - lancamento
+    EventoFinanceiro:
+      type: object
+      properties:
+        quando:
+          type: string
+          nullable: true
+          description: Data e hora (ISO 8601); o lançamento só tem data.
+        quem:
+          type: string
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/EventoFinanceiroTipoEnum'
+        texto:
+          type: string
+      required:
+      - quando
+      - quem
+      - texto
+      - tipo
+    EventoFinanceiroTipoEnum:
+      enum:
+      - venda
+      - liberacao
+      - lancamento
+      type: string
+      description: |-
+        * `venda` - venda
+        * `liberacao` - liberacao
+        * `lancamento` - lancamento
     FinanceiroAnaliseResponse:
       type: object
       properties:
@@ -2930,6 +4782,22 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        total_previsao:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          description: Não liberadas e não faturadas, sem as OS canceladas.
+        por_tipo_condicao:
+          allOf:
+          - $ref: '#/components/schemas/PorTipoCondicao'
+          description: A faturar, faturado e previsão por tipo de condição.
+        receita_recorrente_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          description: Soma do valor mensal dos recorrentes não cancelados.
+        recorrentes_ativos:
+          type: integer
         ticket_medio:
           type: string
           format: decimal
@@ -2943,11 +4811,47 @@ components:
           $ref: '#/components/schemas/ClientesAnalise'
       required:
       - clientes
+      - por_tipo_condicao
+      - receita_recorrente_mensal
+      - recorrentes_ativos
       - ticket_medio
       - total_cobrado
       - total_para_cobrar
+      - total_previsao
       - total_sem_liberacao
       - vendas_por_mes
+    FinanceiroDaVenda:
+      type: object
+      properties:
+        liberada_para_cobranca:
+          type: boolean
+        liberada_para_cobranca_em:
+          type: string
+          format: date-time
+          nullable: true
+        liberada_para_cobranca_por_nome:
+          type: string
+          nullable: true
+        cobranca_realizada:
+          type: boolean
+        referencia_lancamento:
+          type: string
+          nullable: true
+        data_cobranca:
+          type: string
+          format: date
+          nullable: true
+        cobranca_realizada_por_nome:
+          type: string
+          nullable: true
+      required:
+      - cobranca_realizada
+      - cobranca_realizada_por_nome
+      - data_cobranca
+      - liberada_para_cobranca
+      - liberada_para_cobranca_em
+      - liberada_para_cobranca_por_nome
+      - referencia_lancamento
     FormaPagamentoEnum:
       enum:
       - pix
@@ -2968,6 +4872,129 @@ components:
         * `dinheiro` - Dinheiro
         * `cheque` - Cheque
         * `outro` - Outro
+    Funcao:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        organizacao:
+          type: integer
+        nome:
+          type: string
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+          default: true
+        permissoes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissoesEnum'
+          description: Códigos das permissões que a função concede (ver permissoes-disponiveis).
+        setores:
+          type: array
+          items:
+            type: integer
+          description: Setores em que a função pode ser atribuída.
+        setores_detalhe:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - atualizado_em
+      - criado_em
+      - id
+      - nome
+      - organizacao
+      - setores
+      - setores_detalhe
+    FuncaoRequest:
+      type: object
+      properties:
+        organizacao:
+          type: integer
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+          default: true
+        permissoes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissoesEnum'
+          description: Códigos das permissões que a função concede (ver permissoes-disponiveis).
+        setores:
+          type: array
+          items:
+            type: integer
+          description: Setores em que a função pode ser atribuída.
+      required:
+      - nome
+      - organizacao
+      - setores
+    ItemDaFila:
+      type: object
+      properties:
+        ordem_servico_id:
+          type: integer
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        data_venda:
+          type: string
+          format: date
+        vendido_por_nome:
+          type: string
+          nullable: true
+        servico_id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        na_fila_ha_dias:
+          type: integer
+        em_alerta:
+          type: boolean
+        outros_servicos_da_os:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutroServicoDaOS'
+      required:
+      - catalogo_nome
+      - cliente_id
+      - cliente_nome
+      - data_venda
+      - descricao
+      - em_alerta
+      - na_fila_ha_dias
+      - ordem_servico_id
+      - outros_servicos_da_os
+      - prioridade
+      - servico_id
+      - vendido_por_nome
     LiberadaCobranca:
       type: object
       properties:
@@ -2984,6 +5011,191 @@ components:
       - liberada
       - liberada_em
       - liberada_por
+    LiberarEmEnum:
+      enum:
+      - venda
+      - conclusao
+      type: string
+      description: |-
+        * `venda` - Na venda
+        * `conclusao` - Na conclusão dos serviços
+    LinhaDeCobranca:
+      type: object
+      properties:
+        ordem_servico_id:
+          type: integer
+        situacao:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SituacaoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        status:
+          type: string
+          description: Status da OS.
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        data_venda:
+          type: string
+          format: date
+        vendido_por_nome:
+          type: string
+          nullable: true
+        valor:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        tipo_condicao:
+          $ref: '#/components/schemas/TipoCondicaoEnum'
+        condicao_resumo:
+          type: string
+        forma_pagamento:
+          $ref: '#/components/schemas/FormaPagamentoEnum'
+        quantidade_parcelas:
+          type: integer
+          nullable: true
+        data_acordada_cobranca:
+          type: string
+          format: date
+          nullable: true
+          description: Primeiro vencimento.
+        nome_contato_envio_nf:
+          type: string
+        contato_envio_nf:
+          type: string
+        liberar_em:
+          $ref: '#/components/schemas/LiberarEmEnum'
+        liberada_para_cobranca_em:
+          type: string
+          format: date-time
+          nullable: true
+        liberada_para_cobranca_por_nome:
+          type: string
+          nullable: true
+        referencia_lancamento:
+          type: string
+          nullable: true
+        origem_lancamento:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/OrigemLancamentoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        data_cobranca:
+          type: string
+          format: date
+          nullable: true
+          description: Data do lançamento.
+        cobranca_realizada_por_nome:
+          type: string
+          nullable: true
+        dias_aguardando_lancamento:
+          type: integer
+          nullable: true
+          description: Só nas OS a faturar.
+        em_alerta:
+          type: boolean
+          description: Liberada há `DIAS_ALERTA_SEM_LANCAMENTO` dias sem lançamento.
+        andamento:
+          $ref: '#/components/schemas/Andamento'
+      required:
+      - andamento
+      - cliente_id
+      - cliente_nome
+      - cobranca_realizada_por_nome
+      - condicao_resumo
+      - contato_envio_nf
+      - data_acordada_cobranca
+      - data_cobranca
+      - data_venda
+      - dias_aguardando_lancamento
+      - em_alerta
+      - forma_pagamento
+      - liberada_para_cobranca_em
+      - liberada_para_cobranca_por_nome
+      - liberar_em
+      - nome_contato_envio_nf
+      - ordem_servico_id
+      - origem_lancamento
+      - quantidade_parcelas
+      - referencia_lancamento
+      - situacao
+      - status
+      - tipo_condicao
+      - valor
+      - valor_mensal
+      - vendido_por_nome
+    LinhaDeTarefa:
+      type: object
+      properties:
+        tarefa_id:
+          type: integer
+        status:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        responsavel_id:
+          type: integer
+        responsavel_nome:
+          type: string
+          nullable: true
+        servico_id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        setor_nome:
+          type: string
+          nullable: true
+        cliente_nome:
+          type: string
+        ordem_servico_id:
+          type: integer
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        situacao_prazo:
+          $ref: '#/components/schemas/SituacaoPrazoEnum'
+        idade_dias:
+          type: integer
+          description: Dias desde a criação da tarefa.
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+        servico_em_alerta:
+          type: boolean
+        servico_dias_sem_movimentacao:
+          type: integer
+      required:
+      - catalogo_nome
+      - cliente_nome
+      - data_inicio
+      - data_termino
+      - descricao
+      - idade_dias
+      - ordem_servico_id
+      - prazo
+      - responsavel_id
+      - responsavel_nome
+      - servico_dias_sem_movimentacao
+      - servico_em_alerta
+      - servico_id
+      - setor_nome
+      - situacao_prazo
+      - status
+      - tarefa_id
     LoginRequest:
       type: object
       description: Retorna access, refresh e dados do usuário autenticado.
@@ -3020,6 +5232,96 @@ components:
           minLength: 1
       required:
       - refresh
+    MembroDaEquipe:
+      type: object
+      properties:
+        usuario_id:
+          type: integer
+        nome:
+          type: string
+          nullable: true
+        funcao:
+          type: string
+          nullable: true
+        membro_do_setor:
+          type: boolean
+          description: Falso para quem tem tarefa ativa no setor sem ser membro.
+        ativos:
+          type: integer
+        atrasados:
+          type: integer
+        vence_7_dias:
+          type: integer
+        sem_prazo:
+          type: integer
+        em_alerta:
+          type: integer
+        mais_antigo_dias:
+          type: integer
+          nullable: true
+      required:
+      - ativos
+      - atrasados
+      - em_alerta
+      - funcao
+      - mais_antigo_dias
+      - membro_do_setor
+      - nome
+      - sem_prazo
+      - usuario_id
+      - vence_7_dias
+    MembroSetor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        usuario:
+          type: integer
+        usuario_nome:
+          type: string
+          readOnly: true
+        setor:
+          type: integer
+        setor_nome:
+          type: string
+          readOnly: true
+        funcao:
+          type: integer
+        funcao_nome:
+          type: string
+          readOnly: true
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - atualizado_em
+      - criado_em
+      - funcao
+      - funcao_nome
+      - id
+      - setor
+      - setor_nome
+      - usuario
+      - usuario_nome
+    MembroSetorRequest:
+      type: object
+      properties:
+        usuario:
+          type: integer
+        setor:
+          type: integer
+        funcao:
+          type: integer
+      required:
+      - funcao
+      - setor
+      - usuario
     Mes:
       type: object
       properties:
@@ -3048,6 +5350,13 @@ components:
       - ano
       - mes
       - total
+    MessageResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
     MiniOSAnalise:
       type: object
       properties:
@@ -3085,6 +5394,28 @@ components:
       - revisoes_por_cliente
       - total
       - total_revisao_cliente
+    MotivoCienciaEnum:
+      enum:
+      - cliente
+      - documentacao
+      - agendamento
+      - terceiro
+      - outro
+      type: string
+      description: |-
+        * `cliente` - Aguardando o cliente
+        * `documentacao` - Aguardando documentação
+        * `agendamento` - Aguardando agendamento
+        * `terceiro` - Aguardando terceiro
+        * `outro` - Outro
+    MotivosEnum:
+      enum:
+      - atrasado
+      - sem_movimentacao
+      type: string
+      description: |-
+        * `atrasado` - atrasado
+        * `sem_movimentacao` - sem_movimentacao
     NullEnum:
       enum:
       - null
@@ -3120,6 +5451,9 @@ components:
       - tempos_medios
     OrdemServico:
       type: object
+      description: |-
+        Sem `financeiro.ver_valores`, valor e condições de pagamento não aparecem na resposta e
+        são ignorados na edição. Na criação eles continuam aceitos, porque quem lança a venda informa o valor.
       properties:
         id:
           type: integer
@@ -3130,6 +5464,12 @@ components:
           allOf:
           - $ref: '#/components/schemas/Cliente'
           readOnly: true
+        servicos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoDaVenda'
+          description: 'Serviços vendidos, enviados junto na criação da OS. Na edição
+            é somente leitura: use /servicos/ para acrescentar ou alterar serviços.'
         criado_por:
           type: integer
           readOnly: true
@@ -3165,6 +5505,19 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        tipo_condicao:
+          $ref: '#/components/schemas/TipoCondicaoEnum'
+        tipo_condicao_display:
+          type: string
+          readOnly: true
+        condicao_resumo:
+          type: string
+          readOnly: true
         forma_pagamento:
           $ref: '#/components/schemas/FormaPagamentoEnum'
         forma_pagamento_display:
@@ -3172,15 +5525,35 @@ components:
           readOnly: true
         quantidade_parcelas:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
           nullable: true
-        cobranca_imediata:
-          type: boolean
         data_acordada_cobranca:
           type: string
           format: date
           nullable: true
+        intervalo_parcelas_dias:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        dia_fechamento:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        dia_vencimento:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        liberar_em:
+          $ref: '#/components/schemas/LiberarEmEnum'
+        liberar_em_display:
+          type: string
+          readOnly: true
         nome_contato_envio_nf:
           type: string
           maxLength: 50
@@ -3188,33 +5561,6 @@ components:
           type: string
           format: email
           maxLength: 254
-        contrato:
-          type: boolean
-        objeto_contrato:
-          type: string
-          nullable: true
-          maxLength: 255
-        contrato_data_inicio:
-          type: string
-          format: date
-          nullable: true
-        contrato_data_fim:
-          type: string
-          format: date
-          nullable: true
-        gestor_contrato_nome:
-          type: string
-          nullable: true
-          maxLength: 255
-        gestor_contrato_email:
-          type: string
-          format: email
-          nullable: true
-          maxLength: 254
-        gestor_contrato_telefone:
-          type: string
-          nullable: true
-          maxLength: 30
         observacao:
           type: string
           nullable: true
@@ -3223,14 +5569,24 @@ components:
           readOnly: true
         cobranca_realizada:
           type: boolean
-        numero_nf:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          readOnly: true
+        referencia_lancamento:
+          type: string
+          readOnly: true
           nullable: true
+        origem_lancamento:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/OrigemLancamentoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        origem_lancamento_display:
+          type: string
+          readOnly: true
         data_cobranca:
           type: string
           format: date
+          readOnly: true
           nullable: true
         cobranca_realizada_por:
           type: integer
@@ -3284,13 +5640,16 @@ components:
       - atualizado_por
       - cliente
       - cliente_detail
+      - cobranca_realizada
       - cobranca_realizada_por
       - cobranca_realizada_por_nome
       - concluida
+      - condicao_resumo
       - criada_em
       - criado_por
       - criado_por_nome
       - data_atualizacao
+      - data_cobranca
       - data_conclusao_os
       - data_venda
       - dias_em_aberto
@@ -3302,11 +5661,19 @@ components:
       - liberada_para_cobranca_em
       - liberada_para_cobranca_por
       - liberada_para_cobranca_por_nome
+      - liberar_em_display
+      - origem_lancamento
+      - origem_lancamento_display
       - prioridade_display
+      - referencia_lancamento
       - status
       - status_display
+      - tipo_condicao_display
     OrdemServicoList:
       type: object
+      description: |-
+        Sem `financeiro.ver_valores`, valor e condições de pagamento não aparecem na resposta e
+        são ignorados na edição. Na criação eles continuam aceitos, porque quem lança a venda informa o valor.
       properties:
         id:
           type: integer
@@ -3319,14 +5686,39 @@ components:
         data_venda:
           type: string
           format: date
+        vendido_por_nome:
+          type: string
+          readOnly: true
         valor:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        tipo_condicao:
+          $ref: '#/components/schemas/TipoCondicaoEnum'
+        tipo_condicao_display:
+          type: string
+          readOnly: true
+        condicao_resumo:
+          type: string
+          readOnly: true
         forma_pagamento:
           $ref: '#/components/schemas/FormaPagamentoEnum'
         forma_pagamento_display:
           type: string
+          readOnly: true
+        liberar_em:
+          $ref: '#/components/schemas/LiberarEmEnum'
+        liberar_em_display:
+          type: string
+          readOnly: true
+        andamento:
+          allOf:
+          - $ref: '#/components/schemas/Andamento'
           readOnly: true
         status:
           $ref: '#/components/schemas/StatusOSETarefaEnum'
@@ -3346,10 +5738,10 @@ components:
           type: boolean
         cobranca_realizada:
           type: boolean
-        cobranca_imediata:
-          type: boolean
-        contrato:
-          type: boolean
+        referencia_lancamento:
+          type: string
+          nullable: true
+          maxLength: 100
         liberada_para_cobranca:
           type: boolean
         liberada_para_cobranca_em:
@@ -3369,16 +5761,21 @@ components:
           readOnly: true
           nullable: true
       required:
+      - andamento
       - cliente
       - cliente_nome
+      - condicao_resumo
       - data_venda
       - dias_em_aberto
       - dias_entre_criacao_e_conclusao
       - forma_pagamento_display
       - id
       - liberada_para_cobranca_por_nome
+      - liberar_em_display
       - prioridade_display
       - status_display
+      - tipo_condicao_display
+      - vendido_por_nome
     OrdemServicoOperacional:
       type: object
       properties:
@@ -3404,7 +5801,7 @@ components:
           readOnly: true
         quantidade:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         descricao:
@@ -3433,7 +5830,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 65535
+          maximum: 9223372036854775807
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -3482,10 +5879,11 @@ components:
           readOnly: true
         cobranca_realizada:
           type: boolean
+          readOnly: true
         numero_nf:
           type: string
+          readOnly: true
           nullable: true
-          maxLength: 10
         cobranca_realizada_por:
           type: integer
           readOnly: true
@@ -3508,6 +5906,7 @@ components:
       - catalogo_operacional_detail
       - cliente
       - cliente_detail
+      - cobranca_realizada
       - cobranca_realizada_por
       - cobranca_realizada_por_nome
       - complexidade_display
@@ -3519,6 +5918,7 @@ components:
       - id
       - liberada_cobranca_por
       - liberada_cobranca_por_nome
+      - numero_nf
       - prioridade_display
       - responsavel
       - responsavel_nome
@@ -3572,7 +5972,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 65535
+          maximum: 9223372036854775807
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -3660,7 +6060,7 @@ components:
           type: integer
         quantidade:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         descricao:
@@ -3680,7 +6080,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 65535
+          maximum: 9223372036854775807
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -3700,21 +6100,24 @@ components:
           $ref: '#/components/schemas/StatusMiniOSEnum'
         revisao_cliente:
           type: boolean
-        cobranca_realizada:
-          type: boolean
-        numero_nf:
-          type: string
-          nullable: true
-          maxLength: 10
       required:
       - catalogo_operacional
       - cliente
       - responsavel
     OrdemServicoRequest:
       type: object
+      description: |-
+        Sem `financeiro.ver_valores`, valor e condições de pagamento não aparecem na resposta e
+        são ignorados na edição. Na criação eles continuam aceitos, porque quem lança a venda informa o valor.
       properties:
         cliente:
           type: integer
+        servicos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoDaVendaRequest'
+          description: 'Serviços vendidos, enviados junto na criação da OS. Na edição
+            é somente leitura: use /servicos/ para acrescentar ou alterar serviços.'
         data_venda:
           type: string
           format: date
@@ -3728,19 +6131,43 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        tipo_condicao:
+          $ref: '#/components/schemas/TipoCondicaoEnum'
         forma_pagamento:
           $ref: '#/components/schemas/FormaPagamentoEnum'
         quantidade_parcelas:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
           nullable: true
-        cobranca_imediata:
-          type: boolean
         data_acordada_cobranca:
           type: string
           format: date
           nullable: true
+        intervalo_parcelas_dias:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        dia_fechamento:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        dia_vencimento:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        liberar_em:
+          $ref: '#/components/schemas/LiberarEmEnum'
         nome_contato_envio_nf:
           type: string
           minLength: 1
@@ -3750,46 +6177,8 @@ components:
           format: email
           minLength: 1
           maxLength: 254
-        contrato:
-          type: boolean
-        objeto_contrato:
-          type: string
-          nullable: true
-          maxLength: 255
-        contrato_data_inicio:
-          type: string
-          format: date
-          nullable: true
-        contrato_data_fim:
-          type: string
-          format: date
-          nullable: true
-        gestor_contrato_nome:
-          type: string
-          nullable: true
-          maxLength: 255
-        gestor_contrato_email:
-          type: string
-          format: email
-          nullable: true
-          maxLength: 254
-        gestor_contrato_telefone:
-          type: string
-          nullable: true
-          maxLength: 30
         observacao:
           type: string
-          nullable: true
-        cobranca_realizada:
-          type: boolean
-        numero_nf:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          nullable: true
-        data_cobranca:
-          type: string
-          format: date
           nullable: true
       required:
       - cliente
@@ -3832,6 +6221,133 @@ components:
       - total
       - total_concluidas
       - total_nao_concluidas
+    Organizacao:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 150
+        razao_social:
+          type: string
+          maxLength: 200
+        cnpj:
+          type: string
+          maxLength: 18
+        inscricao_estadual:
+          type: string
+          maxLength: 30
+        inscricao_municipal:
+          type: string
+          maxLength: 30
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 20
+        site:
+          type: string
+          maxLength: 200
+        cep:
+          type: string
+          maxLength: 9
+        logradouro:
+          type: string
+          maxLength: 200
+        numero:
+          type: string
+          maxLength: 20
+        complemento:
+          type: string
+          maxLength: 100
+        bairro:
+          type: string
+          maxLength: 100
+        cidade:
+          type: string
+          maxLength: 100
+        uf:
+          type: string
+          maxLength: 2
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - atualizado_em
+      - criado_em
+      - id
+      - nome
+    OrganizacaoRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 150
+        razao_social:
+          type: string
+          maxLength: 200
+        cnpj:
+          type: string
+          maxLength: 18
+        inscricao_estadual:
+          type: string
+          maxLength: 30
+        inscricao_municipal:
+          type: string
+          maxLength: 30
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 20
+        site:
+          type: string
+          maxLength: 200
+        cep:
+          type: string
+          maxLength: 9
+        logradouro:
+          type: string
+          maxLength: 200
+        numero:
+          type: string
+          maxLength: 20
+        complemento:
+          type: string
+          maxLength: 100
+        bairro:
+          type: string
+          maxLength: 100
+        cidade:
+          type: string
+          maxLength: 100
+        uf:
+          type: string
+          maxLength: 2
+      required:
+      - nome
+    Organizador:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+      required:
+      - id
+      - nome
     OrigemEnum:
       enum:
       - api
@@ -3844,6 +6360,62 @@ components:
         * `admin` - Admin
         * `sistema` - Sistema
         * `migracao` - Migração
+    OrigemLancamentoEnum:
+      enum:
+      - manual
+      - integracao
+      type: string
+      description: |-
+        * `manual` - Manual
+        * `integracao` - Integração
+    OutroServicoDaOS:
+      type: object
+      properties:
+        id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        setor_nome:
+          type: string
+          nullable: true
+        etapa:
+          $ref: '#/components/schemas/EtapaEnum'
+        responsaveis:
+          type: array
+          items:
+            type: string
+      required:
+      - catalogo_nome
+      - descricao
+      - etapa
+      - id
+      - responsaveis
+      - setor_nome
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - new_password
+      - token
+    PasswordResetRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
     PatchedAlterarSenhaRequest:
       type: object
       properties:
@@ -3877,7 +6449,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 65535
+          maximum: 9223372036854775807
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -3891,18 +6463,15 @@ components:
         descricao:
           type: string
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+        setor:
+          type: integer
+          title: Setor responsável pela execução
+          description: Setor responsável por executar este serviço.
+        ativo:
+          type: boolean
+          default: true
+          description: Catálogos inativos continuam nos serviços já vendidos, mas
+            não podem ser usados em serviços novos.
     PatchedClienteRequest:
       type: object
       properties:
@@ -3950,6 +6519,40 @@ components:
           type: boolean
         ativo:
           type: boolean
+    PatchedFuncaoRequest:
+      type: object
+      properties:
+        organizacao:
+          type: integer
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+          default: true
+        permissoes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissoesEnum'
+          description: Códigos das permissões que a função concede (ver permissoes-disponiveis).
+        setores:
+          type: array
+          items:
+            type: integer
+          description: Setores em que a função pode ser atribuída.
+    PatchedMembroSetorRequest:
+      type: object
+      properties:
+        usuario:
+          type: integer
+        setor:
+          type: integer
+        funcao:
+          type: integer
     PatchedOrdemServicoOperacionalRequest:
       type: object
       properties:
@@ -3961,7 +6564,7 @@ components:
           type: integer
         quantidade:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         descricao:
@@ -3981,7 +6584,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 65535
+          maximum: 9223372036854775807
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -4001,17 +6604,20 @@ components:
           $ref: '#/components/schemas/StatusMiniOSEnum'
         revisao_cliente:
           type: boolean
-        cobranca_realizada:
-          type: boolean
-        numero_nf:
-          type: string
-          nullable: true
-          maxLength: 10
     PatchedOrdemServicoRequest:
       type: object
+      description: |-
+        Sem `financeiro.ver_valores`, valor e condições de pagamento não aparecem na resposta e
+        são ignorados na edição. Na criação eles continuam aceitos, porque quem lança a venda informa o valor.
       properties:
         cliente:
           type: integer
+        servicos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoDaVendaRequest'
+          description: 'Serviços vendidos, enviados junto na criação da OS. Na edição
+            é somente leitura: use /servicos/ para acrescentar ou alterar serviços.'
         data_venda:
           type: string
           format: date
@@ -4025,19 +6631,43 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        tipo_condicao:
+          $ref: '#/components/schemas/TipoCondicaoEnum'
         forma_pagamento:
           $ref: '#/components/schemas/FormaPagamentoEnum'
         quantidade_parcelas:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
           nullable: true
-        cobranca_imediata:
-          type: boolean
         data_acordada_cobranca:
           type: string
           format: date
           nullable: true
+        intervalo_parcelas_dias:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        dia_fechamento:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        dia_vencimento:
+          type: integer
+          maximum: 31
+          minimum: 1
+          nullable: true
+        liberar_em:
+          $ref: '#/components/schemas/LiberarEmEnum'
         nome_contato_envio_nf:
           type: string
           minLength: 1
@@ -4047,47 +6677,59 @@ components:
           format: email
           minLength: 1
           maxLength: 254
-        contrato:
-          type: boolean
-        objeto_contrato:
-          type: string
-          nullable: true
-          maxLength: 255
-        contrato_data_inicio:
-          type: string
-          format: date
-          nullable: true
-        contrato_data_fim:
-          type: string
-          format: date
-          nullable: true
-        gestor_contrato_nome:
-          type: string
-          nullable: true
-          maxLength: 255
-        gestor_contrato_email:
-          type: string
-          format: email
-          nullable: true
-          maxLength: 254
-        gestor_contrato_telefone:
-          type: string
-          nullable: true
-          maxLength: 30
         observacao:
           type: string
           nullable: true
-        cobranca_realizada:
-          type: boolean
-        numero_nf:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          nullable: true
-        data_cobranca:
+    PatchedOrganizacaoRequest:
+      type: object
+      properties:
+        nome:
           type: string
-          format: date
-          nullable: true
+          minLength: 1
+          maxLength: 150
+        razao_social:
+          type: string
+          maxLength: 200
+        cnpj:
+          type: string
+          maxLength: 18
+        inscricao_estadual:
+          type: string
+          maxLength: 30
+        inscricao_municipal:
+          type: string
+          maxLength: 30
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 20
+        site:
+          type: string
+          maxLength: 200
+        cep:
+          type: string
+          maxLength: 9
+        logradouro:
+          type: string
+          maxLength: 200
+        numero:
+          type: string
+          maxLength: 20
+        complemento:
+          type: string
+          maxLength: 100
+        bairro:
+          type: string
+          maxLength: 100
+        cidade:
+          type: string
+          maxLength: 100
+        uf:
+          type: string
+          maxLength: 2
     PatchedRegistrarCobrancaOSORequestRequest:
       type: object
       properties:
@@ -4099,9 +6741,12 @@ components:
     PatchedRegistrarCobrancaRequestRequest:
       type: object
       properties:
-        numero_nf:
-          type: integer
+        referencia_lancamento:
+          type: string
           nullable: true
+          description: Referência do lançamento no sistema financeiro externo (número
+            da NF ou código).
+          maxLength: 100
         data_cobranca:
           type: string
           format: date
@@ -4119,22 +6764,21 @@ components:
           minLength: 1
         prioridade:
           $ref: '#/components/schemas/PrioridadeEnum'
-        prazo:
+    PatchedSetorRequest:
+      type: object
+      properties:
+        organizacao:
+          type: integer
+        nome:
           type: string
-          format: date
-          nullable: true
-        horas_estimadas:
+          minLength: 1
+          maxLength: 100
+        descricao:
           type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
           nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+        ativo:
+          type: boolean
+          default: true
     PatchedSubitemCatalogoRequest:
       type: object
       properties:
@@ -4149,7 +6793,7 @@ components:
           type: boolean
         ordem:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         catalogo:
@@ -4172,13 +6816,9 @@ components:
           type: string
           format: date
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
     PatchedUsuarioUpdateRequest:
       type: object
+      description: Grava os vínculos enviados em `vinculos` com as proteções de `definir_vinculos`.
       properties:
         email:
           type: string
@@ -4197,10 +6837,89 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        tipo_usuario:
-          $ref: '#/components/schemas/TipoUsuarioEnum'
-        ativo:
-          type: boolean
+    PermissaoCatalogo:
+      type: object
+      properties:
+        codigo:
+          type: string
+        descricao:
+          type: string
+        escopo:
+          $ref: '#/components/schemas/EscopoEnum'
+      required:
+      - codigo
+      - descricao
+      - escopo
+    PermissoesEnum:
+      enum:
+      - os.ver_todas
+      - os.gerenciar
+      - os.excluir
+      - os_operacional.gerenciar
+      - financeiro.ver_valores
+      - financeiro.registrar_cobranca
+      - clientes.gerenciar
+      - catalogo.gerenciar
+      - servicos.ver_setor
+      - servicos.gerenciar
+      - tarefas.distribuir
+      - tarefas.editar_setor
+      - usuarios.gerenciar
+      - usuarios.gerenciar_diretoria
+      - usuarios.redefinir_senha
+      - organizacao.configurar
+      - indicadores.ver_geral
+      - auditoria.ver
+      - setores.todos
+      type: string
+      description: |-
+        * `os.ver_todas` - Ver todas as OS, serviços e tarefas
+        * `os.gerenciar` - Criar e editar OS e seus serviços
+        * `os.excluir` - Excluir OS
+        * `os_operacional.gerenciar` - Criar e editar OS operacionais e o catálogo operacional
+        * `financeiro.ver_valores` - Ver valores e condições de pagamento
+        * `financeiro.registrar_cobranca` - Registrar cobrança e nota fiscal
+        * `clientes.gerenciar` - Criar, editar e excluir clientes
+        * `catalogo.gerenciar` - Criar, editar e excluir o catálogo de serviços
+        * `servicos.ver_setor` - Ver os serviços e tarefas do setor
+        * `servicos.gerenciar` - Ajustar e excluir serviços do setor
+        * `tarefas.distribuir` - Criar, reatribuir e excluir tarefas
+        * `tarefas.editar_setor` - Editar qualquer tarefa do setor
+        * `usuarios.gerenciar` - Criar, editar, ativar e desativar usuários
+        * `usuarios.gerenciar_diretoria` - Gerenciar usuários da diretoria
+        * `usuarios.redefinir_senha` - Alterar a senha de outros usuários
+        * `organizacao.configurar` - Configurar organização e setores
+        * `indicadores.ver_geral` - Ver indicadores de toda a equipe
+        * `auditoria.ver` - Ver o histórico de auditoria
+        * `setores.todos` - As permissões por setor valem em todos os setores
+    PermissoesNoSetor:
+      type: object
+      properties:
+        setor:
+          type: integer
+        setor_nome:
+          type: string
+        permissoes:
+          type: array
+          items:
+            type: string
+      required:
+      - permissoes
+      - setor
+      - setor_nome
+    PorTipoCondicao:
+      type: object
+      properties:
+        a_vista:
+          $ref: '#/components/schemas/SomasPorSituacao'
+        parcelado:
+          $ref: '#/components/schemas/SomasPorSituacao'
+        recorrente:
+          $ref: '#/components/schemas/SomasPorSituacao'
+      required:
+      - a_vista
+      - parcelado
+      - recorrente
     PrioridadeEnum:
       enum:
       - baixa
@@ -4315,6 +7034,107 @@ components:
       - user_agent
       - usuario
       - usuario_nome
+    ResponsavelDoServico:
+      type: object
+      properties:
+        nome:
+          type: string
+          nullable: true
+        status:
+          type: string
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - data_inicio
+      - data_termino
+      - nome
+      - prazo
+      - status
+    ResumoDaVenda:
+      type: object
+      properties:
+        id:
+          type: integer
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        data_venda:
+          type: string
+          format: date
+        vendido_por_nome:
+          type: string
+          nullable: true
+        criada_em:
+          type: string
+          format: date-time
+        status:
+          type: string
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        observacao:
+          type: string
+          nullable: true
+        andamento:
+          $ref: '#/components/schemas/Andamento'
+        servicos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoDoResumo'
+        condicoes:
+          allOf:
+          - $ref: '#/components/schemas/CondicoesDaVenda'
+          nullable: true
+          description: Vazio para quem não tem `financeiro.ver_valores`.
+        financeiro:
+          allOf:
+          - $ref: '#/components/schemas/FinanceiroDaVenda'
+          nullable: true
+          description: Liberação e lançamento. Vazio para quem não tem `financeiro.ver_valores`.
+      required:
+      - andamento
+      - cliente_id
+      - cliente_nome
+      - condicoes
+      - criada_em
+      - data_venda
+      - financeiro
+      - id
+      - observacao
+      - prioridade
+      - servicos
+      - status
+      - vendido_por_nome
+    ResumoPermissoes:
+      type: object
+      properties:
+        globais:
+          type: array
+          items:
+            type: string
+          description: Permissões que valem na organização toda.
+        todos_os_setores:
+          type: boolean
+          description: Se verdadeiro, as permissões por setor valem em qualquer setor
+            (estão em `globais`).
+        por_setor:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissoesNoSetor'
+      required:
+      - globais
+      - por_setor
+      - todos_os_setores
     RevisaoPorCliente:
       type: object
       properties:
@@ -4348,6 +7168,13 @@ components:
           allOf:
           - $ref: '#/components/schemas/Catalogo'
           readOnly: true
+        setor:
+          type: integer
+          readOnly: true
+          nullable: true
+        setor_nome:
+          type: string
+          readOnly: true
         descricao:
           type: string
         status:
@@ -4365,31 +7192,6 @@ components:
         prazo:
           type: string
           format: date
-          nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        horas_estimadas_efetivas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          readOnly: true
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        complexidade_display:
-          type: string
-          nullable: true
-          readOnly: true
-        complexidade_efetiva:
-          type: integer
           readOnly: true
           nullable: true
         data_inicio:
@@ -4423,24 +7225,68 @@ components:
           type: string
           format: date-time
           readOnly: true
+        ultima_movimentacao_em:
+          type: string
+          format: date-time
+          readOnly: true
+        dias_sem_movimentacao:
+          type: integer
+          readOnly: true
+        em_alerta_sem_movimentacao:
+          type: boolean
+          readOnly: true
+        alerta_ciente_em:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        alerta_ciente_por:
+          type: integer
+          readOnly: true
+          nullable: true
+        alerta_ciente_por_nome:
+          type: string
+          readOnly: true
+        alerta_ciente_motivo:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MotivoCienciaEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        alerta_ciente_observacao:
+          type: string
+          readOnly: true
+          nullable: true
+        ciencia_vigente:
+          type: boolean
+          readOnly: true
       required:
+      - alerta_ciente_em
+      - alerta_ciente_motivo
+      - alerta_ciente_observacao
+      - alerta_ciente_por
+      - alerta_ciente_por_nome
       - atualizado_em
       - catalogo_detail
-      - complexidade_display
-      - complexidade_efetiva
+      - ciencia_vigente
       - criado_em
       - data_conclusao
       - data_inicio
       - data_termino
       - descricao
-      - horas_estimadas_efetivas
+      - dias_sem_movimentacao
+      - em_alerta_sem_movimentacao
       - id
       - ordem_servico
+      - prazo
       - prioridade_display
+      - setor
+      - setor_nome
       - status
       - status_display
       - terminado_por
       - terminado_por_nome
+      - ultima_movimentacao_em
     ServicoAnalise:
       type: object
       properties:
@@ -4463,6 +7309,169 @@ components:
       - concluidos_ultimos_12_meses_total
       - por_status
       - principais_por_quantidade
+    ServicoConcluido:
+      type: object
+      properties:
+        ordem_servico_id:
+          type: integer
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        data_venda:
+          type: string
+          format: date
+        vendido_por_nome:
+          type: string
+          nullable: true
+        servico_id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        terminado_por_nome:
+          type: string
+          nullable: true
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+        no_prazo:
+          type: boolean
+          nullable: true
+          description: Vazio quando não havia prazo.
+      required:
+      - catalogo_nome
+      - cliente_id
+      - cliente_nome
+      - data_termino
+      - data_venda
+      - descricao
+      - no_prazo
+      - ordem_servico_id
+      - prazo
+      - servico_id
+      - terminado_por_nome
+      - vendido_por_nome
+    ServicoDaSituacao:
+      type: object
+      properties:
+        id:
+          type: integer
+        descricao:
+          type: string
+        etapa:
+          $ref: '#/components/schemas/EtapaEnum'
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - data_termino
+      - descricao
+      - etapa
+      - id
+    ServicoDaVenda:
+      type: object
+      description: Serviço vendido, enviado junto na criação da OS (ADR 0008, 5).
+        O setor vem do catálogo.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        catalogo:
+          type: integer
+        catalogo_nome:
+          type: string
+          readOnly: true
+        setor:
+          type: integer
+          readOnly: true
+          nullable: true
+        setor_nome:
+          type: string
+          readOnly: true
+        descricao:
+          type: string
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusServicoEnum'
+          readOnly: true
+      required:
+      - catalogo
+      - catalogo_nome
+      - descricao
+      - id
+      - setor
+      - setor_nome
+      - status
+    ServicoDaVendaRequest:
+      type: object
+      description: Serviço vendido, enviado junto na criação da OS (ADR 0008, 5).
+        O setor vem do catálogo.
+      properties:
+        catalogo:
+          type: integer
+        descricao:
+          type: string
+          minLength: 1
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+      required:
+      - catalogo
+      - descricao
+    ServicoDoResumo:
+      type: object
+      properties:
+        id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        setor_nome:
+          type: string
+          nullable: true
+        etapa:
+          $ref: '#/components/schemas/EtapaEnum'
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+        terminado_por_nome:
+          type: string
+          nullable: true
+        responsaveis:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponsavelDoServico'
+      required:
+      - catalogo_nome
+      - data_inicio
+      - data_termino
+      - descricao
+      - etapa
+      - id
+      - prazo
+      - responsaveis
+      - setor_nome
+      - terminado_por_nome
     ServicoList:
       type: object
       properties:
@@ -4475,6 +7484,12 @@ components:
           type: integer
           nullable: true
         catalogo_nome:
+          type: string
+          readOnly: true
+        setor:
+          type: integer
+          nullable: true
+        setor_nome:
           type: string
           readOnly: true
         descricao:
@@ -4492,32 +7507,6 @@ components:
         prazo:
           type: string
           format: date
-          nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        horas_estimadas_efetivas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          readOnly: true
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        complexidade_display:
-          type: string
-          nullable: true
-          readOnly: true
-        complexidade_efetiva:
-          type: integer
-          readOnly: true
           nullable: true
         data_inicio:
           type: string
@@ -4546,6 +7535,37 @@ components:
           type: string
           format: date-time
           readOnly: true
+        ultima_movimentacao_em:
+          type: string
+          format: date-time
+        dias_sem_movimentacao:
+          type: integer
+          readOnly: true
+        em_alerta_sem_movimentacao:
+          type: boolean
+          readOnly: true
+        alerta_ciente_em:
+          type: string
+          format: date-time
+          nullable: true
+        alerta_ciente_por:
+          type: integer
+          nullable: true
+        alerta_ciente_por_nome:
+          type: string
+          readOnly: true
+        alerta_ciente_motivo:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MotivoCienciaEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        alerta_ciente_observacao:
+          type: string
+          nullable: true
+        ciencia_vigente:
+          type: boolean
+          readOnly: true
         cliente_nome:
           type: string
           readOnly: true
@@ -4558,18 +7578,20 @@ components:
           type: boolean
           readOnly: true
       required:
+      - alerta_ciente_por_nome
       - atualizado_em
       - catalogo_nome
+      - ciencia_vigente
       - cliente_nome
-      - complexidade_display
-      - complexidade_efetiva
       - criado_em
       - data_venda
       - descricao
-      - horas_estimadas_efetivas
+      - dias_sem_movimentacao
+      - em_alerta_sem_movimentacao
       - id
       - ordem_servico
       - prioridade_display
+      - setor_nome
       - status_display
       - tem_tarefas
       - terminado_por_nome
@@ -4617,25 +7639,266 @@ components:
           minLength: 1
         prioridade:
           $ref: '#/components/schemas/PrioridadeEnum'
-        prazo:
-          type: string
-          format: date
-          nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
       required:
       - descricao
       - ordem_servico
+    Setor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        organizacao:
+          type: integer
+        nome:
+          type: string
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+          default: true
+        organizadores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organizador'
+          readOnly: true
+        sem_organizador:
+          type: boolean
+          readOnly: true
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - atualizado_em
+      - criado_em
+      - id
+      - nome
+      - organizacao
+      - organizadores
+      - sem_organizador
+    SetorAcompanhado:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        organiza:
+          type: boolean
+          description: Se a pessoa pode distribuir no setor.
+        na_fila:
+          type: integer
+        em_andamento:
+          type: integer
+          description: Distribuídos ou em execução.
+        atrasados:
+          type: integer
+        em_alerta:
+          type: integer
+          description: Sem movimentação há N dias, sem ciência vigente.
+        sem_prazo:
+          type: integer
+          description: Distribuídos ou em execução sem prazo.
+      required:
+      - atrasados
+      - em_alerta
+      - em_andamento
+      - id
+      - na_fila
+      - nome
+      - organiza
+      - sem_prazo
+    SetorRequest:
+      type: object
+      properties:
+        organizacao:
+          type: integer
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 100
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+          default: true
+      required:
+      - nome
+      - organizacao
+    SituacaoEnum:
+      enum:
+      - a_faturar
+      - faturadas
+      - previsao
+      type: string
+      description: |-
+        * `a_faturar` - a_faturar
+        * `faturadas` - faturadas
+        * `previsao` - previsao
+    SituacaoFinanceira:
+      type: object
+      properties:
+        ordem_servico_id:
+          type: integer
+        situacao:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SituacaoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        status:
+          type: string
+          description: Status da OS.
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        data_venda:
+          type: string
+          format: date
+        vendido_por_nome:
+          type: string
+          nullable: true
+        valor:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        tipo_condicao:
+          $ref: '#/components/schemas/TipoCondicaoEnum'
+        condicao_resumo:
+          type: string
+        forma_pagamento:
+          $ref: '#/components/schemas/FormaPagamentoEnum'
+        quantidade_parcelas:
+          type: integer
+          nullable: true
+        data_acordada_cobranca:
+          type: string
+          format: date
+          nullable: true
+          description: Primeiro vencimento.
+        nome_contato_envio_nf:
+          type: string
+        contato_envio_nf:
+          type: string
+        liberar_em:
+          $ref: '#/components/schemas/LiberarEmEnum'
+        liberada_para_cobranca_em:
+          type: string
+          format: date-time
+          nullable: true
+        liberada_para_cobranca_por_nome:
+          type: string
+          nullable: true
+        referencia_lancamento:
+          type: string
+          nullable: true
+        origem_lancamento:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/OrigemLancamentoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        data_cobranca:
+          type: string
+          format: date
+          nullable: true
+          description: Data do lançamento.
+        cobranca_realizada_por_nome:
+          type: string
+          nullable: true
+        dias_aguardando_lancamento:
+          type: integer
+          nullable: true
+          description: Só nas OS a faturar.
+        em_alerta:
+          type: boolean
+          description: Liberada há `DIAS_ALERTA_SEM_LANCAMENTO` dias sem lançamento.
+        andamento:
+          $ref: '#/components/schemas/Andamento'
+        observacao:
+          type: string
+          nullable: true
+        servicos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoDaSituacao'
+        eventos:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventoFinanceiro'
+      required:
+      - andamento
+      - cliente_id
+      - cliente_nome
+      - cobranca_realizada_por_nome
+      - condicao_resumo
+      - contato_envio_nf
+      - data_acordada_cobranca
+      - data_cobranca
+      - data_venda
+      - dias_aguardando_lancamento
+      - em_alerta
+      - eventos
+      - forma_pagamento
+      - liberada_para_cobranca_em
+      - liberada_para_cobranca_por_nome
+      - liberar_em
+      - nome_contato_envio_nf
+      - observacao
+      - ordem_servico_id
+      - origem_lancamento
+      - quantidade_parcelas
+      - referencia_lancamento
+      - servicos
+      - situacao
+      - status
+      - tipo_condicao
+      - valor
+      - valor_mensal
+      - vendido_por_nome
+    SituacaoPrazoEnum:
+      enum:
+      - atrasado
+      - vence_7_dias
+      - depois
+      - sem_prazo
+      type: string
+      description: |-
+        * `atrasado` - atrasado
+        * `vence_7_dias` - vence_7_dias
+        * `depois` - depois
+        * `sem_prazo` - sem_prazo
+    SomasPorSituacao:
+      type: object
+      properties:
+        a_faturar:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        faturadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        previsao:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - a_faturar
+      - faturadas
+      - previsao
     StatusMiniOSEnum:
       enum:
       - nao_iniciado
@@ -4686,7 +7949,7 @@ components:
           type: boolean
         ordem:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         criado_em:
@@ -4719,7 +7982,7 @@ components:
           type: boolean
         ordem:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         catalogo:
@@ -4757,21 +8020,6 @@ components:
           type: string
           format: date
           nullable: true
-        complexidade_servico:
-          type: integer
-          nullable: true
-          readOnly: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        horas_estimadas_efetivas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          readOnly: true
-          nullable: true
         data_inicio:
           type: string
           format: date
@@ -4792,11 +8040,9 @@ components:
           readOnly: true
       required:
       - atualizado_em
-      - complexidade_servico
       - criada_em
       - data_inicio
       - data_termino
-      - horas_estimadas_efetivas
       - id
       - prioridade_display
       - responsavel
@@ -4817,6 +8063,64 @@ components:
       required:
       - concluidas_por_mes
       - por_status
+    TarefaDistribuidaRequest:
+      type: object
+      properties:
+        responsavel:
+          type: integer
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        descricao:
+          type: string
+          nullable: true
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+      required:
+      - responsavel
+    TarefaDoDetalhe:
+      type: object
+      properties:
+        id:
+          type: integer
+        responsavel_id:
+          type: integer
+        responsavel_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+          nullable: true
+        status:
+          type: string
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        situacao_prazo:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SituacaoPrazoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - data_inicio
+      - data_termino
+      - descricao
+      - id
+      - prazo
+      - responsavel_id
+      - responsavel_nome
+      - situacao_prazo
+      - status
     TarefaList:
       type: object
       properties:
@@ -4836,10 +8140,6 @@ components:
         catalogo_nome:
           type: string
           readOnly: true
-        complexidade_servico:
-          type: integer
-          nullable: true
-          readOnly: true
         descricao:
           type: string
           nullable: true
@@ -4856,17 +8156,6 @@ components:
         prazo:
           type: string
           format: date
-          nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        horas_estimadas_efetivas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          readOnly: true
           nullable: true
         data_inicio:
           type: string
@@ -4888,9 +8177,7 @@ components:
       - atualizado_em
       - catalogo_nome
       - cliente_nome
-      - complexidade_servico
       - criada_em
-      - horas_estimadas_efetivas
       - id
       - prioridade_display
       - responsavel
@@ -4927,11 +8214,6 @@ components:
         prazo:
           type: string
           format: date
-          nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
           nullable: true
       required:
       - responsavel
@@ -4975,14 +8257,6 @@ components:
           type: number
           format: double
           nullable: true
-        complexidade_media_concluidas:
-          type: number
-          format: double
-          nullable: true
-        horas_estimadas_entregues:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
         mini_os_concluidas:
           type: integer
         tarefas_em_aberto:
@@ -5014,8 +8288,6 @@ components:
           format: double
           nullable: true
       required:
-      - complexidade_media_concluidas
-      - horas_estimadas_entregues
       - mini_os_alta_prioridade_abertas
       - mini_os_atrasadas
       - mini_os_concluidas
@@ -5109,6 +8381,16 @@ components:
         * `gestao` - Gestão
         * `avulso` - Avulso
         * `fornecedor` - Fornecedor
+    TipoCondicaoEnum:
+      enum:
+      - a_vista
+      - parcelado
+      - recorrente
+      type: string
+      description: |-
+        * `a_vista` - À vista
+        * `parcelado` - Parcelado
+        * `recorrente` - Recorrente
     TipoInscricaoEnum:
       enum:
       - cnpj
@@ -5123,40 +8405,6 @@ components:
         * `cei` - CEI
         * `cno` - CNO
         * `caepf` - CAEPF
-    TipoOpcao:
-      type: object
-      properties:
-        value:
-          type: string
-        label:
-          type: string
-      required:
-      - label
-      - value
-    TipoUsuarioEnum:
-      enum:
-      - diretor
-      - gestor_comercial
-      - comercial
-      - gestor_tecnico
-      - sub_gestor_tecnico
-      - tecnico
-      - gestor_financeiro
-      - financeiro
-      - gestor_administrativo
-      - administrativo
-      type: string
-      description: |-
-        * `diretor` - Diretor
-        * `gestor_comercial` - Gestor Comercial
-        * `comercial` - Comercial
-        * `gestor_tecnico` - Líder Técnico
-        * `sub_gestor_tecnico` - Sub-Líder Técnico
-        * `tecnico` - Técnico
-        * `gestor_financeiro` - Gestor Financeiro
-        * `financeiro` - Financeiro
-        * `gestor_administrativo` - Gestor Administrativo
-        * `administrativo` - Administrativo
     TokenRefreshComUsuarioRequest:
       type: object
       description: Refresh que devolve também os dados atualizados do usuário.
@@ -5178,6 +8426,7 @@ components:
       - usuario
     UsuarioCreate:
       type: object
+      description: Grava os vínculos enviados em `vinculos` com as proteções de `definir_vinculos`.
       properties:
         id:
           type: integer
@@ -5196,21 +8445,22 @@ components:
         nome_completo:
           type: string
           maxLength: 255
-        tipo_usuario:
-          $ref: '#/components/schemas/TipoUsuarioEnum'
-        tipo_usuario_display:
-          type: string
-          readOnly: true
         ativo:
           type: boolean
+          default: true
+        vinculos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vinculo'
+          description: 'Setor e função do usuário: lista com no máximo um item.'
       required:
       - email
       - id
       - nome_completo
-      - tipo_usuario_display
       - username
     UsuarioCreateRequest:
       type: object
+      description: Grava os vínculos enviados em `vinculos` com as proteções de `definir_vinculos`.
       properties:
         email:
           type: string
@@ -5229,10 +8479,14 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        tipo_usuario:
-          $ref: '#/components/schemas/TipoUsuarioEnum'
         ativo:
           type: boolean
+          default: true
+        vinculos:
+          type: array
+          items:
+            $ref: '#/components/schemas/VinculoRequest'
+          description: 'Setor e função do usuário: lista com no máximo um item.'
         password:
           type: string
           writeOnly: true
@@ -5267,22 +8521,29 @@ components:
         nome_completo:
           type: string
           maxLength: 255
-        tipo_usuario:
-          $ref: '#/components/schemas/TipoUsuarioEnum'
-        tipo_usuario_display:
-          type: string
-          readOnly: true
         ativo:
           type: boolean
+          readOnly: true
         is_staff:
           type: boolean
+          readOnly: true
           title: Membro da equipe
           description: Indica que usuário consegue acessar este site de administração.
         is_superuser:
           type: boolean
+          readOnly: true
           title: Status de superusuário
           description: Indica que este usuário tem todas as permissões sem atribuí-las
             explicitamente.
+        vinculos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vinculo'
+          readOnly: true
+        permissoes:
+          allOf:
+          - $ref: '#/components/schemas/ResumoPermissoes'
+          readOnly: true
         data_criacao:
           type: string
           format: date-time
@@ -5294,13 +8555,17 @@ components:
           nullable: true
           title: Último login
       required:
+      - ativo
       - data_criacao
       - email
       - id
+      - is_staff
+      - is_superuser
       - last_login
       - nome_completo
-      - tipo_usuario_display
+      - permissoes
       - username
+      - vinculos
     UsuarioList:
       type: object
       properties:
@@ -5314,23 +8579,25 @@ components:
         nome_completo:
           type: string
           maxLength: 255
-        tipo_usuario:
-          $ref: '#/components/schemas/TipoUsuarioEnum'
-        tipo_usuario_display:
-          type: string
-          readOnly: true
         ativo:
           type: boolean
+          readOnly: true
+        vinculos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vinculo'
+          readOnly: true
         data_criacao:
           type: string
           format: date-time
           readOnly: true
       required:
+      - ativo
       - data_criacao
       - email
       - id
       - nome_completo
-      - tipo_usuario_display
+      - vinculos
     UsuarioPayload:
       type: object
       properties:
@@ -5343,16 +8610,18 @@ components:
           type: string
         nome_completo:
           type: string
-        tipo_usuario:
-          type: string
-        tipo_usuario_display:
-          type: string
         ativo:
           type: boolean
         is_staff:
           type: boolean
         is_superuser:
           type: boolean
+        vinculos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vinculo'
+        permissoes:
+          $ref: '#/components/schemas/ResumoPermissoes'
       required:
       - ativo
       - email
@@ -5360,11 +8629,12 @@ components:
       - is_staff
       - is_superuser
       - nome_completo
-      - tipo_usuario
-      - tipo_usuario_display
+      - permissoes
       - username
+      - vinculos
     UsuarioUpdate:
       type: object
+      description: Grava os vínculos enviados em `vinculos` com as proteções de `definir_vinculos`.
       properties:
         id:
           type: integer
@@ -5383,21 +8653,26 @@ components:
         nome_completo:
           type: string
           maxLength: 255
-        tipo_usuario:
-          $ref: '#/components/schemas/TipoUsuarioEnum'
-        tipo_usuario_display:
-          type: string
-          readOnly: true
         ativo:
           type: boolean
+          readOnly: true
+        vinculos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vinculo'
+          readOnly: true
+          description: Se enviado, substitui o vínculo do usuário (lista com no máximo
+            um item; vazia remove o vínculo).
       required:
+      - ativo
       - email
       - id
       - nome_completo
-      - tipo_usuario_display
       - username
+      - vinculos
     UsuarioUpdateRequest:
       type: object
+      description: Grava os vínculos enviados em `vinculos` com as proteções de `definir_vinculos`.
       properties:
         email:
           type: string
@@ -5416,14 +8691,46 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        tipo_usuario:
-          $ref: '#/components/schemas/TipoUsuarioEnum'
-        ativo:
-          type: boolean
       required:
       - email
       - nome_completo
       - username
+    Vinculo:
+      type: object
+      description: Vínculo do usuário com um setor. Na escrita, informe `setor` e
+        `funcao`.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        setor:
+          type: integer
+        setor_nome:
+          type: string
+          readOnly: true
+        funcao:
+          type: integer
+        funcao_nome:
+          type: string
+          readOnly: true
+      required:
+      - funcao
+      - funcao_nome
+      - id
+      - setor
+      - setor_nome
+    VinculoRequest:
+      type: object
+      description: Vínculo do usuário com um setor. Na escrita, informe `setor` e
+        `funcao`.
+      properties:
+        setor:
+          type: integer
+        funcao:
+          type: integer
+      required:
+      - funcao
+      - setor
   securitySchemes:
     basicAuth:
       type: http
