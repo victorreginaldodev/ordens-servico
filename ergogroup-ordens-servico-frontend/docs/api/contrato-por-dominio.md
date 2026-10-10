@@ -1,6 +1,6 @@
 # Contrato da API por domínio
 
-Leitura do contrato do backend (`epic/v3`, fases 6 a 11) feita em 10/10/2026, para a fase R0 de `docs/ui/plano-redesenho-fluxos-e-telas.md`. Diz o que cada endpoint entrega, a permissão que exige e onde está no frontend.
+Leitura do contrato do backend (branch `v3`, antes `epic/v3`; fases 6 a 11) feita em 10/10/2026, para a fase R0 de `docs/ui/plano-redesenho-fluxos-e-telas.md`. Diz o que cada endpoint entrega, a permissão que exige e onde está no frontend.
 
 ## Como os tipos são mantidos (decidido em 10/10/2026)
 

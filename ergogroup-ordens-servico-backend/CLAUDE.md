@@ -4,10 +4,10 @@
 
 ## Briefing para agentes (atualizado em 10/10/2026)
 
-Leia antes de qualquer ação. O projeto tem dois repositórios: `ergogroup-ordens-servico-backend` (Django + DRF, MySQL, JWT) e `ergogroup-ordens-servico-frontend` (React + Vite + TypeScript). A branch de trabalho nos dois é `epic/v3`.
+Leia antes de qualquer ação. O projeto tem dois projetos, reunidos num monorepo: `ergogroup-ordens-servico-backend` (Django + DRF, MySQL, JWT) e `ergogroup-ordens-servico-frontend` (React + Vite + TypeScript). A branch de trabalho é a `v3` do monorepo, que contém o estado de desenvolvimento antes chamado `epic/v3`.
 
 ### Regras obrigatórias
-1. NUNCA envie nada para a `main` (merge, push, rebase ou PR com destino à main). Tudo fica na `epic/v3` até o usuário aprovar explicitamente.
+1. NUNCA envie nada para a `main` (merge, push, rebase ou PR com destino à main). Tudo fica na `v3` até o usuário aprovar explicitamente.
 2. Commits e push só quando o usuário pedir. Commits organizados por assunto, mensagens em português.
 3. Não crie projetos novos, cópias de projeto nem git worktrees. Não crie apps Django novos sem pedido explícito.
 4. A OS operacional (`OrdemServicoOperacional`, OSO, "mini OS") e o catálogo operacional estão FORA DE ESCOPO: não os inclua em análises, propostas, perguntas nem implementações.

@@ -11,6 +11,7 @@ Plano de 10/10/2026. Escopo: **só frontend**. Integra o que o backend entregou 
 | Rever fluxos, navegação e telas principais, em vez de só adaptar campos | **Decidido** (usuário, 10/10/2026) |
 | R0 é a releitura do contrato da API e a camada nova (tipos, serviços, hooks e componentes), sem remendar as telas antigas | **Decidido** (usuário, 10/10/2026) |
 | Tipos gerados do schema OpenAPI com `openapi-typescript` | **Decidido** (usuário, 10/10/2026) |
+| Trabalho do frontend (R0 a R8) na branch `v3` deste monorepo, que reúne o estado de desenvolvimento antes chamado `epic/v3` | **Decidido** (usuário, 10/10/2026) |
 | Fases R1 em diante: ordem e conteúdo | Proposta |
 
 Referências:
@@ -69,12 +70,7 @@ R5 e R6 podem trocar de lugar com R4, se você preferir começar pela venda.
 
 Concluída em 10/10/2026. **Decidido:** a R0 não remenda as telas antigas, que vão ser substituídas nas fases R4 a R6. Ela relê o contrato e constrói a camada nova sobre a qual as telas novas vão nascer.
 
-**Por que não corrigir as telas atuais antes:**
-- a `epic/v3` do backend não vai para a `main` antes de o trabalho terminar;
-- em produção, frontend e backend antigos continuam consistentes entre si;
-- a quebra existe só no ambiente de desenvolvimento.
-
-*Pressuposto a confirmar com o usuário:* a `epic/v3` do backend não está publicada em nenhum ambiente usado de verdade.
+**Por que não corrigir as telas atuais antes:** o estado do monorepo é o estado de desenvolvimento (confirmado pelo usuário em 10/10/2026). O backend da `v3` (antes `epic/v3`) não está publicado. A quebra das telas antigas existe só no desenvolvimento, e elas serão substituídas.
 
 As telas antigas ficam como estão até a R7.
 
@@ -253,4 +249,4 @@ Código novo em `src/features/execucao/` (`services.ts`, `hooks.ts`, `pages/`, `
 - **Schema desatualizado:** a cada mudança no backend, baixar o schema e rodar `npm run api:tipos`. Os erros de compilação mostram o que mudou.
 - **Banco de dev compartilhado:** testes manuais criam vendas e disparam e-mails se `EMAIL_NOTIFICATIONS_ENABLED` estiver ligado.
 - **Período de convivência:** entre R3 e R7 existem telas novas e antigas. Os redirecionamentos da R3 evitam links quebrados.
-- **Telas antigas quebradas na dev:** contra o backend da `epic/v3`, as telas atuais perdem campos (contrato, NF, horas). Use as telas novas para testar o que o backend mudou.
+- **Telas antigas quebradas na dev:** contra o backend da `v3`, as telas atuais perdem campos (contrato, NF, horas). Use as telas novas para testar o que o backend mudou.
