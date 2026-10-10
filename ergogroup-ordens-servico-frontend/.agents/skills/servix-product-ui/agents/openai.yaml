@@ -1,0 +1,4 @@
+interface:
+  display_name: "Servix Product UI"
+  short_description: "Planeja interfaces do Servix com o produto real"
+  default_prompt: "Use $servix-product-ui para analisar e propor esta interface do Servix antes de implementá-la."

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}ErgoGroup{% endblock %}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F1F5F9; font-family:Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; padding:24px 12px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%; background-color:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #E2E8F0;">
+                    <tr>
+                        <td bgcolor="#2F9C8E" style="background-color:#2F9C8E; background-image:linear-gradient(135deg, #2F9C8E, #2EA1B8); padding:24px 32px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td style="font-family:Arial, Helvetica, sans-serif; font-size:20px; font-weight:bold; color:#FFFFFF; letter-spacing:0.5px;">
+                                        ErgoGroup
+                                    </td>
+                                    <td align="right" style="font-family:Arial, Helvetica, sans-serif; font-size:12px; color:#FFFFFF; opacity:0.85;">
+                                        Ordens de Serviço
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:32px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td>
+                                        <h1 style="margin:0 0 4px; font-family:Arial, Helvetica, sans-serif; font-size:20px; color:#0F172A;">
+                                            {% block cabecalho %}{% endblock %}
+                                        </h1>
+                                    </td>
+                                    {% block badge %}{% endblock %}
+                                </tr>
+                            </table>
+
+                            <div style="margin-top:20px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:1.6; color:#0F172A;">
+                                {% block conteudo %}{% endblock %}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 32px; background-color:#F1F5F9; border-top:1px solid #E2E8F0;">
+                            <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:12px; color:#64748B; line-height:1.5;">
+                                Atenciosamente,<br>
+                                <strong style="color:#0F172A;">Equipe ErgoGroup</strong>
+                            </p>
+                            <p style="margin:12px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; color:#64748B;">
+                                Este é um e-mail automático, não é necessário responder.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

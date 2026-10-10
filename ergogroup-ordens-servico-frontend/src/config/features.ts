@@ -1,0 +1,2 @@
+export const SHOW_DASHBOARD_UNDER_DEVELOPMENT = false;
+

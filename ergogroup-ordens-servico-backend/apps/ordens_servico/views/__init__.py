@@ -1,0 +1,4 @@
+from .ordem_servico_viewset import OrdemServicoViewSet
+from .servico_viewset import ServicoViewSet
+from .tarefa_viewset import TarefaViewSet
+from .ordem_servico_operacional_viewset import OrdemServicoOperacionalViewSet

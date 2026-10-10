@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wireframes",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "4321", "--directory", "ergogroup-ordens-servico-frontend/docs/ui/wireframes"],
+      "port": 4321
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "ergogroup-ordens-servico-frontend"],
+      "port": 8080
+    }
+  ]
+}
