@@ -9,7 +9,9 @@ Plano de 10/10/2026. Escopo: **só frontend**. Integra o que o backend entregou 
 | Item | Status |
 |---|---|
 | Rever fluxos, navegação e telas principais, em vez de só adaptar campos | **Decidido** (usuário, 10/10/2026) |
-| Fases, ordem e conteúdo de cada fase deste plano | Proposta |
+| R0 é a releitura do contrato da API e a camada nova (tipos, serviços, hooks e componentes), sem remendar as telas antigas | **Decidido** (usuário, 10/10/2026) |
+| Tipos gerados do schema OpenAPI com `openapi-typescript` | **Decidido** (usuário, 10/10/2026) |
+| Fases R1 em diante: ordem e conteúdo | Proposta |
 
 Referências:
 - backend: ADRs 0003 a 0008, `docs/telas-blocos-e-endpoints.md`, `docs/conceitos-de-dominio.md`, `docs/mapa-de-permissoes.md`;
@@ -24,7 +26,7 @@ Referências:
 1. **O frontend é centrado na OS.** Todos entram pela lista de OS e trabalham no detalhe da OS, que atende técnico, gestor, comercial, financeiro e administrativo ao mesmo tempo (`ordem-detalhe-brief.md`).
 2. **O backend agora é centrado no uso.** A unidade de trabalho do setor é o serviço (ADR 0006). Cada pessoa tem um ponto de entrada (fila do setor, meus serviços, vendas, cobranças), e o acesso vem das permissões (ADR 0003).
 3. **Conceitos novos sem lugar nas telas atuais:** triagem, distribuição em um passo, alerta sem movimentação com "estou ciente", carga da equipe, linha do tempo, condição de pagamento por tipo, recorrente e as três situações do financeiro.
-4. **Contratos quebrados:** vários campos usados pelo frontend saíram ou mudaram (seção 3, fase R0).
+4. **Contratos quebrados:** vários campos usados pelo frontend saíram ou mudaram (`docs/api/contrato-por-dominio.md`, última seção).
 5. **Briefs de UI desatualizados:** `listagem-ordens-brief.md`, `ordem-detalhe-brief.md` e `gestor-operacional-brief.md` usam líder/sub-líder, contrato, horas e complexidade.
 
 ## 2. Princípios (proposta)
@@ -42,7 +44,7 @@ Referências:
 
 | Fase | Entrega | Depende de |
 |---|---|---|
-| R0 | Base técnica e correção dos contratos quebrados | — |
+| R0 | Camada de contrato da API (tipos gerados, serviços, hooks e componentes de domínio) | — |
 | R1 | Fluxos por persona e mapa de navegação (documento) | — |
 | R2 | Wireframes das telas principais | R1 |
 | R3 | Navegação nova e tela inicial por permissão | R1 e R2 validados |
@@ -63,23 +65,33 @@ R5 e R6 podem trocar de lugar com R4, se você preferir começar pela venda.
 
 ---
 
-### R0 — Base técnica e correção dos contratos
+### R0 — Camada de contrato da API ✅
 
-Objetivo: o sistema atual parar de perder dados e de dar erro, antes do redesenho.
+Concluída em 10/10/2026. **Decidido:** a R0 não remenda as telas antigas, que vão ser substituídas nas fases R4 a R6. Ela relê o contrato e constrói a camada nova sobre a qual as telas novas vão nascer.
 
-| # | Item | Arquivos |
+**Por que não corrigir as telas atuais antes:**
+- a `epic/v3` do backend não vai para a `main` antes de o trabalho terminar;
+- em produção, frontend e backend antigos continuam consistentes entre si;
+- a quebra existe só no ambiente de desenvolvimento.
+
+*Pressuposto a confirmar com o usuário:* a `epic/v3` do backend não está publicada em nenhum ambiente usado de verdade.
+
+As telas antigas ficam como estão até a R7.
+
+| # | Item | Resultado |
 |---|---|---|
-| 0.1 | Baixar de novo o schema (`/api/schema/`) para `docs/api/api-schema.yaml` | `docs/api/` |
-| 0.2 | Tipos da OS: sair `cobranca_imediata`, `contrato`, `objeto_contrato`, `contrato_data_*`, `gestor_contrato_*`, `numero_nf`; entrar `tipo_condicao`, `valor_mensal`, `intervalo_parcelas_dias`, `dia_fechamento`, `dia_vencimento`, `liberar_em`, `condicao_resumo`, `referencia_lancamento`, `origem_lancamento`, `andamento`, `vendido_por_nome` (e os `*_display`). Campos financeiros opcionais | `features/ordens/services.ts` |
-| 0.3 | Registrar lançamento envia `referencia_lancamento` (texto) em vez de `numero_nf` | `OrdemCobrancaPanel.tsx`, `services.ts` |
-| 0.4 | Formulário da OS: tirar contrato e cobrança imediata; entrar a condição por tipo e `liberar_em`; tirar o limite de 12 parcelas. Erros 400 por campo mostrados no campo. *Versão mínima: o formulário completo é redesenhado na R5* | `OrdemServicoFormPage.tsx` |
-| 0.5 | Serviço e tarefa: tirar horas e complexidade; prazo do serviço só leitura | `ServicoFormDialog.tsx`, `ServicoAccordionCard.tsx`, `TarefaRow.tsx` |
-| 0.6 | Lista de responsáveis = membros do setor do serviço (`/api/organizacoes/membros/?setor=`); mostrar a mensagem de 400 em `responsavel` | `ServicoAccordionCard.tsx`, `TarefaRow.tsx` |
-| 0.7 | Análise operacional: tirar `complexidade_media_concluidas` e `horas_estimadas_entregues` | `features/analytics/` |
-| 0.8 | Painel e PDF da OS: trocar contrato e cobrança imediata por `condicao_resumo` e `liberar_em`; NF por referência do lançamento | `OrdemComercialPanel.tsx`, `OrdemPdfDocument.tsx` |
-| 0.9 | Atualizar o briefing do `CLAUDE.md`/`AGENTS.md` do frontend: um vínculo por pessoa; ADRs 0005, 0007 e 0008 implementados | `CLAUDE.md`, `AGENTS.md` |
+| 0.1 | Schema atual do backend | `docs/api/api-schema.yaml`, gerado com `manage.py spectacular` |
+| 0.2 | Leitura do contrato por domínio | `docs/api/contrato-por-dominio.md`: endpoints, permissões, campos ocultáveis e regras de erro |
+| 0.3 | Tipos gerados, serviços e hooks | `npm run api:tipos` → `src/api/schema.d.ts`. Utilitários em `src/api/tipos.ts`. Módulos novos `features/execucao`, `features/vendas`, `features/financeiro` e `features/linha-do-tempo`, com um hook por bloco e invalidação entre domínios |
+| 0.4 | Componentes de domínio do kit | `EtapaBadge`, `SituacaoPrazoBadge`, `SituacaoFinanceiraBadge`, `TipoCondicaoBadge`, `CondicaoPagamento`, `AndamentoServicos`, `AlertaMovimentacao` e `LinhaDoTempo` |
+| 0.5 | Briefing do frontend | `CLAUDE.md` e `AGENTS.md` atualizados |
 
-**Pronto quando:** criar e editar uma OS à vista, parcelada e recorrente funciona; o lançamento grava a referência; nenhuma tela mostra horas, complexidade ou contrato; distribuir para alguém de fora do setor não é oferecido.
+**Verificação:**
+- `tsc` sem erros, inclusive os arquivos novos em modo estrito;
+- `npm run build` ok;
+- `npm run lint` sem problemas novos (os 49 que já existiam continuam).
+
+Nenhuma tela usa a camada nova ainda: ela entra na R3 em diante.
 
 ---
 
@@ -212,6 +224,8 @@ Código novo em `src/features/execucao/` (`services.ts`, `hooks.ts`, `pages/`, `
 | 7.3 | Remover o `useUserRole` e trocar os usos por `usePermissoes().pode()` |
 | 7.4 | Remover a lista de OS e o detalhe da OS antigos, depois que vendas e resumo cobrirem tudo |
 | 7.5 | Remover código morto (tipos antigos em `types/index.ts`, `mockData`, componentes sem uso) |
+| 7.6 | Análise operacional: tirar `complexidade_media_concluidas` e `horas_estimadas_entregues` da produtividade |
+| 7.7 | Telas de cadastro e time que continuam: trocar os tipos escritos à mão pelos gerados (`src/api/tipos.ts`) |
 
 ### R8 — Revisão final
 
@@ -232,10 +246,11 @@ Código novo em `src/features/execucao/` (`services.ts`, `hooks.ts`, `pages/`, `
 | 4 | Nova venda em modal com etapas ou página com etapas? | R2 |
 | 5 | Validar o painel do setor com a gestora técnica antes de implementar? | R2 |
 | 6 | O técnico também pode distribuir a si mesmo um serviço da fila? (hoje exige `tarefas.distribuir`) | R4 |
-| 7 | Análise operacional: só ajustar campos (R0) ou redesenhar com os indicadores de prazo? | depois da R8 |
+| 7 | Análise operacional: só ajustar campos (R7) ou redesenhar com os indicadores de prazo? | depois da R8 |
 
 ## 5. Riscos
 
-- **Schema desatualizado:** sem o 0.1, os tipos voltam a divergir. Refazer o download a cada fase do backend.
+- **Schema desatualizado:** a cada mudança no backend, baixar o schema e rodar `npm run api:tipos`. Os erros de compilação mostram o que mudou.
 - **Banco de dev compartilhado:** testes manuais criam vendas e disparam e-mails se `EMAIL_NOTIFICATIONS_ENABLED` estiver ligado.
 - **Período de convivência:** entre R3 e R7 existem telas novas e antigas. Os redirecionamentos da R3 evitam links quebrados.
+- **Telas antigas quebradas na dev:** contra o backend da `epic/v3`, as telas atuais perdem campos (contrato, NF, horas). Use as telas novas para testar o que o backend mudou.

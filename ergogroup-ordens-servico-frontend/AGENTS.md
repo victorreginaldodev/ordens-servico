@@ -3,6 +3,7 @@
 * Use sempre o sistema de codificação UTF-8
 * Sempre que lhe for pedido para consultar a documentação procure em ../documention um diretório antes
 * Sempre que lhe for pedido para criar uma nova funcionalidade CRUD baixe o contrato da API em [http://127.0.0.1:8000/api/schema/](http://127.0.0.1:8000/api/schema/)
+* O contrato fica em `docs/api/api-schema.yaml`. Depois de atualizá-lo, rode `npm run api:tipos` para gerar `src/api/schema.d.ts` (nunca edite esse arquivo à mão). Código novo usa os tipos gerados (`src/api/tipos.ts`); a leitura do contrato por domínio está em `docs/api/contrato-por-dominio.md`
 
 ## Briefing para agentes (atualizado em 10/10/2026)
 
@@ -26,21 +27,26 @@ Leia antes de qualquer ação. O projeto tem dois repositórios: `ergogroup-orde
    - 0004: setor responsável pela execução e catálogo;
    - 0005: prazo como único parâmetro de planejamento;
    - 0006: fluxo de execução nos setores;
-   - 0007: papel do sistema no faturamento.
+   - 0007: papel do sistema no faturamento;
+   - 0008: acompanhamento da execução, linha do tempo, visão comercial e controle financeiro.
 
    Cada ADR diz o que está aceito e o que é proposta.
 2. `telas-blocos-e-endpoints.md`: telas, blocos de informação, quem vê o quê (permissões) e endpoints candidatos. Também há uma cópia no frontend.
 3. `conceitos-de-dominio.md`: glossário. Use estes termos.
 4. `mapa-de-permissoes.md`: o que cada permissão libera.
 5. `plano-setores-e-permissoes.md`: fases, fora de escopo e situação dos problemas originais.
-6. `faturamento/01-condicoes-de-pagamento-as-is.md` (estado atual) e `faturamento/02-proposta-condicoes-de-pagamento.md` (proposta).
+6. `faturamento/01-condicoes-de-pagamento-as-is.md` (estado anterior) e `faturamento/02-proposta-condicoes-de-pagamento.md` (implementada).
+7. `plano-execucao-comercial-financeiro.md`: fases 6 a 12 do backend (6 a 11 concluídas; a 12 é este frontend).
 
-No frontend: `docs/ui/` (design system, UI kit, plano de setores e time, wireframes).
+No frontend:
+- `docs/ui/plano-redesenho-fluxos-e-telas.md`: **plano atual** do frontend (fases R0 a R8; R0 concluída);
+- `docs/api/contrato-por-dominio.md`: leitura do contrato da API por domínio;
+- `docs/ui/`: design system, UI kit, plano de setores e time, wireframes. Os briefs `listagem-ordens-brief.md`, `ordem-detalhe-brief.md` e `gestor-operacional-brief.md` usam o modelo antigo (líder, contrato, horas) e serão superados pela R1.
 
 ### Modelo atual (resumo)
 - **Organização → Setor → Função → Vínculo.**
   - A função tem nome livre, as permissões marcadas e os setores em que pode ser usada.
-  - O vínculo é usuário + setor + função; uma pessoa pode estar em vários setores, com um vínculo por setor.
+  - O vínculo é usuário + setor + função; **cada pessoa pertence a um único setor** (um vínculo por pessoa).
 - **Não existe mais `tipo_usuario`.** O código verifica CÓDIGOS DE PERMISSÃO (`apps/organizacoes/permissoes.py`), nunca nomes de função ou setor.
   - Há permissões globais e por setor.
   - `setores.todos` faz as permissões por setor valerem em todos os setores.
@@ -51,12 +57,15 @@ No frontend: `docs/ui/` (design system, UI kit, plano de setores e time, wirefra
 - **Faturamento:**
   - a cobrança é por OS;
   - o sistema NÃO gerencia parcelas;
-  - ele registra as condições, avisa a liberação e guarda o check de lançamento no outro sistema (Asaas, Conta Azul ou SOC, a confirmar).
+  - ele registra as condições, avisa a liberação e guarda o check de lançamento no outro sistema (Asaas, Conta Azul ou SOC, a confirmar);
+  - condição por tipo (`tipo_condicao`: à vista, parcelado, recorrente com `valor_mensal`), `liberar_em` e `referencia_lancamento`; o contrato saiu e virou o recorrente (ADR 0007).
+- **Execução (backend pronto):** blocos em `/api/execucao/`, `/api/comercial/` e `/api/financeiro/`, e linha do tempo da OS e do serviço. Horas e complexidade saíram; o prazo do serviço é calculado (ADRs 0005, 0006 e 0008).
 
-### Pendente de decisão (NÃO implementar sem pedido)
-- Agrupamento dos blocos em páginas e endpoints novos de execução (`telas-blocos-e-endpoints.md`).
-- Mudanças na OS para o faturamento (ADR 0007).
-- Remoção de horas e complexidade de serviço e tarefa (ADR 0005: aceita, implementação pendente).
+### Situação do frontend
+- Decidido: redesenhar fluxos, navegação e telas principais em vez de adaptar campo a campo (`docs/ui/plano-redesenho-fluxos-e-telas.md`).
+- R0 concluída: tipos gerados, serviços e hooks em `features/execucao`, `features/vendas`, `features/financeiro` e `features/linha-do-tempo`, e componentes de domínio no kit. Nenhuma tela usa ainda.
+- As telas antigas (`features/ordens`, `features/faturamento`) usam o contrato antigo e ficam como estão até serem substituídas (R4 a R7). Não as remende.
+- Próxima fase: R1 (fluxos e navegação). Implementar cada fase só quando o usuário pedir.
 
 ### Cuidados técnicos (backend)
 - MySQL não desfaz DDL em transação: uma alteração de schema por migração, separada da migração de dados.
