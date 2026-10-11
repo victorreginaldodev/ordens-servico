@@ -132,7 +132,7 @@ Detalhes, fora do menu: `/servicos/:id` (detalhe do serviço) e `/vendas/:id` (r
 
 ---
 
-### R2 — Wireframes — lotes 1 e 2 entregues, aguardando validação
+### R2 — Wireframes — três lotes entregues, aguardando validação
 
 Feita em três lotes, um por fluxo, cada um validado antes do próximo (decidido pelo usuário em 10/10/2026):
 
@@ -140,7 +140,7 @@ Feita em três lotes, um por fluxo, cada um validado antes do próximo (decidido
 |---|---|---|
 | 1 | Menu e tela inicial, Painel do setor (com distribuir e ciência), Meus serviços, Detalhe do serviço | Entregue: [`wireframes/lote1-execucao.html`](./wireframes/lote1-execucao.html) |
 | 2 | Vendas, Nova venda (e edição), Resumo da venda com linha do tempo, Acrescentar serviço | Entregue: [`wireframes/lote2-vendas.html`](./wireframes/lote2-vendas.html), que inclui as telas do lote 1 para navegar da venda aos serviços |
-| 3 | Cobranças, registrar lançamento, Situação financeira | A fazer |
+| 3 | Cobranças (três situações, contadores, filtros e alerta), Registrar lançamento, Situação financeira | Entregue: [`wireframes/lote3-cobrancas.html`](./wireframes/lote3-cobrancas.html), que inclui os lotes 1 e 2; é o protótipo completo |
 
 O lote 1 usa as propostas da seção 9 de `fluxos-e-navegacao.md` (nomes do menu, tela inicial), até a validação do usuário. O seletor "Ver como" mostra o menu e a tela inicial de cada persona.
 
