@@ -275,7 +275,23 @@ Itens planejados:
 
 ---
 
-### R6 — Financeiro
+### R6 — Financeiro ✅ (aguardando o teste contra o backend local)
+
+Entregue em 11/10/2026, no desenho do wireframe do lote 3 (que o usuário pediu para manter), com os componentes do kit. A tela antiga (`features/faturamento`) saiu das rotas e é removida na R7.
+
+| # | Resultado |
+|---|---|
+| 6.1 | `features/financeiro/pages/CobrancasPage.tsx` (`/cobrancas`): as três situações (A faturar, Previsão, Faturadas) como indicadores com a quantidade e o valor; aviso das liberadas há 3 dias ou mais sem lançamento, com "Ver só essas" (`em_alerta=true`); filtros Cliente, Data da venda, Condição e Forma em dropdown, enviados ao backend; situação e filtros na URL; a ordem de cada situação explicada na barra |
+| 6.2 | Linha: OS, Cliente, Venda, Valor (e o mensal), Condição (tipo, texto e forma), NF para; em A faturar, Liberada (quando, por quê e por quem), Aguardando (destacado em alerta) e o botão Registrar; na Previsão, Andamento e quando libera; nas Faturadas, o lançamento (referência, data, quem, manual ou integração) e a liberação |
+| 6.3 | `components/RegistrarLancamentoModal.tsx`: mostra a condição para lançar, referência opcional e data (padrão: hoje); erro do backend no modal. Disponível na linha e na situação da OS |
+| 6.4 | `pages/SituacaoFinanceiraPage.tsx` (`/cobrancas/:id`, `financeiro.ver_valores`): o que lançar (condição, valor, mensal, parcelas, vencimento, forma, NF com botão de copiar o e-mail), observação, eventos financeiros, liberação, lançamento e serviços com a etapa; links para o resumo da venda |
+| 6.5 | Análise › Financeiro: indicadores Faturado, A faturar, Previsão (`total_previsao`), Receita recorrente mensal (com `recorrentes_ativos`) e Ticket médio, e a tabela "Por tipo de condição" (`por_tipo_condicao`). A página passou a usar `useIndicadoresFinanceiros` (tipos gerados); os gráficos continuam como estavam |
+
+**Verificação:** `tsc` sem erros (`features/financeiro` também em modo estrito), `npm run build` ok, `npm run lint` sem problemas novos. Teste no navegador com a API simulada, como financeiro: as três situações com contadores, "Ver só essas", registrar lançamento (`PATCH /ordens/{id}/cobranca/` com referência e data), filtro de condição refletido nos contadores, situação financeira com o breadcrumb "OS 1286" e a Análise financeira; nenhum erro na página. Os testes da R4 e da R5 continuaram passando.
+
+**Falta para fechar:** o teste manual contra o backend local, faturando uma OS do começo ao fim (liberação na venda e na conclusão).
+
+Itens planejados:
 
 | # | Item | Detalhe |
 |---|---|---|

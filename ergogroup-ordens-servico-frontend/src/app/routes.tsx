@@ -46,8 +46,9 @@ import ContactFormPage from '@/features/clientes/pages/ContactFormPage';
 import MeuPerfilPage from '@/features/time/pages/MeuPerfilPage';
 import TimePage from '@/features/time/pages/TimePage';
 
-// Faturamento
-import FaturamentoPage from '@/features/faturamento/pages/FaturamentoPage';
+// Financeiro (R6)
+import CobrancasPage from '@/features/financeiro/pages/CobrancasPage';
+import SituacaoFinanceiraPage from '@/features/financeiro/pages/SituacaoFinanceiraPage';
 
 // Operational Orders
 import OperationalOrderListPage from '@/features/ordens/pages/OperationalOrderListPage';
@@ -139,7 +140,8 @@ const AppRoutes = () => (
     <Route path="/clientes/contacts/:id/edit" element={w(<ContactFormPage />)} />
 
     {/* Cobranças */}
-    <Route path="/cobrancas" element={g(<FaturamentoPage />, ['financeiro.registrar_cobranca'])} />
+    <Route path="/cobrancas" element={g(<CobrancasPage />, ['financeiro.registrar_cobranca'])} />
+    <Route path="/cobrancas/:id" element={g(<SituacaoFinanceiraPage />, ['financeiro.ver_valores'])} />
 
     {/* Organização e time */}
     <Route path="/time" element={w(<TimePage />)} />

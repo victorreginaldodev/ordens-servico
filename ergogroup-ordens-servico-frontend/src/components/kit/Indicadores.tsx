@@ -12,6 +12,8 @@ export interface Indicador<Id extends string = string> {
   valor: number | null;
   /** Explicação curta, no texto que aparece ao passar o mouse. */
   dica: string;
+  /** Segunda informação ao lado do número (ex.: o valor em reais). */
+  detalhe?: string | null;
 }
 
 export interface IndicadoresProps<Id extends string> {
@@ -21,6 +23,8 @@ export interface IndicadoresProps<Id extends string> {
   onEscolher: (id: Id | null) => void;
   /** Clicar de novo no ativo desmarca (mostra tudo). Sem isso, sempre há um selecionado. */
   alternavel?: boolean;
+  /** Frase ao lado do título; o padrão explica que o indicador filtra. */
+  subtitulo?: string;
   className?: string;
 }
 
@@ -28,12 +32,12 @@ export interface IndicadoresProps<Id extends string> {
  * Indicadores que também são filtro (fluxos-e-navegacao.md §6.2.2): número em destaque e um rodapé
  * de ação ("Ver estes →", "Mostrando estes"), para ficar claro que o cartão é clicável.
  */
-export function Indicadores<Id extends string>({ titulo, itens, ativo, onEscolher, alternavel, className }: IndicadoresProps<Id>) {
+export function Indicadores<Id extends string>({ titulo, itens, ativo, onEscolher, alternavel, subtitulo = 'Clique num indicador para ver só aqueles itens', className }: IndicadoresProps<Id>) {
   return (
     <section className={cn('mb-4', className)} aria-label={titulo}>
       <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <h2 className="text-sm font-semibold">{titulo}</h2>
-        <span className="text-xs text-muted-foreground">Clique num indicador para ver só aqueles itens</span>
+        <span className="text-xs text-muted-foreground">{subtitulo}</span>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {itens.map((it) => {
@@ -61,13 +65,16 @@ export function Indicadores<Id extends string>({ titulo, itens, ativo, onEscolhe
               {it.valor == null ? (
                 <Skeleton className="h-8 w-12" />
               ) : (
-                <span
-                  className={cn(
-                    'text-3xl font-bold tabular-nums leading-none tracking-tight',
-                    it.tom === 'danger' && it.valor > 0 && 'text-danger-strong',
-                  )}
-                >
-                  {it.valor}
+                <span className="flex flex-wrap items-baseline gap-x-2">
+                  <span
+                    className={cn(
+                      'text-3xl font-bold tabular-nums leading-none tracking-tight',
+                      it.tom === 'danger' && it.valor > 0 && 'text-danger-strong',
+                    )}
+                  >
+                    {it.valor}
+                  </span>
+                  {it.detalhe ? <span className="text-sm font-medium tabular-nums text-muted-foreground">{it.detalhe}</span> : null}
                 </span>
               )}
               <span

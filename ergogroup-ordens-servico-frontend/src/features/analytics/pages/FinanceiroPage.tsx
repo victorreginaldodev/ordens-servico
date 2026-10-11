@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { DollarSign, TrendingUp, AlertTriangle, AlertCircle, Receipt } from 'lucide-react';
+import { AlertCircle, CircleCheck, CircleDashed, Clock, Receipt, Repeat } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useUserRole } from '@/hooks/useUserRole';
-import { useFinanceiroAnalise } from '../hooks';
+import { TipoCondicaoBadge } from '@/components/kit';
+import { useIndicadoresFinanceiros } from '@/features/financeiro/hooks';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import { formatCurrency, toChartSeries } from '../utils';
 import { KpiCard, KpiCardSkeleton } from '../components/KpiCard';
 import { MonthlyBarChart } from '../components/MonthlyBarChart';
@@ -14,8 +15,9 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 );
 
 const FinanceiroPage = () => {
-  const { data, isLoading, isError } = useFinanceiroAnalise();
-  const { canViewOrderValues } = useUserRole();
+  // Mesmo endpoint de antes (`/api/analise/financeiro/`), agora com os tipos gerados e os campos da fase 10.
+  const { data, isLoading, isError } = useIndicadoresFinanceiros();
+  const canViewOrderValues = usePermissoes().pode('financeiro.ver_valores');
 
   const salesChartData = useMemo(
     () =>
@@ -65,39 +67,66 @@ const FinanceiroPage = () => {
 
       <section className="space-y-4">
         <SectionLabel>Indicadores</SectionLabel>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data ? (
             <>
+              <KpiCard title="Faturado" value={formatCurrency(Number(data.total_cobrado))} changeType="positive" icon={CircleCheck} />
+              <KpiCard title="A faturar" value={formatCurrency(Number(data.total_para_cobrar))} change="Liberadas, sem lançamento" changeType="neutral" icon={Clock} />
+              <KpiCard title="Previsão" value={formatCurrency(Number(data.total_previsao))} change="Ainda não liberadas" changeType="neutral" icon={CircleDashed} />
               <KpiCard
-                title="Total Cobrado"
-                value={canViewOrderValues ? formatCurrency(Number(data.total_cobrado)) : '—'}
-                changeType="positive"
-                icon={DollarSign}
-              />
-              <KpiCard
-                title="A Cobrar"
-                value={canViewOrderValues ? formatCurrency(Number(data.total_para_cobrar)) : '—'}
+                title="Receita recorrente mensal"
+                value={formatCurrency(Number(data.receita_recorrente_mensal))}
+                change={`${data.recorrentes_ativos} recorrente${data.recorrentes_ativos === 1 ? '' : 's'} ativo${data.recorrentes_ativos === 1 ? '' : 's'}`}
                 changeType="neutral"
-                icon={TrendingUp}
+                icon={Repeat}
               />
-              <KpiCard
-                title="Sem Liberação para Cobrança"
-                value={canViewOrderValues ? formatCurrency(Number(data.total_sem_liberacao)) : '—'}
-                changeType="negative"
-                icon={AlertTriangle}
-              />
-              <KpiCard
-                title="Ticket Médio"
-                value={canViewOrderValues && data.ticket_medio != null ? formatCurrency(Number(data.ticket_medio)) : '—'}
-                changeType="neutral"
-                icon={Receipt}
-              />
+              <KpiCard title="Ticket médio" value={data.ticket_medio != null ? formatCurrency(Number(data.ticket_medio)) : '—'} changeType="neutral" icon={Receipt} />
             </>
           ) : (
-            Array.from({ length: 4 }).map((_, i) => <KpiCardSkeleton key={i} index={i} />)
+            Array.from({ length: 5 }).map((_, i) => <KpiCardSkeleton key={i} index={i} />)
           )}
         </div>
       </section>
+
+      {/* Por tipo de condição (ADR 0008): a faturar, faturado e previsão de cada tipo */}
+      {data ? (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Por tipo de condição</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="h-10 border-b bg-secondary text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 text-left">Condição</th>
+                    <th className="border-l border-border/70 px-3 text-right">A faturar</th>
+                    <th className="border-l border-border/70 px-3 text-right">Faturado</th>
+                    <th className="border-l border-border/70 px-3 text-right">Previsão</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(['a_vista', 'parcelado', 'recorrente'] as const).map((tipo) => {
+                    const v = data.por_tipo_condicao[tipo];
+                    return (
+                      <tr key={tipo} className="border-b last:border-0">
+                        <td className="px-3 py-2.5">
+                          <TipoCondicaoBadge value={tipo} />
+                        </td>
+                        {[v.a_faturar, v.faturadas, v.previsao].map((x, i) => (
+                          <td key={i} className="border-l border-border/70 px-3 py-2.5 text-right tabular-nums">
+                            {formatCurrency(Number(x))}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Vendas por Mês */}
       <Card className="bg-card border-border">

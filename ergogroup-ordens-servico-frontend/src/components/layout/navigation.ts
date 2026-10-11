@@ -167,7 +167,7 @@ export const buildBreadcrumb = (pathname: string): Crumb[] => {
     .filter(Boolean)
     .forEach((segment) => {
       if (/^\d+$/.test(segment)) {
-        const prefix = base.startsWith('/ordens/operacionais') ? 'OSO' : base.startsWith('/vendas') ? 'OS' : '#';
+        const prefix = base.startsWith('/ordens/operacionais') ? 'OSO' : base.startsWith('/vendas') || base.startsWith('/cobrancas') ? 'OS' : '#';
         crumbs.push({ label: prefix === '#' ? `#${segment}` : `${prefix} ${segment}`, to: `${base}/${segment}` });
       } else {
         crumbs.push({ label: SEGMENT_LABELS[segment] ?? segment });
