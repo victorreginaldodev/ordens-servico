@@ -223,6 +223,42 @@ Em cada página: rota, permissão, blocos (endpoint), ações e estados. "Bloco"
   5. **Concluídos** (`useConcluidos`): período (padrão: mês atual), quem concluiu, prazo, término e no prazo ou não.
 - **Sem permissão no setor (403):** mensagem "Você não acompanha este setor", com a lista dos que acompanha.
 
+### 6.2.1 Variante em quadro (Painel do setor e Meus serviços)
+
+Pedido do usuário em 10/10/2026: organizar a execução no estilo de um quadro (Kanban), para o gestor e para o técnico. **Proposta**, nos wireframes como visualização padrão, com o botão **Quadro | Lista** para comparar com a lista em abas.
+
+**Painel do setor em quadro**
+- **Colunas = etapas do serviço** (ADR 0006, 1): Para distribuir → Distribuído → Em execução → Concluídos no mês.
+- **Cada cartão é um serviço:**
+  - catálogo, descrição, cliente e OS;
+  - prioridade alta destacada;
+  - na fila: há quantos dias está ali e quantos outros serviços a OS tem;
+  - distribuído e em execução: chip de prazo pela situação (atrasado, vence, sem prazo, data), chip de alerta (dias sem movimentação ou a ciência vigente) e avatares dos responsáveis;
+  - concluído: data de término, se foi no prazo e quem concluiu.
+- **Atrasado:** o cartão ganha uma faixa vermelha à esquerda.
+- **Ordem dentro de cada coluna:**
+  - na fila, os mais antigos primeiro;
+  - em andamento, atrasados, depois parados, depois por prazo;
+  - concluídos, os mais recentes primeiro.
+- **Filtros:** pessoa da equipe (chips com a carga de cada um) e "Só atrasados e parados" (os KPIs de atrasados e de sem movimentação ligam o mesmo filtro). A fila não é filtrada: ela é a origem da distribuição.
+- **Raias por pessoa (opcional):** a fila fica numa coluna lateral fixa, e cada membro do setor tem uma raia com Distribuído, Em execução e Concluídos. É a carga da equipe em forma de quadro.
+- **Distribuir arrastando:**
+  - arrastar um cartão da fila para "Distribuído", ou para a raia de alguém, abre o mesmo modal de distribuição, já com a pessoa escolhida;
+  - o prazo continua sendo informado no modal;
+  - o botão "Distribuir" do cartão faz o mesmo, pelo teclado.
+- **O gestor não arrasta entre Distribuído, Em execução e Concluído.** Essas etapas mudam quando o responsável muda o status da tarefa (regra do backend). Mudar a tarefa de outra pessoa continua no detalhe do serviço, para quem tem `tarefas.editar_setor`.
+
+**Meus serviços em quadro**
+- **Colunas = status da minha tarefa:** A fazer → Em andamento → Concluídas no mês.
+- **Mudar de status:** arrastar o cartão ou usar o botão Iniciar / Concluir. Voltar uma coluna reabre a tarefa, o que o responsável já pode fazer hoje.
+- **Ordem:** atrasados primeiro e, depois, quem vence antes.
+- **Histórico:** os meses anteriores ficam na visualização Lista, aba Concluídos.
+
+**Impacto no backend (proposta, a confirmar na R4)**
+- **Meus serviços:** os blocos atuais bastam. `meus-servicos` traz as tarefas ativas, e `?status=concluida&de=&ate=` traz as concluídas do mês.
+- **Painel em quadro:** dá para montar com `fila/`, `andamento/` e `concluidos/`, mas `andamento/` é por tarefa. O frontend teria de agrupar por serviço e deduzir a etapa (um serviço com uma tarefa concluída e outra aberta continua "em execução", e isso não aparece nas tarefas ativas).
+- *Proposta:* um bloco `GET /api/execucao/quadro/?setor=` que devolva os serviços do setor com etapa, prazo, situação de prazo, alerta, ciência e responsáveis. Seria uma lista por serviço, no formato do cartão.
+
 ### 6.3 Detalhe do serviço — `/servicos/:id`
 - **Permissão:** quem vê o serviço (404 para quem não vê).
 - **Blocos:**
@@ -377,6 +413,8 @@ A rota `/ordens/operacionais` (fora de escopo) continua igual. O redirecionament
 | 7 | Nova venda em página com etapas (e não em modal) | Página |
 | 8 | Painel do setor em uma página com seções (e não em páginas separadas) | Uma página com seções e aba na URL |
 | 9 | Validar o painel com a gestora técnica no wireframe (R2) | Sim |
+| 10 | Quadro (colunas por etapa) como visualização padrão do Painel do setor e de Meus serviços, com a Lista como alternativa | Sim; ver 6.2.1 |
+| 11 | Endpoint `quadro/` no backend para o painel em quadro | Sim, se o quadro for aprovado |
 
 ## 10. Lacunas encontradas para as próximas fases
 - **Mutações de tarefa e de serviço:** a camada da R0 não tem as funções de mudar status, reatribuir, mudar prazo e excluir tarefa (`/api/ordens-servico/tarefas/{id}/`), nem as de ajustar e excluir serviço (`/servicos/{id}/`). Entram em `features/execucao` na R4.
