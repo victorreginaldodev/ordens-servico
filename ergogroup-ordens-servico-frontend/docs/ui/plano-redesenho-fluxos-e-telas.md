@@ -167,7 +167,25 @@ Entrega: HTML em `docs/ui/wireframes/`, no padrão dos existentes, com dados de 
 
 ---
 
-### R3 — Navegação e tela inicial
+### R3 — Navegação e tela inicial ✅
+
+Concluída em 11/10/2026. **Decidido pelo usuário:** o visual do header, da sidebar e da área principal não muda; só o conteúdo (itens, rotas, permissões).
+
+| # | Resultado |
+|---|---|
+| 3.1 | `components/layout/navigation.ts`: grupos Meu trabalho (Meus serviços, Visão geral, Painel do setor), Comercial (Vendas, Nova venda, OS operacionais), Financeiro (Cobranças), Análise, Cadastros (Clientes, Catálogo, Catálogo operacional) e Organização. Cada item declara `permissoes` e, quando precisa, `semPermissoes` (o Painel do setor some para quem tem `setores.todos`) |
+| 3.2 | `lib/telaInicial.ts` (regra da seção 5 de `fluxos-e-navegacao.md`) e `hooks/useTelaInicial.ts`. Rota `/inicio` leva à tela inicial; `/` vai para ela quando há sessão; o login abre `/inicio`; o logo da sidebar também. "Abrir sempre em…" no menu do usuário, gravado por pessoa só no navegador |
+| 3.3 | `components/common/RequerPermissao.tsx`: sem permissão → tela "Você não tem acesso a esta página" com o botão para a tela inicial; sem sessão → login; sessão antiga sem permissões → espera o `/auth/me/`. Guardas em Visão geral, Painel do setor (quem tem `setores.todos` vai para a Visão geral), Vendas, Nova venda, edição, Cobranças (`financeiro.registrar_cobranca`), Análise financeira e Funções |
+| 3.4 | `/ordens` → `/vendas` (mantém a busca), `/ordens/new` → `/vendas/nova`, `/ordens/:id` → `/vendas/:id`, `/ordens/:id/edit` → `/vendas/:id/editar`. `/ordens/operacionais` continua igual |
+| 3.5 | Breadcrumb com as rotas novas (`Comercial › Vendas › OS 12 › Editar`). Busca global: vendas por número ou cliente abrindo `/vendas/:id` (só para quem vê vendas, com `useVendas` da R0) e a ação "Nova venda" |
+
+**Provisório até as próximas fases:**
+- `/vendas`, `/vendas/nova`, `/vendas/:id` e `/vendas/:id/editar` mostram as telas atuais de OS (substituídas na R5). Os links internos delas ainda apontam para `/ordens/...` e passam pelos redirecionamentos.
+- Meus serviços, Visão geral, Painel do setor e `/servicos/:id` mostram uma página "em construção" (`pages/EmConstrucaoPage.tsx`), com título e descrição; o conteúdo chega na R4.
+
+**Verificação:** `tsc` sem erros (arquivos novos também em modo estrito), `npm run build` ok, `npm run lint` sem problemas novos (os 49 de antes continuam). Teste no navegador com a API simulada para gestora técnica, técnico, diretoria, comercial e financeiro: tela inicial, menu, guardas, redirecionamentos, breadcrumb e "Abrir sempre em…" conforme a regra; nenhum erro na página.
+
+Itens planejados:
 
 | # | Item |
 |---|---|

@@ -23,9 +23,9 @@ const LoginPage = () => {
       await authService.login({ email, password });
       toast({
         title: "Login realizado com sucesso!",
-        description: "Redirecionando para a lista de ordens de serviço...",
+        description: "Abrindo a sua tela inicial...",
       });
-      navigate('/ordens');
+      navigate('/inicio');
     } catch (error) {
       console.error(error);
       toast({

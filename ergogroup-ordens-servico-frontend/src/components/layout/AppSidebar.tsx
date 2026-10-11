@@ -88,7 +88,7 @@ export function AppSidebar({ collapsed: collapsedProp, onToggle, variant = 'rail
       {/* Marca */}
       <div className={cn('flex h-14 shrink-0 items-center gap-2', collapsed ? 'justify-center' : 'pl-4 pr-2')}>
         {!collapsed ? (
-          <Link to="/ordens" onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md">
+          <Link to="/inicio" onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md">
             <img src="/images/logos/logo-ergo.png" alt="" className="size-8 shrink-0 object-contain" />
             <span className="min-w-0">
               <span className="block truncate text-base font-bold leading-5 tracking-tight">

@@ -4,7 +4,7 @@ import { Building2, FileText, Loader2, Plus, Search, User } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/kit';
-import { useOrdensLista } from '@/features/ordens/hooks';
+import { useVendas } from '@/features/vendas/hooks';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { cn } from '@/lib/utils';
 import { visibleNavGroups } from './navigation';
@@ -17,9 +17,9 @@ const normalize = (v: unknown) =>
 
 const MAX_OS = 8;
 
-/** Resultados de OS: só monta (e só busca a lista) com a busca aberta e algo digitado. */
-function OrdensResults({ query, onSelect }: { query: string; onSelect: (url: string) => void }) {
-  const { data: ordens = [], isLoading } = useOrdensLista();
+/** Resultados de vendas: só monta (e só busca a lista) com a busca aberta e algo digitado. */
+function VendasResults({ query, onSelect }: { query: string; onSelect: (url: string) => void }) {
+  const { data: ordens = [], isLoading } = useVendas();
   const q = normalize(query.trim().replace(/^(os\s*)?#?/i, ''));
   const results = useMemo(
     () => (q ? ordens.filter((o) => normalize(o.cliente_nome).includes(q) || String(o.id).startsWith(q)).slice(0, MAX_OS) : []),
@@ -29,15 +29,15 @@ function OrdensResults({ query, onSelect }: { query: string; onSelect: (url: str
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> Buscando ordens de serviço…
+        <Loader2 className="size-4 animate-spin" /> Buscando vendas…
       </div>
     );
   }
   if (!results.length) return null;
   return (
-    <CommandGroup heading="Ordens de serviço">
+    <CommandGroup heading="Vendas">
       {results.map((o) => (
-        <CommandItem key={o.id} value={`os-${o.id}`} onSelect={() => onSelect(`/ordens/${o.id}`)} className="gap-2.5">
+        <CommandItem key={o.id} value={`os-${o.id}`} onSelect={() => onSelect(`/vendas/${o.id}`)} className="gap-2.5">
           <FileText className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate">
             <span className="tabular-nums text-muted-foreground">OS {o.id}</span> · {o.cliente_nome}
@@ -81,14 +81,14 @@ export function CommandMenu() {
   const matches = (text: string) => !q || normalize(text).includes(q);
 
   const actions = [
-    ...(pode('os.gerenciar') ? [{ label: 'Nova ordem de serviço', url: '/ordens/new', icon: Plus }] : []),
+    ...(pode('os.gerenciar') ? [{ label: 'Nova venda', url: '/vendas/nova', icon: Plus }] : []),
     ...(pode('clientes.gerenciar') ? [{ label: 'Novo cliente', url: '/clientes/new', icon: Building2 }] : []),
   ].filter((a) => matches(a.label));
 
   const pages = [
     ...visibleNavGroups(podeAlguma).flatMap((g) => g.items.map((i) => ({ label: i.title, group: g.title, url: i.url, icon: i.icon }))),
     { label: 'Meu perfil', group: 'Conta', url: '/time/eu', icon: User },
-  ].filter((p) => matches(`${p.label} ${p.group}`));
+  ].filter((p) => matches(`${p.label} ${p.group}`) && !actions.some((a) => a.url === p.url));
 
   return (
     <>
@@ -115,9 +115,9 @@ export function CommandMenu() {
             shouldFilter={false}
             className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:h-10 [&_[cmdk-item]]:rounded-md"
           >
-            <CommandInput value={query} onValueChange={setQuery} placeholder="Buscar OS (nº ou cliente), página ou ação…" />
+            <CommandInput value={query} onValueChange={setQuery} placeholder="Buscar venda (nº da OS ou cliente), página ou ação…" />
             <CommandList className="max-h-96 pb-2">
-              {q ? <OrdensResults query={query} onSelect={go} /> : null}
+              {q && podeAlguma(['os.gerenciar', 'os.ver_todas']) ? <VendasResults query={query} onSelect={go} /> : null}
               {actions.length ? (
                 <CommandGroup heading="Ações">
                   {actions.map((a) => (

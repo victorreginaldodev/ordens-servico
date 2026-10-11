@@ -2,18 +2,22 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
-import { ChevronsUpDown, LogOut, Moon, Sun, SunMoon, User } from 'lucide-react';
+import { Check, ChevronsUpDown, House, LogOut, Moon, Sun, SunMoon, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTelaInicial } from '@/hooks/useTelaInicial';
 import { authService } from '@/services/auth';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +28,7 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const telaInicial = useTelaInicial();
 
   useEffect(() => setMounted(true), []);
 
@@ -88,6 +93,25 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
             Meu perfil
           </Link>
         </DropdownMenuItem>
+        {/* Tela inicial: a regra por permissões ou a escolha da pessoa (fluxos-e-navegacao.md §5) */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <House className="mr-2 size-4" />
+            <span className="flex-1">Abrir sempre em…</span>
+            <span className="ml-2 truncate text-xs text-muted-foreground">{telaInicial.tela.titulo}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-60">
+            {[{ id: null, titulo: `Automático (${telaInicial.automatica.titulo})` }, ...telaInicial.opcoes].map((op) => {
+              const marcado = telaInicial.preferida === op.id;
+              return (
+                <DropdownMenuItem key={op.id ?? 'auto'} onSelect={() => telaInicial.escolher(op.id)}>
+                  <Check className={cn('mr-2 size-4', !marcado && 'invisible')} />
+                  {op.titulo}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <div className="flex h-9 items-center px-2 text-sm">
           <SunMoon className="mr-2 size-4" aria-hidden />
           Tema

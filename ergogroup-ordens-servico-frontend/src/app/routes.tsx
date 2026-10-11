@@ -1,5 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { RequerPermissao } from '@/components/common/RequerPermissao';
+import { useTelaInicial } from '@/hooks/useTelaInicial';
+import type { Permissao } from '@/lib/permissoes';
+import { authService } from '@/services/auth';
 
 // Auth
 import LoginPage from '@/pages/LoginPage';
@@ -7,6 +11,7 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import NotFound from '@/pages/NotFound';
 import UiKitPage from '@/pages/UiKitPage';
+import EmConstrucaoPage from '@/pages/EmConstrucaoPage';
 
 // Analytics
 import OperacionalPage from '@/features/analytics/pages/OperacionalPage';
@@ -45,23 +50,107 @@ import OperationalOrderListPage from '@/features/ordens/pages/OperationalOrderLi
 
 const w = (element: React.ReactNode) => <DashboardLayout>{element}</DashboardLayout>;
 
+/** Página do painel que exige permissão (fluxos-e-navegacao.md §4). Sem ela, a tela "sem acesso". */
+const g = (element: React.ReactNode, algumaDe: Permissao[], extra?: { nenhumaDe?: Permissao[]; redirecionarPara?: string }) =>
+  w(
+    <RequerPermissao algumaDe={algumaDe} {...extra}>
+      {element}
+    </RequerPermissao>,
+  );
+
+const VER_VENDAS: Permissao[] = ['os.gerenciar', 'os.ver_todas'];
+
+/** `/inicio`: a tela inicial de cada pessoa (escolha pessoal ou regra por permissões). */
+function IrParaInicio() {
+  const { tela } = useTelaInicial();
+  if (!authService.getCurrentUser()) return <Navigate to="/login" replace />;
+  return <Navigate to={tela.url} replace />;
+}
+
+/** `/`: com sessão, a tela inicial; sem sessão, o login. */
+function Raiz() {
+  return authService.getCurrentUser() ? <Navigate to="/inicio" replace /> : <LoginPage />;
+}
+
+/** Endereços antigos de OS levam às vendas (`/ordens/12/edit` → `/vendas/12/editar`), mantendo a busca. */
+function DeOrdensParaVendas({ sufixo = '' }: { sufixo?: string }) {
+  const { id } = useParams();
+  const { search } = useLocation();
+  return <Navigate to={`/vendas${id ? `/${id}` : ''}${sufixo}${search}`} replace />;
+}
+
 const AppRoutes = () => (
   <Routes>
     {/* Auth */}
-    <Route path="/" element={<LoginPage />} />
+    <Route path="/" element={<Raiz />} />
+    <Route path="/inicio" element={<IrParaInicio />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />
 
     {/* Análise */}
     <Route path="/analise/operacional" element={w(<OperacionalPage />)} />
-    <Route path="/analise/financeiro" element={w(<AnaliseFinanceiroPage />)} />
+    <Route path="/analise/financeiro" element={g(<AnaliseFinanceiroPage />, ['financeiro.ver_valores'])} />
 
-    {/* Ordens */}
-    <Route path="/ordens" element={w(<OrdemServicoListPage />)} />
-    <Route path="/ordens/new" element={w(<OrdemServicoFormPage />)} />
-    <Route path="/ordens/:id" element={w(<OrdemDetalhePage />)} />
-    <Route path="/ordens/:id/edit" element={w(<OrdemServicoFormPage />)} />
+    {/* Meu trabalho: as páginas novas chegam na R4; rota, menu e permissão já valem */}
+    <Route
+      path="/meus-servicos"
+      element={w(
+        <EmConstrucaoPage
+          titulo="Meus serviços"
+          descricao="O que está com você, o que vence primeiro e o que está atrasado."
+          conteudo="Aqui vão aparecer as suas tarefas, com os atrasados primeiro e os botões de iniciar e concluir."
+        />,
+      )}
+    />
+    <Route
+      path="/visao-geral"
+      element={g(
+        <EmConstrucaoPage
+          titulo="Visão geral"
+          descricao="Todos os setores num lugar só: o que chegou, o que está com quem e o que precisa de atenção."
+          conteudo="Aqui vão aparecer os indicadores de todos os setores, o resumo por setor e a lista com filtro por setor."
+        />,
+        ['setores.todos'],
+      )}
+    />
+    {['/setor', '/setor/:setorId'].map((path) => (
+      <Route
+        key={path}
+        path={path}
+        element={g(
+          <EmConstrucaoPage
+            titulo="Painel do setor"
+            descricao="O que chegou, o que está com quem e o que precisa de atenção."
+            conteudo="Aqui vão aparecer a fila para distribuir, o andamento por pessoa, os atrasados, os parados e os concluídos do mês."
+          />,
+          ['servicos.ver_setor'],
+          { nenhumaDe: ['setores.todos'], redirecionarPara: '/visao-geral' },
+        )}
+      />
+    ))}
+    <Route
+      path="/servicos/:id"
+      element={w(
+        <EmConstrucaoPage
+          titulo="Serviço"
+          descricao="Etapa, prazo, tarefas e linha do tempo do serviço."
+          conteudo="Aqui vão aparecer as tarefas do serviço, o contexto da venda, os outros serviços da OS e a linha do tempo."
+        />,
+      )}
+    />
+
+    {/* Vendas: as telas atuais de OS até a R5 */}
+    <Route path="/vendas" element={g(<OrdemServicoListPage />, VER_VENDAS)} />
+    <Route path="/vendas/nova" element={g(<OrdemServicoFormPage />, ['os.gerenciar'])} />
+    <Route path="/vendas/:id" element={g(<OrdemDetalhePage />, VER_VENDAS)} />
+    <Route path="/vendas/:id/editar" element={g(<OrdemServicoFormPage />, ['os.gerenciar'])} />
+
+    {/* Endereços antigos de OS (a rota estática de OS operacionais tem precedência sobre :id) */}
+    <Route path="/ordens" element={<DeOrdensParaVendas />} />
+    <Route path="/ordens/new" element={<Navigate to="/vendas/nova" replace />} />
+    <Route path="/ordens/:id" element={<DeOrdensParaVendas />} />
+    <Route path="/ordens/:id/edit" element={<DeOrdensParaVendas sufixo="/editar" />} />
     <Route path="/ordens/operacionais" element={w(<OperationalOrderListPage />)} />
 
     {/* Catálogo */}
@@ -82,13 +171,13 @@ const AppRoutes = () => (
     <Route path="/clientes/contacts/:id/edit" element={w(<ContactFormPage />)} />
 
     {/* Cobranças */}
-    <Route path="/cobrancas" element={w(<FaturamentoPage />)} />
+    <Route path="/cobrancas" element={g(<FaturamentoPage />, ['financeiro.registrar_cobranca'])} />
 
     {/* Organização e time */}
     <Route path="/time" element={w(<TimePage />)} />
     <Route path="/time/eu" element={w(<MeuPerfilPage />)} />
     <Route path="/organizacao/setores" element={w(<SetoresPage />)} />
-    <Route path="/organizacao/funcoes" element={w(<FuncoesPage />)} />
+    <Route path="/organizacao/funcoes" element={g(<FuncoesPage />, ['organizacao.configurar', 'usuarios.gerenciar'])} />
     <Route path="/organizacao/dados" element={w(<CompanySettingsPage />)} />
 
     {/* Endereços antigos */}

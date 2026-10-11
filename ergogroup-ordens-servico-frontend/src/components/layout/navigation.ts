@@ -2,21 +2,26 @@ import {
   Activity,
   Boxes,
   Building2,
-  ClipboardList,
+  CirclePlus,
+  Handshake,
+  KeyRound,
+  LayoutDashboard,
+  LayoutGrid,
+  ListChecks,
+  Network,
   Package,
   Receipt,
   Users,
-  Network,
-  KeyRound,
   Wallet,
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
-import type { Permissao } from '@/lib/permissoes';
+import type { Permissao, Verificador } from '@/lib/permissoes';
 
 /**
  * Configuração única da navegação: menu lateral, breadcrumb e busca global
  * leem daqui. Para incluir uma página no menu, adicione-a a um grupo.
+ * Grupos e permissões: docs/ui/fluxos-e-navegacao.md §4.
  */
 
 export interface NavItem {
@@ -25,6 +30,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** Só aparece para quem tem ao menos uma destas permissões. Sem o campo, aparece para todos. */
   permissoes?: Permissao[];
+  /** Some para quem tem alguma destas (ex.: o Painel do setor para quem tem a Visão geral). */
+  semPermissoes?: Permissao[];
 }
 
 export interface NavGroup {
@@ -35,18 +42,33 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    id: 'operacao',
-    title: 'Operação',
+    id: 'meu-trabalho',
+    title: 'Meu trabalho',
     items: [
-      { title: 'Ordens de serviço', url: '/ordens', icon: ClipboardList },
-      { title: 'OS operacionais', url: '/ordens/operacionais', icon: Wrench },
+      { title: 'Meus serviços', url: '/meus-servicos', icon: ListChecks },
+      { title: 'Visão geral', url: '/visao-geral', icon: LayoutGrid, permissoes: ['setores.todos'] },
       {
-        title: 'Cobranças',
-        url: '/cobrancas',
-        icon: Receipt,
-        permissoes: ['financeiro.ver_valores', 'financeiro.registrar_cobranca'],
+        title: 'Painel do setor',
+        url: '/setor',
+        icon: LayoutDashboard,
+        permissoes: ['servicos.ver_setor'],
+        semPermissoes: ['setores.todos'],
       },
     ],
+  },
+  {
+    id: 'comercial',
+    title: 'Comercial',
+    items: [
+      { title: 'Vendas', url: '/vendas', icon: Handshake, permissoes: ['os.gerenciar', 'os.ver_todas'] },
+      { title: 'Nova venda', url: '/vendas/nova', icon: CirclePlus, permissoes: ['os.gerenciar'] },
+      { title: 'OS operacionais', url: '/ordens/operacionais', icon: Wrench },
+    ],
+  },
+  {
+    id: 'financeiro',
+    title: 'Financeiro',
+    items: [{ title: 'Cobranças', url: '/cobrancas', icon: Receipt, permissoes: ['financeiro.registrar_cobranca'] }],
   },
   {
     id: 'analise',
@@ -61,6 +83,8 @@ export const NAV_GROUPS: NavGroup[] = [
     title: 'Cadastros',
     items: [
       { title: 'Clientes', url: '/clientes', icon: Building2 },
+      { title: 'Catálogo', url: '/catalogo', icon: Package },
+      { title: 'Catálogo operacional', url: '/catalogo/operacional', icon: Boxes },
     ],
   },
   {
@@ -75,15 +99,16 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: KeyRound,
         permissoes: ['organizacao.configurar', 'usuarios.gerenciar'],
       },
-      { title: 'Catálogo', url: '/catalogo', icon: Package },
-      { title: 'Catálogo operacional', url: '/catalogo/operacional', icon: Boxes },
     ],
   },
 ];
 
+export const podeVerItem = (item: Pick<NavItem, 'permissoes' | 'semPermissoes'>, podeAlguma: Verificador['podeAlguma']) =>
+  (!item.permissoes || podeAlguma(item.permissoes)) && !(item.semPermissoes && podeAlguma(item.semPermissoes));
+
 /** Grupos com os itens que a pessoa pode ver. Recebe `usePermissoes().podeAlguma`. */
-export const visibleNavGroups = (podeAlguma: (permissoes: Permissao[]) => boolean): NavGroup[] =>
-  NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.permissoes || podeAlguma(i.permissoes)) })).filter(
+export const visibleNavGroups = (podeAlguma: Verificador['podeAlguma']): NavGroup[] =>
+  NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => podeVerItem(i, podeAlguma)) })).filter(
     (g) => g.items.length > 0,
   );
 
@@ -91,7 +116,7 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items.map((item) => ({ item, group
 
 /**
  * Item ativo = o de prefixo mais específico que casa com o caminho
- * (ex.: /ordens/operacionais ativa "OS operacionais", não "Ordens de serviço").
+ * (ex.: /vendas/nova ativa "Nova venda", não "Vendas").
  */
 export const findActiveNav = (pathname: string) => {
   let best: (typeof ALL_ITEMS)[number] | null = null;
@@ -108,16 +133,17 @@ const EXTRA_PAGES: Record<string, { group: string; title: string }> = {
   '/organizacao/dados': { group: 'Organização', title: 'Dados da empresa' },
   '/clientes/contacts': { group: 'Cadastros', title: 'Contatos' },
   '/ui': { group: 'Desenvolvimento', title: 'UI kit' },
+  '/servicos': { group: 'Meu trabalho', title: 'Serviço' },
 };
 
-const SEGMENT_LABELS: Record<string, string> = { new: 'Novo cadastro', edit: 'Editar' };
+const SEGMENT_LABELS: Record<string, string> = { new: 'Novo cadastro', edit: 'Editar', editar: 'Editar' };
 
 export interface Crumb {
   label: string;
   to?: string;
 }
 
-/** `Operação › Ordens de serviço › OS 682 › Editar` */
+/** `Comercial › Vendas › OS 682 › Editar` */
 export const buildBreadcrumb = (pathname: string): Crumb[] => {
   const extraKey = Object.keys(EXTRA_PAGES)
     .filter((k) => pathname === k || pathname.startsWith(`${k}/`))
@@ -141,7 +167,7 @@ export const buildBreadcrumb = (pathname: string): Crumb[] => {
     .filter(Boolean)
     .forEach((segment) => {
       if (/^\d+$/.test(segment)) {
-        const prefix = base.startsWith('/ordens/operacionais') ? 'OSO' : base.startsWith('/ordens') ? 'OS' : '#';
+        const prefix = base.startsWith('/ordens/operacionais') ? 'OSO' : base.startsWith('/vendas') ? 'OS' : '#';
         crumbs.push({ label: prefix === '#' ? `#${segment}` : `${prefix} ${segment}`, to: `${base}/${segment}` });
       } else {
         crumbs.push({ label: SEGMENT_LABELS[segment] ?? segment });

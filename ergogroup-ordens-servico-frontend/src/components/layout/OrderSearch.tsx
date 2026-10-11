@@ -34,7 +34,7 @@ const OrderSearch = () => {
   const goToSearch = (term: string) => {
     setOpen(false);
     setSearch('');
-    navigate(`/ordens?q=${encodeURIComponent(term)}`);
+    navigate(`/vendas?q=${encodeURIComponent(term)}`);
   };
 
   return (
