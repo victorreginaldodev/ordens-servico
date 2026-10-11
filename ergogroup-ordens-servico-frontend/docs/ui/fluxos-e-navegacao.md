@@ -2,7 +2,7 @@
 
 Entrega da fase **R1** de `docs/ui/plano-redesenho-fluxos-e-telas.md` (10/10/2026). Define quem usa o sistema, o que cada pessoa faz no dia, por onde entra, o menu e o que cada página reúne. É a base dos wireframes (R2) e da implementação (R3 a R6).
 
-**Status:** todo o documento é **proposta**, aguardando a validação do usuário. As perguntas abertas estão na seção 9. O que for aprovado passa a "decidido" aqui mesmo.
+**Status:** **validado em 11/10/2026** (fecha a R2). As respostas estão na seção 9, e as mudanças que elas trouxeram, na seção 6.2.3. O que não foi comentado foi aceito como estava na proposta.
 
 **Fontes:**
 - ADRs 0003, 0006, 0007 e 0008;
@@ -122,7 +122,7 @@ Frequência: diária, na fila do que pode ser faturado.
 
 ### 3.5 Diretoria
 1. Tem acesso a tudo.
-2. Usa **Vendas** e o **Painel do setor** com todos os setores (os contadores por setor formam a visão consolidada).
+2. Entra na **Visão geral** (decidido em 11/10/2026): o painel com todos os setores juntos, uma tabela por setor e o filtro por setor (seção 6.2.3). Também usa **Vendas**.
 3. Usa **Cobranças** e **Análise**.
 4. Age em qualquer setor, mas só distribui para membros daquele setor.
 
@@ -137,7 +137,8 @@ Frequência: diária, na fila do que pode ser faturado.
 | Grupo | Item | Rota | Aparece para |
 |---|---|---|---|
 | **Meu trabalho** | Meus serviços | `/meus-servicos` | todos |
-| | Painel do setor | `/setor` | `servicos.ver_setor` (em algum setor) |
+| | Visão geral | `/visao-geral` | `setores.todos` (substitui o Painel do setor no menu dessa pessoa) |
+| | Painel do setor | `/setor` | `servicos.ver_setor` (em algum setor), **sem** `setores.todos` |
 | **Comercial** | Vendas | `/vendas` | `os.gerenciar` ou `os.ver_todas` |
 | | Nova venda (botão em Vendas; atalho no menu) | `/vendas/nova` | `os.gerenciar` |
 | **Financeiro** | Cobranças | `/cobrancas` | `financeiro.registrar_cobranca` |
@@ -164,17 +165,20 @@ Frequência: diária, na fila do que pode ser faturado.
 
 A tela depois do login sai das permissões, nesta ordem:
 
+**Decidido em 11/10/2026.**
+
 | # | Regra | Tela | Quem cai aqui (funções iniciais) |
 |---|---|---|---|
-| 1 | `tarefas.distribuir` + `servicos.ver_setor` no setor do vínculo, **sem** `setores.todos` (organizador) | Painel do setor | Gestor Técnico, Sub-Gestor Técnico |
-| 2 | `financeiro.registrar_cobranca` **sem** `setores.todos` | Cobranças | Gestor Financeiro, Financeiro |
-| 3 | `os.gerenciar` ou `os.ver_todas` | Vendas | Diretor, Gestor Comercial, Comercial, Gestor Administrativo, Administrativo |
-| 4 | nenhuma das anteriores | Meus serviços | Técnico |
+| 1 | `setores.todos` | Visão geral | Diretor, Gestor Comercial |
+| 2 | `tarefas.distribuir` + `servicos.ver_setor` no setor do vínculo (organizador) | Painel do setor | Gestor Técnico, Sub-Gestor Técnico |
+| 3 | `financeiro.registrar_cobranca` | Cobranças | Gestor Financeiro, Financeiro |
+| 4 | `os.gerenciar` ou `os.ver_todas` | Vendas | Comercial, Gestor Administrativo, Administrativo |
+| 5 | nenhuma das anteriores | Meus serviços | Técnico |
 
 **Por que essa ordem:**
-- O financeiro também tem `os.gerenciar`, por isso a regra 2 vem antes da 3.
-- A diretoria tem todas as permissões, inclusive no próprio setor (Diretoria). Sem a condição "sem `setores.todos`" nas regras 1 e 2, ela cairia no painel ou em Cobranças. Com ela, vai para Vendas, que é a entrada do Gestor Comercial.
-- Diretor e Gestor Comercial têm exatamente as mesmas permissões, então o sistema não consegue separá-los sem testar o nome da função (proibido).
+- A diretoria tem todas as permissões. A regra 1 vem antes para que ela não caia no painel de um setor nem em Cobranças.
+- O financeiro também tem `os.gerenciar`, por isso a regra 3 vem antes da 4.
+- **Atenção:** Diretor e Gestor Comercial têm exatamente as mesmas permissões, então os dois abrem na Visão geral. O sistema não consegue separá-los sem testar o nome da função (proibido). Quem preferir abrir em Vendas usa "Abrir sempre em…" (abaixo), ou a função do Gestor Comercial perde `setores.todos` na tela de Funções.
 
 **Complemento:** cada pessoa pode escolher a própria tela inicial no menu do usuário ("Abrir sempre em…"). A escolha fica gravada só no navegador dela e substitui a regra.
 
@@ -301,6 +305,30 @@ Pedido do usuário em 10/10/2026: organizar a execução no estilo de um quadro 
    - na lista, uma informação por coluna.
 6. **Removidos:** a linha de chips da equipe, o botão "Só atrasados e parados" (agora é o indicador) e o texto fixo sobre arrastar (agora está em "Como ler").
 
+### 6.2.3 Validação da R2 (11/10/2026)
+
+Respostas do usuário e o que mudou nos wireframes:
+
+1. **Diretoria abre numa Visão geral (decidido).** Não é o Painel do setor, e sim uma tela consolidada de todos os setores, com filtro por setor. No wireframe (persona Diretoria):
+   - item **Visão geral** no menu, no lugar do Painel do setor; rota `/visao-geral`;
+   - os mesmos indicadores do painel, somando todos os setores;
+   - uma **tabela por setor** abaixo dos indicadores (para distribuir, em andamento, atrasados, parados, concluídos no mês e o aviso "sem quem organize"). Clicar num setor aplica o filtro;
+   - dropdown **Setor** na barra de filtros, com a fila e os atrasados de cada setor; a coluna Setor aparece na lista enquanto não há setor escolhido, e o Agrupar ganha "Por setor";
+   - distribuir continua valendo só para membros do setor do serviço. Soltar um cartão na raia de alguém de outro setor mostra o aviso e não abre o modal.
+2. **A visualização padrão é a lista (tabela); o quadro é a opção (decidido)**, no Painel do setor, na Visão geral e em Meus serviços.
+3. **Agrupamento da lista volta ao do primeiro wireframe** (o usuário preferia o primeiro e deixou a decisão de UX comigo):
+   - **Para distribuir** em ordem de chegada, sem agrupar, com a coluna **Outros serviços da OS** (chips com a etapa de cada um, inclusive de outros setores) e a descrição do serviço sob o nome;
+   - **Em andamento, Atrasados e Parados agrupados por pessoa**, com o cabeçalho de cada pessoa (nome, função, quantos serviços e quantos atrasados), como a antiga aba "Em andamento";
+   - o número da OS é um link para o resumo da venda;
+   - o dropdown Agrupar continua com sem agrupar, por OS, por pessoa e por cliente. Ao trocar de indicador, a lista volta ao agrupamento padrão daquele indicador.
+4. **Vendas segue o padrão da execução (decidido):**
+   - indicadores clicáveis: **Para distribuir** (vendas com algum serviço na fila), **Em execução**, **Com atraso**, **Concluídas no mês** e, para quem vê valores, **A faturar**. Clicar de novo mostra todas;
+   - barra de filtros em dropdown: **Vendedor** (com "Minhas vendas" no topo), **Cliente**, **Setor** (vendas com serviço no setor), **Financeiro** (só com `financeiro.ver_valores`) e **Data** (da venda ou da conclusão), com busca por cliente ou número;
+   - a data da venda e o vendedor passam a ter colunas separadas (uma informação por coluna);
+   - as antigas visões rápidas (Minhas vendas, Com serviço na fila, Em execução, Concluídas) viraram os indicadores e o filtro Vendedor.
+5. **Cobranças fica como está** (o usuário não pediu a mudança).
+6. **Sem validação com a gestora técnica.** A pergunta 9 da seção 9 sai.
+
 ### 6.3 Detalhe do serviço — `/servicos/:id`
 - **Permissão:** quem vê o serviço (404 para quem não vê).
 - **Blocos:**
@@ -337,11 +365,10 @@ Pedido do usuário em 10/10/2026: organizar a execução no estilo de um quadro 
 - **Ações:**
   - **Nova venda**;
   - abrir o resumo da venda.
-- **Visões rápidas:**
-  - Minhas vendas (`?minhas=true`);
-  - Com serviço na fila (`?etapa=na_fila`);
-  - Em execução;
-  - Concluídas.
+- **Indicadores e filtros (decidido em 11/10/2026):** os da seção 6.2.3, item 4. Eles substituem as visões rápidas da proposta original:
+  - Minhas vendas → filtro Vendedor (`?minhas=true`);
+  - Com serviço na fila → indicador Para distribuir (`?etapa=na_fila`);
+  - Em execução e Concluídas → indicadores.
 
 ### 6.5 Nova venda — `/vendas/nova` (e edição em `/vendas/:id/editar`)
 - **Permissão:** `os.gerenciar`.
@@ -429,6 +456,7 @@ Busca global ──► Resumo da venda
 | Rota | Página | Substitui |
 |---|---|---|
 | `/meus-servicos` | Meus serviços | — |
+| `/visao-geral` | Visão geral (todos os setores; `?setor=` filtra) | — |
 | `/setor`, `/setor/:setorId` | Painel do setor | — |
 | `/servicos/:id` | Detalhe do serviço | o acordeão de serviços no detalhe da OS |
 | `/vendas` | Vendas | `/ordens` (redireciona) |
@@ -442,23 +470,27 @@ A rota `/ordens/operacionais` (fora de escopo) continua igual. O redirecionament
 
 ---
 
-## 9. Perguntas para validar
+## 9. Perguntas para validar — respondidas em 11/10/2026
 
-| # | Pergunta | Proposta |
-|---|---|---|
-| 1 | Nome da lista de OS no menu | **Vendas** (é a visão comercial; "OS" continua no número e no PDF) |
-| 2 | Nome da área do financeiro | **Cobranças** (mantém o endereço atual; o nome do passo "lançado" segue provisório, ADR 0007) |
-| 3 | Nome da porta do organizador | **Painel do setor** |
-| 4 | Regra e ordem da tela inicial | Seção 5, com a escolha pessoal "Abrir sempre em…" |
-| 5 | Diretoria entra em Vendas ou no Painel do setor? | Vendas |
-| 6 | Cobranças só para quem registra cobrança (o Comercial deixa de ver a tela) | Sim; o Comercial vê condição e faturamento no resumo da venda |
-| 7 | Nova venda em página com etapas (e não em modal) | Página |
-| 8 | Painel do setor em uma página com seções (e não em páginas separadas) | Uma página com seções e aba na URL |
-| 9 | Validar o painel com a gestora técnica no wireframe (R2) | Sim |
-| 10 | Quadro (colunas por etapa) como visualização padrão do Painel do setor e de Meus serviços, com a Lista como alternativa | Sim; ver 6.2.1 |
-| 11 | Endpoint `quadro/` no backend para o painel em quadro | Sim, se o quadro for aprovado |
+| # | Pergunta | Proposta | Decisão |
+|---|---|---|---|
+| 1 | Nome da lista de OS no menu | **Vendas** (é a visão comercial; "OS" continua no número e no PDF) | Aceita |
+| 2 | Nome da área do financeiro | **Cobranças** (mantém o endereço atual; o nome do passo "lançado" segue provisório, ADR 0007) | Aceita |
+| 3 | Nome da porta do organizador | **Painel do setor** | Aceita |
+| 4 | Regra e ordem da tela inicial | Seção 5, com a escolha pessoal "Abrir sempre em…" | Aceita, com a regra nova da diretoria (seção 5) |
+| 5 | Diretoria entra em Vendas ou no Painel do setor? | Vendas | **Nenhum dos dois: Visão geral**, consolidada de todos os setores com filtro por setor (6.2.3) |
+| 6 | Cobranças só para quem registra cobrança (o Comercial deixa de ver a tela) | Sim; o Comercial vê condição e faturamento no resumo da venda | Aceita |
+| 7 | Nova venda em página com etapas (e não em modal) | Página | Aceita |
+| 8 | Painel do setor em uma página com seções (e não em páginas separadas) | Uma página com seções e aba na URL | Aceita, no formato da 6.2.2: indicadores no lugar das abas (`?foco=` na URL) |
+| 9 | Validar o painel com a gestora técnica no wireframe (R2) | Sim | **Não haverá** essa validação |
+| 10 | Quadro (colunas por etapa) como visualização padrão do Painel do setor e de Meus serviços, com a Lista como alternativa | Sim; ver 6.2.1 | **Não: a lista (tabela) é o padrão**, e o quadro é a opção |
+| 11 | Endpoint `quadro/` no backend para o painel em quadro | Sim, se o quadro for aprovado | Continua proposta: o quadro ficou como opção, então o endpoint é útil mas não bloqueia a R4 |
+| 12 | Agrupamento padrão da lista | — | O do primeiro wireframe (6.2.3, item 3) |
+| 13 | Indicadores e filtros em dropdown também em Vendas e Cobranças | — | **Vendas: sim.** Cobranças: fica como está |
 
 ## 10. Lacunas encontradas para as próximas fases
+- **Visão geral sem bloco no backend (proposta para o backend):** os blocos de `/api/execucao/` exigem `?setor=` (400 sem setor). Para a Visão geral, há dois caminhos: (a) o frontend chama os blocos de cada setor e soma, o que funciona hoje, mas faz uma chamada por setor e por bloco; (b) um bloco `GET /api/execucao/visao-geral/` (ou `setor` opcional para quem tem `setores.todos`) que devolva os contadores por setor e a lista consolidada. Recomendação: (a) na R4 para não bloquear, e (b) se ficar lento.
+- **Filtros de Vendas que a lista ainda não tem (proposta para o backend):** `vendido_por`, `setor` (vendas com serviço no setor), período da venda (`venda_de`, `venda_ate`), "com atraso" e "a faturar". Hoje `/ordens/` aceita `q`, `cliente`, `minhas`, `etapa`, `concluida`, `liberada` e `cobranca_realizada`. Os contadores dos indicadores também precisam de um resumo (`/api/comercial/vendas/resumo/` ou um campo `contadores` na lista), senão o frontend teria de baixar todas as vendas para contar.
 - **Mutações de tarefa e de serviço:** a camada da R0 não tem as funções de mudar status, reatribuir, mudar prazo e excluir tarefa (`/api/ordens-servico/tarefas/{id}/`), nem as de ajustar e excluir serviço (`/servicos/{id}/`). Entram em `features/execucao` na R4.
 - **Permissões por tarefa no detalhe:** o detalhe do serviço traz `pode_distribuir` e `pode_dar_ciencia`, mas não traz por tarefa se a pessoa pode editá-la. O frontend deriva isso com `pode('tarefas.distribuir', setor_id)`, `pode('tarefas.editar_setor', setor_id)` e "a tarefa é minha". *Proposta para o backend, se ficar frágil:* um `pode_editar` por tarefa.
 - **Briefs antigos:** `listagem-ordens-brief.md`, `ordem-detalhe-brief.md` e `gestor-operacional-brief.md` ficam superados por este documento depois da aprovação.

@@ -12,7 +12,11 @@ Plano de 10/10/2026. Escopo: **só frontend**. Integra o que o backend entregou 
 | R0 é a releitura do contrato da API e a camada nova (tipos, serviços, hooks e componentes), sem remendar as telas antigas | **Decidido** (usuário, 10/10/2026) |
 | Tipos gerados do schema OpenAPI com `openapi-typescript` | **Decidido** (usuário, 10/10/2026) |
 | Trabalho do frontend (R0 a R8) na branch `v3` deste monorepo, que reúne o estado de desenvolvimento antes chamado `epic/v3` | **Decidido** (usuário, 10/10/2026) |
-| Fases R1 em diante: ordem e conteúdo | Proposta |
+| R1 (fluxos e navegação) e R2 (wireframes) validadas; respostas na seção 9 e na 6.2.3 de `fluxos-e-navegacao.md` | **Decidido** (usuário, 11/10/2026) |
+| Diretoria abre numa Visão geral consolidada de todos os setores, com filtro por setor | **Decidido** (usuário, 11/10/2026) |
+| Lista (tabela) como visualização padrão da execução; quadro como opção | **Decidido** (usuário, 11/10/2026) |
+| Vendas com o mesmo padrão de indicadores clicáveis e filtros em dropdown da execução | **Decidido** (usuário, 11/10/2026) |
+| Fases R3 em diante: ordem e conteúdo | Proposta |
 
 Referências:
 - backend: ADRs 0003 a 0008, `docs/telas-blocos-e-endpoints.md`, `docs/conceitos-de-dominio.md`, `docs/mapa-de-permissoes.md`;
@@ -91,7 +95,7 @@ Nenhuma tela usa a camada nova ainda: ela entra na R3 em diante.
 
 ---
 
-### R1 — Fluxos e navegação (documento) — entregue, aguardando validação
+### R1 — Fluxos e navegação (documento) ✅
 
 Entregue em 10/10/2026: [`fluxos-e-navegacao.md`](./fluxos-e-navegacao.md). As perguntas para validar estão na seção 9 dele. Os briefs antigos foram marcados como em revisão.
 
@@ -132,7 +136,9 @@ Detalhes, fora do menu: `/servicos/:id` (detalhe do serviço) e `/vendas/:id` (r
 
 ---
 
-### R2 — Wireframes — três lotes entregues, aguardando validação
+### R2 — Wireframes ✅
+
+Validada em 11/10/2026. Os ajustes pedidos na validação (Visão geral da diretoria, lista como padrão, agrupamento do primeiro wireframe e o padrão novo em Vendas) estão nos três arquivos e descritos na seção 6.2.3 de `fluxos-e-navegacao.md`.
 
 Feita em três lotes, um por fluxo, cada um validado antes do próximo (decidido pelo usuário em 10/10/2026):
 
@@ -157,7 +163,7 @@ Entrega: HTML em `docs/ui/wireframes/`, no padrão dos existentes, com dados de 
 | Resumo da venda | `comercial/vendas/{id}/`, `ordens/{id}/linha-do-tempo/` |
 | Cobranças | `financeiro/cobrancas/`, `financeiro/ordens/{id}/`, `PATCH /ordens/{id}/cobranca/` |
 
-**Pronto quando:** você aprovar, e o painel do setor for validado com a gestora técnica.
+**Pronto quando:** você aprovar. A validação com a gestora técnica não vai acontecer (decidido em 11/10/2026).
 
 ---
 
@@ -165,7 +171,7 @@ Entrega: HTML em `docs/ui/wireframes/`, no padrão dos existentes, com dados de 
 
 | # | Item |
 |---|---|
-| 3.1 | `navigation.ts` com os grupos da R1 e as permissões por item |
+| 3.1 | `navigation.ts` com os grupos da R1 e as permissões por item, incluindo a Visão geral (`setores.todos`) no lugar do Painel do setor |
 | 3.2 | Redirecionamento pós-login pela regra da tela inicial (`LoginPage` e rota `/`) |
 | 3.3 | Guarda de rota por permissão (componente `RequerPermissao`): sem acesso → tela "sem acesso", não 403 cru |
 | 3.4 | Redirecionamentos dos endereços antigos (`/ordens` → `/vendas`, `/ordens/:id` → `/vendas/:id`) |
@@ -249,10 +255,10 @@ Código novo em `src/features/execucao/` (`services.ts`, `hooks.ts`, `pages/`, `
 | # | Pergunta | Fase |
 |---|---|---|
 | 1 | Ordem: execução (R4) antes da venda (R5), ou o contrário? | antes da R4 |
-| 2 | Nomes no menu: "Vendas" ou "Ordens de serviço"? "Painel do setor"? "Faturar" ou "Cobranças"? (o nome do passo "lançado" ainda é provisório, ADR 0007) | R1 |
-| 3 | Regra e ordem da tela inicial | R1 |
-| 4 | Nova venda em modal com etapas ou página com etapas? | R2 |
-| 5 | Validar o painel do setor com a gestora técnica antes de implementar? | R2 |
+| 2 | ~~Nomes no menu~~ Respondida em 11/10/2026: Vendas, Painel do setor, Cobranças e Visão geral | R1 |
+| 3 | ~~Regra e ordem da tela inicial~~ Respondida em 11/10/2026: seção 5 de `fluxos-e-navegacao.md` | R1 |
+| 4 | ~~Nova venda em modal ou página~~ Respondida em 11/10/2026: página com etapas | R2 |
+| 5 | ~~Validar com a gestora técnica~~ Respondida em 11/10/2026: não haverá | R2 |
 | 6 | O técnico também pode distribuir a si mesmo um serviço da fila? (hoje exige `tarefas.distribuir`) | R4 |
 | 7 | Análise operacional: só ajustar campos (R7) ou redesenhar com os indicadores de prazo? | depois da R8 |
 

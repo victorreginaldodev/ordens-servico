@@ -315,6 +315,9 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
 .lane-os{gap:8px 12px}
 .os-res{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:auto}
 tr.grp .os-res{margin-left:12px;font-weight:400}
+tr.grp-p td{padding:10px 12px}
+.por-setor{margin-bottom:4px}
+.por-setor td,.por-setor th{white-space:nowrap}
 .k-cli{font-size:13px;color:hsl(var(--foreground));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .k-chips{display:inline-flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
 .k-foot{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
@@ -490,7 +493,7 @@ const emAlerta = (s) => ['distribuido', 'em_execucao'].includes(etapa(s)) && dia
 const ativo = (s) => ['na_fila', 'distribuido', 'em_execucao'].includes(etapa(s));
 const atrasado = (s) => ativo(s) && etapa(s) !== 'na_fila' && situacaoPrazo(prazoServico(s)) === 'atrasado';
 const responsaveis = (s) => [...new Set(s.tarefas.filter((t) => t.status !== 'cancelada').map((t) => PESSOAS[t.resp].nome))];
-const doSetor = (setor) => SERVICOS.filter((s) => s.setor === setor);
+const doSetor = (setor) => SERVICOS.filter((s) => setor === 'todos' || s.setor === setor);
 /* Visibilidade do backend: os.ver_todas, servicos.ver_setor no setor, ou tarefa própria. */
 const vejo = (s) => pode('os.ver_todas') || setoresQueAcompanho().some((x) => x.id === s.setor) || s.tarefas.some((t) => t.resp === S.persona.pessoa);
 const termino = (s) => new Date(Math.max(...s.tarefas.filter((t) => t.termino).map((t) => dt(t.termino))));
@@ -523,7 +526,8 @@ const setoresQueAcompanho = () => S.persona.setores === 'todos' ? SETORES : SETO
 const MENU = [
   { grupo: 'Meu trabalho', itens: [
     { id: 'meus-servicos', titulo: 'Meus serviços', icone: 'list-checks' },
-    { id: 'setor', titulo: 'Painel do setor', icone: 'layout-dashboard', perm: ['servicos.ver_setor'], contador: true },
+    { id: 'visao-geral', titulo: 'Visão geral', icone: 'layout-grid', perm: ['setores.todos'], contador: true },
+    { id: 'setor', titulo: 'Painel do setor', icone: 'layout-dashboard', perm: ['servicos.ver_setor'], semTodos: true, contador: true },
   ] },
   { grupo: 'Comercial', itens: [
     { id: 'vendas', titulo: 'Vendas', icone: 'handshake', perm: ['os.gerenciar', 'os.ver_todas'], lote: 2 },
@@ -544,15 +548,16 @@ const MENU = [
     { id: 'setores', titulo: 'Setores', icone: 'network', fora: true },
   ] },
 ];
-const visivel = (it) => !it.perm || it.perm.some(pode);
+const visivel = (it) => (!it.perm || it.perm.some(pode)) && !(it.semTodos && pode('setores.todos'));
 
 /* Tela inicial (fluxos-e-navegacao.md §5) */
 const telaInicial = () => {
   const todos = pode('setores.todos');
-  if (pode('tarefas.distribuir') && pode('servicos.ver_setor') && !todos) return ['setor', 'Regra 1: distribui e acompanha o setor do próprio vínculo → Painel do setor'];
-  if (pode('financeiro.registrar_cobranca') && !todos) return ['cobrancas', 'Regra 2: registra cobrança (sem setores.todos) → Cobranças'];
-  if (pode('os.gerenciar') || pode('os.ver_todas')) return ['vendas', 'Regra 3: gerencia ou vê vendas → Vendas'];
-  return ['meus-servicos', 'Regra 4: nenhuma das anteriores → Meus serviços'];
+  if (todos) return ['visao-geral', 'Regra 1: acompanha todos os setores (setores.todos) → Visão geral'];
+  if (pode('tarefas.distribuir') && pode('servicos.ver_setor') && !todos) return ['setor', 'Regra 2: distribui e acompanha o setor do próprio vínculo → Painel do setor'];
+  if (pode('financeiro.registrar_cobranca') && !todos) return ['cobrancas', 'Regra 3: registra cobrança (sem setores.todos) → Cobranças'];
+  if (pode('os.gerenciar') || pode('os.ver_todas')) return ['vendas', 'Regra 4: gerencia ou vê vendas → Vendas'];
+  return ['meus-servicos', 'Regra 5: nenhuma das anteriores → Meus serviços'];
 };
 
 /* ───────────────────────── Estado ───────────────────────── */
@@ -562,11 +567,11 @@ const S = {
   rota: 'setor',
   setor: 1,
   aba: 'fila',
-  visPainel: 'quadro',
-  fp: { foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' },
-  fm: { foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' },
+  visPainel: 'lista',
+  fp: { foco: null, pessoa: null, cliente: null, prioridade: null, setor: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: null },
+  fm: { foco: null, pessoa: null, cliente: null, prioridade: null, setor: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: null },
   pop: null,
-  visMeus: 'quadro',
+  visMeus: 'lista',
   raias: 'nenhuma',
   soAlerta: false,
   agrupar: 'nenhum',
@@ -669,7 +674,7 @@ function crumbs() {
   if (S.rota.startsWith('servico-')) {
     const s = SERVICOS.find((x) => x.id === +S.rota.slice(8));
     const daFila = S.persona.setores === 'todos' || (Array.isArray(S.persona.setores) && S.persona.setores.includes(s.setor));
-    return [daFila ? 'Painel do setor' : 'Meus serviços', `${s.cat} · ${OS[s.os].cliente}`];
+    return [daFila ? (S.persona.setores === 'todos' ? 'Visão geral' : 'Painel do setor') : 'Meus serviços', `${s.cat} · ${OS[s.os].cliente}`];
   }
   const it = m.find((x) => x.id === S.rota);
   if (S.rota.startsWith('venda-')) return ['Vendas', `OS ${S.rota.slice(6)}`];
@@ -694,7 +699,7 @@ function tarefasAtivasDoSetor(setor) {
   return doSetor(setor.id).flatMap((s) => s.tarefas.filter(ATIVA).map((t) => ({ s, t })));
 }
 function equipeDoSetor(setor) {
-  const membros = Object.entries(PESSOAS).filter(([, p]) => p.setor === setor.id).map(([k]) => k);
+  const membros = Object.entries(PESSOAS).filter(([, p]) => (setor.id === 'todos' ? !!p.setor : p.setor === setor.id)).map(([k]) => k);
   return membros.map((k) => {
     const ls = tarefasAtivasDoSetor(setor).filter(({ t }) => t.resp === k);
     const sit = (l) => situacaoPrazo(l.t.prazo && dt(l.t.prazo));
@@ -710,9 +715,18 @@ function equipeDoSetor(setor) {
 }
 
 const INICIO_MES = new Date(2026, 9, 1);
-const FILTROS_VAZIOS = () => ({ foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' });
-const F = () => (S.rota === 'meus-servicos' ? S.fm : S.fp);
+const FILTROS_VAZIOS = () => ({ foco: null, pessoa: null, cliente: null, prioridade: null, setor: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: null });
+const F = () => (S.rota === 'meus-servicos' ? S.fm : S.rota === 'vendas' ? S.vf : S.fp);
 const vis = () => (S.rota === 'meus-servicos' ? S.visMeus : S.visPainel);
+/* Visão geral (diretoria): o mesmo painel com todos os setores juntos e filtro por setor. */
+const TODOS = { id: 'todos', nome: 'Todos os setores' };
+const noPainel = () => S.rota === 'setor' || S.rota === 'visao-geral';
+const geral = () => S.rota === 'visao-geral';
+const setorAtual = () => (geral() ? (S.fp.setor ? SETORES.find((x) => String(x.id) === S.fp.setor) : TODOS) : SETORES.find((x) => x.id === S.setor));
+const nomeSetor = (id) => SETORES.find((x) => x.id === id).nome;
+/* Agrupamento padrão da lista (como no primeiro wireframe): a fila em ordem de chegada, o andamento por pessoa. */
+const tipoLista = (f) => (f.foco === 'fila' ? 'fila' : f.foco === 'concluidos' ? 'concluidos' : 'andamento');
+const agrEfetivo = (f) => f.agrupar || (vis() === 'lista' && noPainel() && tipoLista(f) === 'andamento' ? 'pessoa' : 'nenhum');
 
 /* Período: presets relativos a hoje (10/10/2026, sábado) */
 const PRESETS = {
@@ -723,6 +737,8 @@ const PRESETS = {
 };
 const CAMPOS_DATA_SETOR = { prazo: 'Prazo', chegada: 'Chegada', conclusao: 'Conclusão' };
 const CAMPOS_DATA_MEUS = { prazo: 'Prazo', conclusao: 'Conclusão' };
+const CAMPOS_DATA_VENDAS = { venda: 'Venda', conclusao: 'Conclusão' };
+const camposData = () => (S.rota === 'meus-servicos' ? CAMPOS_DATA_MEUS : S.rota === 'vendas' ? CAMPOS_DATA_VENDAS : CAMPOS_DATA_SETOR);
 function intervalo(f) {
   if (!f.dataCampo || !f.dataPreset) return null;
   if (f.dataPreset === 'personalizado') return f.de || f.ate ? [f.de ? new Date(f.de + 'T00:00') : new Date(2000, 0, 1), f.ate ? new Date(f.ate + 'T23:59') : new Date(2100, 0, 1)] : null;
@@ -764,31 +780,38 @@ function botaoFiltro(id, icone, rotulo, valor) {
 function popover(id, f) {
   const opc = (campo, v, txt, extra = '') => `<button class="fopt ${f[campo] === v ? 'on' : ''}" data-fsel="${campo}:${v ?? ''}">${f[campo] === v ? I('check') : '<span class="ck"></span>'}<span class="fo-t">${txt}</span>${extra}</button>`;
   if (id === 'pessoa') {
-    const eq = equipeDoSetor(SETORES.find((x) => x.id === S.setor));
+    const eq = equipeDoSetor(setorAtual());
     return `<div class="fpop-h">Responsável</div>${opc('pessoa', null, 'Todas as pessoas')}
       ${eq.map((e) => opc('pessoa', e.k, `<span class="inline"><span class="av sm">${iniciais(e.nome)}</span>${esc(e.nome)}</span>`, `<span class="fo-x num">${pl(e.ativos, 'ativo', 'ativos')}${e.atrasados ? ` · <span class="tx-danger">${e.atrasados} atras.</span>` : ''}</span>`)).join('')}
       <div class="fpop-n">Itens ativos e atrasados de cada pessoa: a carga da equipe.</div>`;
   }
   if (id === 'cliente') {
-    const base = S.rota === 'meus-servicos' ? SERVICOS.filter((s) => s.tarefas.some((t) => t.resp === S.persona.pessoa)) : doSetor(S.setor);
+    const base = S.rota === 'meus-servicos' ? SERVICOS.filter((s) => s.tarefas.some((t) => t.resp === S.persona.pessoa)) : S.rota === 'vendas' ? Object.keys(OS).map((os) => ({ os })) : doSetor(setorAtual().id);
     const cls = [...new Set(base.map((s) => OS[s.os].cliente))].sort();
     return `<div class="fpop-h">Cliente</div>${opc('cliente', null, 'Todos os clientes')}${cls.map((c) => opc('cliente', c, esc(c))).join('')}`;
   }
   if (id === 'prioridade') return `<div class="fpop-h">Prioridade da venda</div>${opc('prioridade', null, 'Todas')}${Object.entries(PRIOR).map(([k, v]) => opc('prioridade', k, v[2])).join('')}`;
+  if (id === 'setor') {
+    return `<div class="fpop-h">Setor</div>${opc('setor', null, 'Todos os setores')}
+      ${SETORES.map((s) => { const c = contadores(s.id); return opc('setor', String(s.id), esc(s.nome), `<span class="fo-x num">${c.na_fila} na fila${c.atrasados ? ` · <span class="tx-danger">${c.atrasados} atras.</span>` : ''}</span>`); }).join('')}`;
+  }
   if (id === 'agrupar') {
     const ops = vis() === 'quadro' ? [['nenhum', 'Colunas por etapa'], ['os', 'Raias por OS'], ['pessoa', 'Raias por pessoa']] : [['nenhum', 'Sem agrupar'], ['os', 'Por OS'], ['pessoa', 'Por pessoa'], ['cliente', 'Por cliente']];
-    return `<div class="fpop-h">Agrupar</div>${ops.map(([v, t]) => opc('agrupar', v, t)).join('')}`;
+    if (geral() && !f.setor && vis() === 'lista') ops.push(['setor', 'Por setor']);
+    const ef = agrEfetivo(f);
+    return `<div class="fpop-h">Agrupar</div>${ops.map(([v, t]) => `<button class="fopt ${ef === v ? 'on' : ''}" data-fsel="agrupar:${v}">${ef === v ? I('check') : '<span class="ck"></span>'}<span class="fo-t">${t}</span></button>`).join('')}
+      ${vis() === 'lista' ? '<div class="fpop-n">Padrão: “Para distribuir” em ordem de chegada; andamento, atrasados e parados por pessoa.</div>' : ''}`;
   }
   if (id === 'data') {
-    const campos = S.rota === 'meus-servicos' ? CAMPOS_DATA_MEUS : CAMPOS_DATA_SETOR;
-    return `<div class="fpop-h">Filtrar pela data de</div><div class="seg seg-w">${Object.entries(campos).map(([k, v]) => `<button class="${(f.dataCampo || 'prazo') === k ? 'on' : ''}" data-fsel="dataCampo:${k}">${v}</button>`).join('')}</div>
+    const campos = camposData();
+    return `<div class="fpop-h">Filtrar pela data de</div><div class="seg seg-w">${Object.entries(campos).map(([k, v]) => `<button class="${(f.dataCampo || Object.keys(campos)[0]) === k ? 'on' : ''}" data-fsel="dataCampo:${k}">${v}</button>`).join('')}</div>
       <div class="fpop-h">Período</div>${Object.entries(PRESETS).map(([k, [t, a, b]]) => opc('dataPreset', k, t, `<span class="fo-x num">${fmtC(a)} a ${fmtC(b)}</span>`)).join('')}
       ${opc('dataPreset', 'personalizado', 'Personalizado')}
       ${f.dataPreset === 'personalizado' ? `<div class="grid2" style="padding:6px 8px 2px"><label class="field" for="f-de"><span class="sm muted">De</span><input class="inp" type="date" id="f-de" data-fdata="de" value="${f.de}"></label><label class="field" for="f-ate"><span class="sm muted">Até</span><input class="inp" type="date" id="f-ate" data-fdata="ate" value="${f.ate}"></label></div>` : ''}
       <div class="fpop-f"><button class="btn ghost sm" data-fclear="data">Limpar data</button><button class="btn sm pri" data-pop="">Aplicar</button></div>`;
   }
   if (id === 'ajuda') return legenda();
-  return '';
+  return typeof popoverExtra === 'function' ? popoverExtra(id, f, opc) : '';
 }
 function legenda() {
   const l = (c, txt) => `<div class="leg">${c}<span>${txt}</span></div>`;
@@ -801,23 +824,25 @@ function legenda() {
     ${l(chip(['neutral', 'bell-off', 'Aguardando o cliente', '']), 'Alguém confirmou que o serviço está esperando algo. O aviso de parado fica silenciado por 7 dias.')}
     ${l(`<span class="tx-danger inline">${I('chevrons-up')}</span>`, 'Venda com prioridade alta.')}
     ${l(avatares(['rafael']), 'Quem está com o serviço.')}
-    ${S.rota === 'setor' && pode('tarefas.distribuir') ? l(`<span class="inline muted">${I('grip-vertical')}</span>`, 'Arraste um cartão da fila para “Distribuído” (ou para a raia de alguém) para distribuir.') : ''}
+    ${noPainel() && pode('tarefas.distribuir') ? l(`<span class="inline muted">${I('grip-vertical')}</span>`, 'Arraste um cartão da fila para “Distribuído” (ou para a raia de alguém) para distribuir.') : ''}
     ${S.rota === 'meus-servicos' ? l(`<span class="inline muted">${I('grip-vertical')}</span>`, 'Arraste o cartão entre as colunas para mudar o status, ou use o botão do cartão.') : ''}`;
 }
 function barraFiltros(opcoes) {
   const f = F();
-  const campos = S.rota === 'meus-servicos' ? CAMPOS_DATA_MEUS : CAMPOS_DATA_SETOR;
+  const campos = camposData();
   const ativos = [];
+  if (f.setor) ativos.push(['setor', `Setor: ${nomeSetor(+f.setor)}`]);
   if (f.pessoa) ativos.push(['pessoa', `Pessoa: ${PESSOAS[f.pessoa].nome}`]);
   if (f.cliente) ativos.push(['cliente', `Cliente: ${f.cliente}`]);
   if (f.prioridade) ativos.push(['prioridade', `Prioridade: ${PRIOR[f.prioridade][2]}`]);
   if (rotuloData(f, campos)) ativos.push(['data', rotuloData(f, campos)]);
   if (f.q) ativos.push(['q', `Busca: “${f.q}”`]);
   const chave = S.rota === 'meus-servicos' ? 'visMeus' : 'visPainel';
-  const agr = { nenhum: null, os: vis() === 'quadro' ? 'Raias por OS' : 'Por OS', pessoa: vis() === 'quadro' ? 'Raias por pessoa' : 'Por pessoa', cliente: 'Por cliente' }[f.agrupar];
+  const agr = { nenhum: null, os: vis() === 'quadro' ? 'Raias por OS' : 'Por OS', pessoa: vis() === 'quadro' ? 'Raias por pessoa' : 'Por pessoa', cliente: 'Por cliente', setor: 'Por setor' }[agrEfetivo(f)];
   return `<div class="fbar">
       <span class="seg" role="group" aria-label="Visualização"><button class="${S[chave] === 'quadro' ? 'on' : ''}" data-vis="${chave}:quadro" title="Colunas por etapa">${I('columns-3')}Quadro</button><button class="${S[chave] === 'lista' ? 'on' : ''}" data-vis="${chave}:lista" title="Tabela">${I('list')}Lista</button></span>
       <span class="vsep"></span>
+      ${opcoes.includes('setor') ? botaoFiltro('setor', 'network', 'Setor', f.setor ? nomeSetor(+f.setor) : null) : ''}
       ${opcoes.includes('pessoa') ? botaoFiltro('pessoa', 'user', 'Pessoa', f.pessoa ? PESSOAS[f.pessoa].nome.split(' ')[0] : null) : ''}
       ${botaoFiltro('cliente', 'building-2', 'Cliente', f.cliente ? f.cliente.split(' ').slice(0, 2).join(' ') : null)}
       ${opcoes.includes('prioridade') ? botaoFiltro('prioridade', 'chevrons-up', 'Prioridade', f.prioridade ? PRIOR[f.prioridade][2] : null) : ''}
@@ -878,7 +903,7 @@ function paginaSetor() {
   const acompanha = setoresQueAcompanho();
   if (!acompanha.length) return empty('lock', 'Você não acompanha nenhum setor', 'O painel aparece para quem tem a permissão de ver os serviços de um setor.');
   if (!acompanha.some((s) => s.id === S.setor)) S.setor = acompanha[0].id;
-  const setor = SETORES.find((s) => s.id === S.setor);
+  const setor = setorAtual();
   const organiza = pode('tarefas.distribuir');
   if (S.visPainel === 'lista' && !S.fp.foco) S.fp.foco = 'fila';
   const base = servicosDoPainel(setor, true);
@@ -890,6 +915,15 @@ function paginaSetor() {
     ['parados', 'Parados', 'hourglass', 'warning', n('parados'), 'Sem nenhuma mudança há 7 dias ou mais, sem ciência.'],
     ['concluidos', 'Concluídos no mês', 'circle-check', 'success', n('concluidos'), 'Todas as tarefas concluídas neste mês.'],
   ];
+  if (geral()) {
+    return `
+    <div class="ph"><div class="t"><h1>Visão geral</h1><span class="muted">Todos os setores num lugar só: o que chegou, o que está com quem e o que precisa de atenção.</span></div></div>
+    ${indicadores(kpis, S.fp.setor ? `Resumo de ${esc(setor.nome)}` : 'Resumo de todos os setores')}
+    ${S.fp.setor ? '' : porSetor()}
+    ${barraFiltros(['setor', 'pessoa', 'prioridade', 'agrupar'])}
+    ${setor.semOrganizador ? `<div class="alerta">${I('user-x')}<div class="tx"><b>Este setor ainda não tem quem organize</b>Nenhum membro de ${esc(setor.nome)} tem as permissões de acompanhar e distribuir. A diretoria distribui enquanto as funções são configuradas.</div><button class="btn sm">Configurar funções</button></div>` : ''}
+    ${S.visPainel === 'quadro' ? quadroSetor(setor, organiza) : listaSetor(setor, organiza)}`;
+  }
   return `
     <div class="ph"><div class="t"><h1>Painel do setor</h1><span class="muted">O que chegou, o que está com quem e o que precisa de atenção.</span></div>
       ${acompanha.length > 1 ? `<label class="inline" for="sel-setor"><span class="sm muted">Setor</span><select class="inp" id="sel-setor" data-sel-setor style="width:auto;height:34px">${acompanha.map((s) => `<option value="${s.id}" ${s.id === S.setor ? 'selected' : ''}>${esc(s.nome)} (${contadores(s.id).na_fila} na fila)</option>`).join('')}</select></label>` : `<span class="inline muted">${I('network')}${esc(setor.nome)}</span>`}
@@ -898,6 +932,19 @@ function paginaSetor() {
     ${indicadores(kpis, 'Resumo do setor')}
     ${barraFiltros(['pessoa', 'prioridade', 'agrupar'])}
     ${S.visPainel === 'quadro' ? quadroSetor(setor, organiza) : listaSetor(setor, organiza)}`;
+}
+
+/* Visão geral: uma linha por setor com os mesmos indicadores; clicar filtra pelo setor. */
+function porSetor() {
+  const base = servicosDoPainel(TODOS, true);
+  const n = (sid, k) => base.filter((s) => s.setor === sid && FOCO_SETOR[k](s)).length;
+  const cel = (sid, k, tom) => { const v = n(sid, k); return `<td class="r num ${v && tom ? `tx-${tom}` : v ? '' : 'muted'}">${v}</td>`; };
+  return `<div class="tw por-setor"><table>
+    <thead><tr><th>Setor</th><th class="r">Para distribuir</th><th class="r">Em andamento</th><th class="r">Atrasados</th><th class="r">Parados</th><th class="r">Concluídos no mês</th><th class="r"></th></tr></thead>
+    <tbody>${SETORES.map((s) => `<tr class="click" data-fsel="setor:${s.id}" title="Ver só ${esc(s.nome)}">
+      <td><b>${esc(s.nome)}</b>${s.semOrganizador ? ` ${chip(['warning', 'user-x', 'Sem quem organize', 'Nenhum membro tem as permissões de acompanhar e distribuir.'])}` : ''}</td>
+      ${cel(s.id, 'fila', 'warning')}${cel(s.id, 'andamento')}${cel(s.id, 'atrasados', 'danger')}${cel(s.id, 'parados', 'warning')}${cel(s.id, 'concluidos')}
+      <td class="r"><span class="sm muted inline">Ver setor${I('arrow-right')}</span></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function kcardServico(s, organiza) {
@@ -915,7 +962,7 @@ function kcardServico(s, organiza) {
   }
   return `<article class="kcard ${atrasado(s) ? 'k-atr' : ''} ${arrasta ? 'k-drag' : ''}" data-ir="servico-${s.id}" tabindex="0" ${arrasta ? `draggable="true" data-drag="${s.id}"` : ''} title="${esc(s.desc)}">
     <div class="k-top"><b>${esc(s.cat)}</b>${o.prioridade === 'alta' ? `<span class="tx-danger" title="Prioridade alta">${I('chevrons-up')}</span>` : ''}<span class="sp"></span><span class="sm muted num">OS ${s.os}</span></div>
-    <span class="k-cli">${esc(o.cliente)}</span>
+    <span class="k-cli">${esc(o.cliente)}${geral() && !S.fp.setor ? ` <span class="sm muted">· ${esc(nomeSetor(s.setor))}</span>` : ''}</span>
     <div class="k-foot">${pe}</div>
   </article>`;
 }
@@ -930,8 +977,8 @@ function quadroSetor(setor, organiza) {
   const f = S.fp;
   const cols = ETAPAS_COL.filter(([id]) => !f.foco || ss.some((s) => etapa(s) === id) || (id === 'distribuido' && f.foco === 'fila' && organiza));
   const cab = ([id, t, tom], n) => `<div class="col-h"><span class="dot d-${tom}"></span><b>${t}</b><span class="cnt n">${n}</span></div>`;
-  if (f.agrupar === 'os') return raiasPorOS(setor, organiza, ss, cols, cab);
-  if (f.agrupar !== 'pessoa') {
+  if (agrEfetivo(f) === 'os') return raiasPorOS(setor, organiza, ss, cols, cab);
+  if (agrEfetivo(f) !== 'pessoa') {
     return `<div class="board" style="grid-template-columns:repeat(${cols.length},minmax(250px,1fr))">${cols.map((c) => {
       const lista = ordenar2(c[0], ss.filter((s) => etapa(s) === c[0]));
       const soltar = c[0] === 'distribuido' && organiza;
@@ -991,36 +1038,51 @@ function listaSetor(setor, organiza) {
   const f = S.fp;
   const ss = servicosDoPainel(setor, false);
   if (!ss.length) return empty('search-x', 'Nada com estes filtros', 'Mude o indicador selecionado ou limpe os filtros.');
-  const tipo = f.foco === 'fila' ? 'fila' : f.foco === 'concluidos' ? 'concluidos' : 'andamento';
+  const tipo = tipoLista(f);
+  const agr = agrEfetivo(f);
+  const comSetor = geral() && !f.setor && agr !== 'setor';
+  const thSetor = comSetor ? '<th>Setor</th>' : '';
   const head = {
-    fila: '<th>Serviço</th><th>Cliente</th><th>OS</th><th>Na fila há</th><th>Prioridade</th><th></th>',
-    andamento: '<th>Serviço</th><th>Cliente</th><th>OS</th><th>Responsável</th><th>Situação</th><th></th>',
-    concluidos: '<th>Serviço</th><th>Cliente</th><th>OS</th><th>Concluído por</th><th>Término</th><th>Prazo</th>',
+    fila: `<th>Serviço</th><th>Cliente</th><th>OS</th>${thSetor}<th>Na fila há</th><th>Prioridade</th><th>Outros serviços da OS</th><th></th>`,
+    andamento: `<th>Serviço</th><th>Cliente</th><th>OS</th>${thSetor}${agr === 'pessoa' ? '' : '<th>Responsável</th>'}<th>Etapa</th><th>Situação</th><th></th>`,
+    concluidos: `<th>Serviço</th><th>Cliente</th><th>OS</th>${thSetor}<th>Concluído por</th><th>Término</th><th>Prazo</th>`,
   }[tipo];
+  const ncols = (head.match(/<th/g) || []).length;
   const linha = (s) => {
     const o = OS[s.os];
-    const base = `<td><b>${esc(s.cat)}</b></td><td>${esc(o.cliente)}</td><td class="num muted">${s.os}</td>`;
+    const base = `<td>${svcCel(s)}</td><td>${esc(o.cliente)}</td><td class="num"><a href="#venda-${s.os}" data-stop>${s.os}</a></td>${comSetor ? `<td>${esc(nomeSetor(s.setor))}</td>` : ''}`;
     if (tipo === 'fila') {
       const na = dias(dt(s.chegou));
-      return `${base}<td class="num ${na >= 5 ? 'tx-warning' : ''}">${na === 0 ? 'Chegou hoje' : pl(na, 'dia', 'dias')}</td><td>${bPrior(o.prioridade)}</td><td class="r">${organiza ? `<button class="btn sm pri" data-distribuir="${s.id}" data-stop>Distribuir</button>` : ''}</td>`;
+      return `${base}<td class="num ${na >= 5 ? 'tx-warning' : ''}">${na === 0 ? 'Chegou hoje' : pl(na, 'dia', 'dias')}</td><td>${bPrior(o.prioridade)}</td><td>${chipsOutros(s)}</td><td class="r">${organiza ? `<button class="btn sm pri" data-distribuir="${s.id}" data-stop>Distribuir</button>` : ''}</td>`;
     }
     if (tipo === 'concluidos') {
       const p = prazoServico(s); const tm = termino(s);
       return `${base}<td>${esc(quemConcluiu(s))}</td><td class="num">${fmt(tm)}</td><td>${p ? (tm <= p ? chip(['success', 'circle-check', 'No prazo', `Prazo ${fmt(p)}`]) : chip(['danger', 'triangle-alert', `${pl(dias(p, tm), 'dia', 'dias')} após`, `Prazo ${fmt(p)}`])) : '<span class="sm muted">Sem prazo</span>'}</td>`;
     }
-    return `${base}<td>${respsDe(s).map((k) => esc(PESSOAS[k].nome)).join('<br>')}</td><td><span class="k-chips">${situacoes(s, prazoServico(s), false).map(chip).join('')}</span></td>
+    return `${base}${agr === 'pessoa' ? '' : `<td>${respsDe(s).map((k) => esc(PESSOAS[k].nome)).join('<br>')}</td>`}<td>${bEtapa(etapa(s))}</td><td><span class="k-chips">${situacoes(s, prazoServico(s), false).map(chip).join('')}</span></td>
       <td class="r">${emAlerta(s) ? `<button class="btn sm" data-ciencia="${s.id}" data-stop title="Confirmar que está tudo bem e silenciar o aviso por 7 dias">Estou ciente</button>` : ''}</td>`;
   };
   const col = tipo === 'fila' ? 'na_fila' : tipo === 'concluidos' ? 'concluido' : 'em_execucao';
   const ordenados = ordenar2(col, ss);
+  const tr = (s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`;
   let corpo;
-  if (f.agrupar === 'nenhum') corpo = ordenados.map((s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`).join('');
-  else {
-    const chave = (s) => f.agrupar === 'os' ? [`OS ${s.os} · ${OS[s.os].cliente}`] : f.agrupar === 'cliente' ? [OS[s.os].cliente] : (respsDe(s).length ? respsDe(s).map((k) => PESSOAS[k].nome) : ['Sem responsável']);
+  if (agr === 'nenhum') corpo = ordenados.map(tr).join('');
+  else if (agr === 'pessoa') {
+    /* Como no primeiro wireframe: um bloco por pessoa, com a carga dela no cabeçalho. */
     const g = {};
-    ordenados.forEach((s) => chave(s).forEach((k) => (g[k] ||= []).push(s)));
-    const ordemGrupos = f.agrupar === 'os' ? Object.keys(g).sort((a, b) => +a.slice(3, 7) - +b.slice(3, 7)) : Object.keys(g).sort();
-    corpo = ordemGrupos.map((k) => `<tr class="grp"><td colspan="6">${esc(k)} <span class="muted">· ${pl(g[k].length, 'serviço', 'serviços')} aqui</span>${f.agrupar === 'os' ? resumoOS(+k.slice(3, 7), setor) : ''}</td></tr>${g[k].map((s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`).join('')}`).join('');
+    ordenados.forEach((s) => (respsDe(s).length ? respsDe(s) : ['']).forEach((k) => (g[k] ||= []).push(s)));
+    const ks = Object.keys(g).sort((a, b) => (a ? PESSOAS[a].nome : 'zz').localeCompare(b ? PESSOAS[b].nome : 'zz'));
+    corpo = ks.map((k) => {
+      const atr = g[k].filter(atrasado).length;
+      const cab = k ? `<span class="inline"><span class="av sm">${iniciais(PESSOAS[k].nome)}</span><b>${esc(PESSOAS[k].nome)}</b><span class="muted">${esc(PESSOAS[k].funcao)}</span></span>` : '<b>Sem responsável</b>';
+      return `<tr class="grp grp-p"><td colspan="${ncols}"><span class="inline" style="gap:10px">${cab}<span class="sm muted num">${pl(g[k].length, 'serviço', 'serviços')}${atr ? ` · <span class="tx-danger">${atr} atrasado${atr > 1 ? 's' : ''}</span>` : ''}</span></span></td></tr>${g[k].map(tr).join('')}`;
+    }).join('');
+  } else {
+    const chave = (s) => agr === 'os' ? s.os : agr === 'setor' ? nomeSetor(s.setor) : OS[s.os].cliente;
+    const g = new Map();
+    ordenados.forEach((s) => { const k = chave(s); if (!g.has(k)) g.set(k, []); g.get(k).push(s); });
+    const ks = [...g.keys()].sort((a, b) => (agr === 'os' ? a - b : String(a).localeCompare(String(b))));
+    corpo = ks.map((k) => `<tr class="grp"><td colspan="${ncols}">${agr === 'os' ? `<b>OS ${k}</b> · ${esc(OS[k].cliente)}` : esc(k)} <span class="muted">· ${pl(g.get(k).length, 'serviço', 'serviços')} aqui</span>${agr === 'os' ? resumoOS(k, setor) : ''}</td></tr>${g.get(k).map(tr).join('')}`).join('');
   }
   return `<div class="tw"><table><thead><tr>${head}</tr></thead><tbody>${corpo}</tbody></table></div>`;
 }
@@ -1135,7 +1197,12 @@ document.addEventListener('drop', (ev) => {
   let d = {};
   try { d = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (e) { return; }
   document.querySelectorAll('.drop-on').forEach((x) => x.classList.remove('drop-on'));
-  if (d.s && z.dataset.drop != null) return abrirDistribuir(+d.s, z.dataset.drop.split(':')[1] || null);
+  if (d.s && z.dataset.drop != null) {
+    const resp = z.dataset.drop.split(':')[1] || null;
+    const s = SERVICOS.find((x) => x.id === +d.s);
+    if (resp && PESSOAS[resp].setor !== s.setor) return toast(`${PESSOAS[resp].nome} não é de ${nomeSetor(s.setor)}: só membros do setor recebem o serviço.`);
+    return abrirDistribuir(+d.s, resp);
+  }
   if (d.t && z.dataset.dropT) return mudarStatus(d.t, z.dataset.dropT);
 });
 
@@ -1341,7 +1408,7 @@ function render() {
   renderHeader();
   const r = S.rota;
   let html;
-  if (r === 'setor') html = paginaSetor();
+  if (r === 'setor' || r === 'visao-geral') html = paginaSetor();
   else if (r === 'meus-servicos') html = paginaMeusServicos();
   else if (r.startsWith('servico-')) html = paginaServico(+r.slice(8));
   else html = paginaOutroLote(r);
@@ -1373,8 +1440,8 @@ document.addEventListener('click', (ev) => {
   if ((x = el('[data-fsel]'))) {
     const i = x.dataset.fsel.indexOf(':'); const k = x.dataset.fsel.slice(0, i); const v = x.dataset.fsel.slice(i + 1) || null;
     const f = F(); f[k] = v;
-    if (k === 'agrupar' && !v) f.agrupar = 'nenhum';
-    if (k === 'dataPreset' && !f.dataCampo) f.dataCampo = 'prazo';
+    if (k === 'agrupar' && !v) f.agrupar = null;
+    if (k === 'dataPreset' && !f.dataCampo) f.dataCampo = Object.keys(camposData())[0];
     if (!['dataCampo', 'dataPreset'].includes(k) || (k === 'dataPreset' && v !== 'personalizado')) S.pop = null;
     return render();
   }
@@ -1383,8 +1450,14 @@ document.addEventListener('click', (ev) => {
     if (k === 'data') Object.assign(f, { dataCampo: null, dataPreset: null, de: '', ate: '' }); else if (k === 'q') f.q = ''; else f[k] = null;
     S.pop = null; return render();
   }
-  if (el('[data-flimpar]')) { const f = F(); Object.assign(f, { pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '' }); return render(); }
-  if ((x = el('[data-foco]'))) { const f = F(); const id = x.dataset.foco; f.foco = f.foco === id && vis() === 'quadro' ? null : id; return render(); }
+  if (el('[data-flimpar]')) { const f = F(); Object.assign(f, { pessoa: null, cliente: null, prioridade: null, setor: null, vendedor: null, fin: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '' }); return render(); }
+  if ((x = el('[data-foco]'))) {
+    const f = F(); const id = x.dataset.foco;
+    const solta = vis() === 'quadro' || S.rota === 'vendas';
+    if (f.foco !== id && vis() === 'lista') f.agrupar = null;
+    f.foco = f.foco === id && solta ? null : id;
+    return render();
+  }
   if ((x = el('[data-tema]'))) {
     S.tema = x.dataset.tema;
     if (S.tema === 'sistema') document.documentElement.removeAttribute('data-theme');
@@ -1418,7 +1491,7 @@ document.addEventListener('click', (ev) => {
     toast(st === 'concluida' ? (etapa(s) === 'concluido' ? `${s.cat} concluído.` : 'Tarefa concluída.') : `${s.cat} iniciado.`);
     return render();
   }
-  if ((x = el('[data-vis]'))) { const [k, v] = x.dataset.vis.split(':'); S[k] = v; return render(); }
+  if ((x = el('[data-vis]'))) { const [k, v] = x.dataset.vis.split(':'); S[k] = v; F().agrupar = null; return render(); }
   if ((x = el('[data-raias]'))) { S.raias = x.dataset.raias; return render(); }
   if (el('[data-so-alerta]')) { S.soAlerta = !S.soAlerta; return render(); }
   if ((x = el('.kpis [data-aba]')) && S.visPainel === 'quadro' && S.rota === 'setor') { if (x.dataset.aba === 'alertas') S.soAlerta = !S.soAlerta; return render(); }
@@ -1449,14 +1522,14 @@ document.addEventListener('change', (ev) => {
 });
 document.getElementById('wf-persona').addEventListener('change', (ev) => {
   S.personaId = ev.target.value; S.aba = 'fila'; S.pop = null;
-  ['fp', 'fm'].forEach((k) => { S[k] = { foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' }; }); S.filtroResp = null; S.popUser = false; S.minhasAba = 'abertos';
+  ['fp', 'fm'].forEach((k) => { S[k] = FILTROS_VAZIOS(); }); if (S.vf) S.vf = VENDAS_VAZIO(); S.filtroResp = null; S.popUser = false; S.minhasAba = 'abertos';
   irParaInicial();
 });
 window.addEventListener('resize', renderWf);
 
 /* Abre direto numa tela com #setor, #meus-servicos ou #servico-511 */
 const h = (location.hash || '').slice(1);
-if (/^(setor|meus-servicos|servico-\d+)$/.test(h)) ir(h); else irParaInicial();
+if (/^(visao-geral|setor|meus-servicos|servico-\d+)$/.test(h)) ir(h); else irParaInicial();
 </script>
 </body>
 </html>
