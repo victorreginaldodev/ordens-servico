@@ -286,6 +286,54 @@ textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
 .arrastando-s [data-drop],.arrastando-t [data-drop-t]{outline:2px dashed hsl(var(--primary)/.5);outline-offset:-2px}
 .drop-on{outline:2px solid hsl(var(--primary))!important;background:hsl(var(--primary)/.06)!important}
 .seg button svg{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
+.kpi-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.kpis2{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi2{position:relative;display:flex;flex-direction:column;gap:6px;padding:14px 16px 12px;border-radius:14px;border:1px solid hsl(var(--border));background:hsl(var(--card));text-align:left;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s,transform .15s}
+.kpi2:hover{border-color:hsl(var(--border-strong));transform:translateY(-1px);box-shadow:0 4px 14px hsl(222 47% 11%/.08)}
+.kpi2 .k-l{display:flex;align-items:center;gap:8px;font-weight:600;color:hsl(var(--muted-foreground))}
+.kpi2 .k-ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center}
+.kpi2 .k-ic svg{width:15px;height:15px}
+.kpi2 .k-v{font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.02em}
+.kpi2 .k-a{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:hsl(var(--primary));opacity:.75}
+.kpi2 .k-a svg{width:13px;height:13px}
+.kpi2:hover .k-a{opacity:1}
+.kpi2.on{border-color:hsl(var(--primary));box-shadow:0 0 0 1px hsl(var(--primary)),var(--shadow);background:hsl(var(--primary)/.05)}
+.kpi2.on .k-a{opacity:1}
+.kpi2 .k-a.zero{color:hsl(var(--muted-foreground))}
+.fbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card))}
+.fbar .sp{flex:1}
+.vsep{width:1px;height:22px;background:hsl(var(--border))}
+.fwrap{position:relative}
+.fbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:8px;border:1px solid transparent;background:none;font-weight:500;font-size:13px;color:hsl(var(--muted-foreground))}
+.fbtn:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.fbtn svg{width:15px;height:15px}
+.fbtn b{color:hsl(var(--foreground));font-weight:600}
+.fbtn.on{border-color:hsl(var(--primary)/.4);background:hsl(var(--primary)/.07);color:hsl(var(--primary))}
+.fbtn[aria-expanded="true"]{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.fpop{position:absolute;top:calc(100% + 6px);left:0;z-index:12;width:300px;max-height:420px;overflow-y:auto;padding:6px;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-lg)}
+.fwrap-r .fpop{left:auto;right:0;width:340px}
+.fpop-h{font-size:11px;font-weight:600;letter-spacing:.02em;color:hsl(var(--muted-foreground));padding:8px 8px 4px}
+.fpop-n{font-size:12px;color:hsl(var(--muted-foreground));padding:6px 8px 4px;border-top:1px solid hsl(var(--border));margin-top:4px}
+.fpop-f{display:flex;justify-content:space-between;gap:8px;padding:8px 8px 4px;border-top:1px solid hsl(var(--border));margin-top:6px}
+.fopt{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:7px 8px;border-radius:7px;text-align:left}
+.fopt:hover{background:hsl(var(--accent))}
+.fopt.on{color:hsl(var(--primary));font-weight:600}
+.fopt .ck{width:16px;flex-shrink:0}
+.fopt .fo-t{flex:1;min-width:0}
+.fopt .fo-x{font-size:12px;color:hsl(var(--muted-foreground));font-weight:400}
+.seg-w{display:flex;margin:0 8px}.seg-w button{flex:1}
+.fsearch{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));color:hsl(var(--muted-foreground));width:240px;max-width:100%}
+.fsearch input{border:0;outline:0;background:none;flex:1;min-width:0}
+.fchips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:-8px}
+.fchip{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 4px 0 10px;border-radius:999px;background:hsl(var(--primary)/.08);color:hsl(var(--primary));font-size:12px;font-weight:600}
+.fchip button{border:0;background:none;color:inherit;display:grid;place-items:center;width:20px;height:20px;border-radius:50%}
+.fchip button:hover{background:hsl(var(--primary)/.15)}
+.fchip svg{width:12px;height:12px}
+.leg{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:start;padding:6px 8px;font-size:12px;line-height:17px;color:hsl(var(--muted-foreground))}
+.k-top .sp{flex:1}
+.k-cli{font-size:13px;color:hsl(var(--foreground));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-chips{display:inline-flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.k-foot{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
 .toast{position:fixed;right:20px;bottom:20px;z-index:30;display:flex;align-items:center;gap:10px;max-width:420px;padding:12px 14px;border-radius:10px;background:hsl(var(--foreground));color:hsl(var(--background));box-shadow:var(--shadow-lg)}
 
 @media (max-width:1000px){
@@ -535,6 +583,9 @@ const S = {
   setor: 1,
   aba: 'fila',
   visPainel: 'quadro',
+  fp: { foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' },
+  fm: { foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' },
+  pop: null,
   visMeus: 'quadro',
   raias: 'nenhuma',
   soAlerta: false,
@@ -654,123 +705,15 @@ function renderHeader() {
 }
 
 /* ───────────────────────── Página: Painel do setor ───────────────────────── */
-function paginaSetor() {
-  const acompanha = setoresQueAcompanho();
-  if (!acompanha.length) return empty('lock', 'Você não acompanha nenhum setor', 'O painel aparece para quem tem a permissão de ver os serviços de um setor.');
-  if (!acompanha.some((s) => s.id === S.setor)) S.setor = acompanha[0].id;
-  const setor = SETORES.find((s) => s.id === S.setor);
-  const c = contadores(setor.id);
-  const organiza = pode('tarefas.distribuir');
-  const abas = [
-    ['fila', 'Para distribuir', c.na_fila, true], ['alertas', 'Alertas', c.atrasados + c.em_alerta, true],
-    ['andamento', 'Em andamento', c.em_andamento], ['equipe', 'Equipe', null], ['concluidos', 'Concluídos', null],
-  ];
-  return `
-    <div class="ph"><div class="t"><h1>Painel do setor</h1>
-      <span class="muted">O que chegou, o que está com quem e o que precisa de atenção.</span></div></div>
-    ${acompanha.length > 1 ? `<div class="setores" role="tablist" aria-label="Setores">${acompanha.map((s) => {
-      const cs = contadores(s.id);
-      return `<button class="setor-tab ${s.id === S.setor ? 'on' : ''}" data-setor="${s.id}" role="tab" aria-selected="${s.id === S.setor}">
-        <b>${esc(s.nome)}</b><span class="sm muted num">${cs.na_fila} para distribuir · ${cs.atrasados} atrasados · ${cs.em_alerta} em alerta</span></button>`;
-    }).join('')}</div>` : `<div class="inline muted">${I('network')}Setor: <b style="color:hsl(var(--foreground))">${esc(setor.nome)}</b></div>`}
-    ${setor.semOrganizador ? `<div class="alerta">${I('user-x')}<div class="tx"><b>Este setor ainda não tem quem organize</b>Nenhum membro de ${esc(setor.nome)} tem as permissões de acompanhar e distribuir. A diretoria consegue distribuir enquanto as funções são configuradas.</div><button class="btn sm">Configurar funções</button></div>` : ''}
-    <div class="kpis">
-      <button class="kpi hero ${S.aba === 'fila' ? 'on' : ''}" data-aba="fila"><span class="v">${c.na_fila}</span><span class="l">${I('inbox')}Para distribuir</span></button>
-      <button class="kpi ${S.aba === 'andamento' ? 'on' : ''}" data-aba="andamento"><span class="v">${c.em_andamento}</span><span class="l">${I('circle-dot')}Em andamento</span></button>
-      <button class="kpi" data-aba="alertas"><span class="v tx-danger">${c.atrasados}</span><span class="l">${I('triangle-alert')}Atrasados</span></button>
-      <button class="kpi" data-aba="alertas"><span class="v tx-warning">${c.em_alerta}</span><span class="l">${I('hourglass')}Sem movimentação</span></button>
-      <button class="kpi" data-aba="andamento"><span class="v">${c.sem_prazo}</span><span class="l">${I('calendar-x')}Sem prazo</span></button>
-    </div>
-    ${S.visPainel === 'quadro' ? quadroSetor(setor, organiza) : `<div class="toolbar">${seletorVisao('visPainel')}</div>
-    <div class="tabs" role="tablist">${abas.map(([id, t, n, w]) => `<button class="tab ${S.aba === id ? 'on' : ''}" data-aba="${id}" role="tab" aria-selected="${S.aba === id}">${t}${n != null ? `<span class="cnt ${w && n ? 'w' : ''}">${n}</span>` : ''}</button>`).join('')}</div>
-    ${{ fila: abaFila, alertas: abaAlertas, andamento: abaAndamento, equipe: abaEquipe, concluidos: abaConcluidos }[S.aba](setor, organiza)}`}`;
-}
-
-function abaFila(setor, organiza) {
-  const fila = doSetor(setor.id).filter((s) => etapa(s) === 'na_fila').sort((a, b) => dt(a.chegou) - dt(b.chegou));
-  if (!fila.length) return empty('inbox', 'Nada para distribuir', 'Tudo o que chegou ao setor já tem responsável.');
-  const linha = (s) => {
-    const o = OS[s.os];
-    const na = dias(dt(s.chegou));
-    return `<tr class="click" data-ir="servico-${s.id}">
-      <td>${svcCel(s)}</td>
-      <td>${osCel(s)}</td>
-      <td><span class="stack"><span class="num">${fmt(dt(o.venda))}</span><span class="sm muted">${esc(PESSOAS[o.vendedor].nome)}</span></span></td>
-      <td>${bPrior(o.prioridade)}</td>
-      <td class="num ${na >= 5 ? 'tx-warning' : ''}">${na === 0 ? 'Chegou hoje' : pl(na, 'dia', 'dias')}</td>
-      <td>${chipsOutros(s)}</td>
-      <td class="r">${organiza ? `<button class="btn sm pri" data-distribuir="${s.id}" data-stop>${I('user-plus')}Distribuir</button>` : ''}</td>
-    </tr>`;
-  };
-  let corpo;
-  if (S.agrupar === 'nenhum') corpo = fila.map(linha).join('');
-  else {
-    const chave = (s) => S.agrupar === 'cliente' ? OS[s.os].cliente : `OS ${s.os} · ${OS[s.os].cliente}`;
-    const grupos = {};
-    fila.forEach((s) => { (grupos[chave(s)] ||= []).push(s); });
-    corpo = Object.entries(grupos).map(([k, ss]) => `<tr class="grp"><td colspan="7">${esc(k)} <span class="muted">· ${pl(ss.length, 'serviço', 'serviços')}</span></td></tr>${ss.map(linha).join('')}`).join('');
-  }
-  return `
-    <div class="toolbar">
-      <span class="muted">Os mais antigos primeiro. Agrupar ajuda a dar serviços do mesmo cliente para a mesma pessoa.</span><span class="sp"></span>
-      <span class="inline sm muted">Agrupar por <span class="seg">${[['nenhum', 'Nenhum'], ['cliente', 'Cliente'], ['os', 'OS']].map(([v, t]) => `<button class="${S.agrupar === v ? 'on' : ''}" data-agrupar="${v}">${t}</button>`).join('')}</span></span>
-    </div>
-    <div class="tw"><table>
-      <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Venda</th><th>Prioridade</th><th>Na fila há</th><th>Outros serviços da OS</th><th></th></tr></thead>
-      <tbody>${corpo}</tbody></table></div>
-    ${organiza ? '' : '<div class="note-wf"><b>Sem permissão de distribuir neste setor:</b> a fila aparece só para consulta, sem o botão Distribuir.</div>'}`;
-}
-
-function abaAlertas(setor) {
-  const lista = doSetor(setor.id).filter((s) => atrasado(s) || emAlerta(s) || (cienciaVigente(s) && ativo(s)))
-    .sort((a, b) => (atrasado(b) - atrasado(a)) || (diasSemMov(b) - diasSemMov(a)));
-  if (!lista.length) return empty('shield-check', 'Nenhum alerta', 'Nada atrasado nem parado há 7 dias ou mais.');
-  return `
-    <div class="toolbar"><span class="muted">Atrasados primeiro. "Sem movimentação" acende após 7 dias sem mudança nas tarefas. O sistema não marca nada como parado: só avisa.</span></div>
-    <div class="tw"><table>
-      <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Motivo</th><th>Prazo</th><th>Responsáveis</th><th>Ciência</th><th></th></tr></thead>
-      <tbody>${lista.map((s) => {
-        const motivos = [];
-        if (atrasado(s)) motivos.push(badge('danger', 'triangle-alert', 'Atrasado'));
-        if (emAlerta(s)) motivos.push(badge('warning', 'hourglass', `Sem movimentação há ${pl(diasSemMov(s), 'dia', 'dias')}`));
-        return `<tr class="click" data-ir="servico-${s.id}">
-          <td>${svcCel(s)}</td><td>${osCel(s)}</td>
-          <td><span class="chips">${motivos.join('') || '<span class="sm muted">Silenciado</span>'}</span></td>
-          <td>${prazoCel(prazoServico(s))}</td>
-          <td>${responsaveis(s).map(esc).join('<br>')}</td>
-          <td>${cienciaVigente(s) ? alertaCel(s) : '<span class="sm muted">—</span>'}</td>
-          <td class="r">${emAlerta(s) ? `<button class="btn sm" data-ciencia="${s.id}" data-stop>${I('bell-off')}Estou ciente</button>` : ''}</td>
-        </tr>`;
-      }).join('')}</tbody></table></div>`;
-}
+/* ───────────────────────── Execução: painel do setor e meus serviços (revisão de UX de 10/10/2026) ─────────────────────────
+   - Indicadores clicáveis que filtram o que está abaixo (com estado "Filtrando" visível).
+   - Uma barra de filtros enxuta: dropdowns de pessoa, cliente, prioridade, data e agrupamento, mais busca.
+   - Cartões e linhas com menos informação: serviço, cliente, responsável e UMA situação; o resto fica no detalhe.
+   - Legenda em "Como ler" para explicar cada marca. */
 
 function tarefasAtivasDoSetor(setor) {
   return doSetor(setor.id).flatMap((s) => s.tarefas.filter(ATIVA).map((t) => ({ s, t })));
 }
-function abaAndamento(setor) {
-  const linhas = tarefasAtivasDoSetor(setor).filter(({ t }) => !S.filtroResp || t.resp === S.filtroResp);
-  if (!linhas.length) return empty('circle-dot', 'Nada em andamento', 'Distribua serviços da fila para que apareçam aqui.');
-  const ordem = { atrasado: 0, vence_7_dias: 1, sem_prazo: 2, depois: 3 };
-  const porPessoa = {};
-  linhas.forEach((l) => { (porPessoa[l.t.resp] ||= []).push(l); });
-  const pessoas = Object.keys(porPessoa).sort((a, b) => PESSOAS[a].nome.localeCompare(PESSOAS[b].nome));
-  return `
-    <div class="toolbar">
-      <span class="muted">Agrupado por responsável; dentro de cada pessoa, os mais urgentes primeiro.</span><span class="sp"></span>
-      ${S.filtroResp ? `<span class="chip">${esc(PESSOAS[S.filtroResp].nome)} <button class="btn ghost sm" data-resp="" aria-label="Limpar filtro">${I('x')}</button></span>` : ''}
-    </div>
-    ${pessoas.map((k) => {
-      const ls = porPessoa[k].sort((a, b) => ordem[situacaoPrazo(a.t.prazo && dt(a.t.prazo))] - ordem[situacaoPrazo(b.t.prazo && dt(b.t.prazo))]);
-      const atr = ls.filter((l) => situacaoPrazo(l.t.prazo && dt(l.t.prazo)) === 'atrasado').length;
-      return `<div class="pessoa"><div class="pessoa-h"><span class="av sm">${iniciais(PESSOAS[k].nome)}</span><b>${esc(PESSOAS[k].nome)}</b><span class="muted sm">${esc(PESSOAS[k].funcao)}</span><span class="sp" style="flex:1"></span><span class="sm muted num">${pl(ls.length, 'item', 'itens')}${atr ? ` · <span class="tx-danger">${atr} atrasado${atr > 1 ? 's' : ''}</span>` : ''}</span></div>
-        <div class="tw"><table><thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Status</th><th>Prazo</th><th>Com a pessoa há</th><th>Alerta</th></tr></thead><tbody>
-        ${ls.map(({ s, t }) => `<tr class="click" data-ir="servico-${s.id}">
-          <td>${svcCel(s)}${t.desc ? `<span class="sm muted">Tarefa: ${esc(t.desc)}</span>` : ''}</td><td>${osCel(s)}</td><td>${bStatus(t.status)}</td>
-          <td>${prazoCel(t.prazo && dt(t.prazo))}</td><td class="num">${pl(dias(dt(t.criada)), 'dia', 'dias')}</td><td>${alertaCel(s)}</td></tr>`).join('')}
-        </tbody></table></div></div>`;
-    }).join('')}`;
-}
-
 function equipeDoSetor(setor) {
   const membros = Object.entries(PESSOAS).filter(([, p]) => p.setor === setor.id).map(([k]) => k);
   return membros.map((k) => {
@@ -786,88 +729,405 @@ function equipeDoSetor(setor) {
     };
   });
 }
-function abaEquipe(setor) {
-  const eq = equipeDoSetor(setor);
-  if (!eq.length) return empty('users', 'Ninguém no setor', 'Vincule pessoas ao setor em Organização › Time.');
-  const max = Math.max(1, ...eq.map((e) => e.ativos));
-  return `
-    <div class="toolbar"><span class="muted">Carga sem horas: itens ativos por situação de prazo e há quanto tempo o mais antigo está com a pessoa. Clique numa pessoa para ver o que está com ela.</span></div>
-    <div class="tw"><table>
-      <thead><tr><th>Pessoa</th><th>Função</th><th class="r">Ativos</th><th>Distribuição</th><th class="r">Atrasados</th><th class="r">Vence em 7 dias</th><th class="r">Sem prazo</th><th class="r">Em alerta</th><th class="r">Mais antigo</th></tr></thead>
-      <tbody>${eq.sort((a, b) => b.ativos - a.ativos).map((e) => {
-        const depois = e.ativos - e.atrasados - e.vence7 - e.semPrazo;
-        const w = (n) => `${(n / max) * 100}%`;
-        return `<tr class="click" data-resp="${e.k}">
-          <td><span class="inline"><span class="av sm">${iniciais(e.nome)}</span>${esc(e.nome)}</span></td><td class="muted">${esc(e.funcao)}</td>
-          <td class="r num"><b>${e.ativos}</b></td>
-          <td><span class="bar" title="${e.atrasados} atrasados · ${e.vence7} vencem em 7 dias · ${e.semPrazo} sem prazo · ${depois} no prazo"><span class="d-danger" style="width:${w(e.atrasados)}"></span><span class="d-warning" style="width:${w(e.vence7)}"></span><span style="width:${w(e.semPrazo)};background:hsl(var(--warning)/.45)"></span><span class="d-neutral" style="width:${w(depois)};opacity:.5"></span></span></td>
-          <td class="r num ${e.atrasados ? 'tx-danger' : 'muted'}">${e.atrasados}</td><td class="r num ${e.vence7 ? 'tx-warning' : 'muted'}">${e.vence7}</td>
-          <td class="r num ${e.semPrazo ? 'tx-warning' : 'muted'}">${e.semPrazo}</td><td class="r num ${e.alerta ? 'tx-warning' : 'muted'}">${e.alerta}</td>
-          <td class="r num">${e.antigo == null ? '—' : pl(e.antigo, 'dia', 'dias')}</td></tr>`;
-      }).join('')}</tbody></table></div>`;
-}
 
-function abaConcluidos(setor) {
-  const lista = doSetor(setor.id).filter((s) => etapa(s) === 'concluido').sort((a, b) => termino(b) - termino(a));
-  if (!lista.length) return empty('circle-check', 'Nada concluído no período', 'Mude o período para ver entregas anteriores.');
-  const noPrazo = lista.filter((s) => prazoServico(s) && termino(s) <= prazoServico(s)).length;
-  const comPrazo = lista.filter((s) => prazoServico(s)).length;
-  return `
-    <div class="toolbar">
-      <span class="inline">${I('calendar')}<span class="seg"><button class="on">Este mês</button><button>Mês passado</button><button>Personalizado</button></span></span>
-      <span class="sp"></span><span class="muted num">${pl(lista.length, 'serviço concluído', 'serviços concluídos')} · ${noPrazo} de ${comPrazo} com prazo dentro do prazo</span>
-    </div>
-    <div class="tw"><table>
-      <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Concluído por</th><th>Prazo</th><th>Término</th><th>No prazo</th></tr></thead>
-      <tbody>${lista.map((s) => {
-        const p = prazoServico(s); const tm = termino(s);
-        const ok = p ? (tm <= p ? badge('success', 'circle-check', 'No prazo') : badge('danger', 'triangle-alert', `${pl(dias(p, tm), 'dia', 'dias')} depois`)) : '<span class="sm muted">Sem prazo</span>';
-        const quem = PESSOAS[s.tarefas.filter((t) => t.termino).sort((a, b) => dt(b.termino) - dt(a.termino))[0].resp].nome;
-        return `<tr class="click" data-ir="servico-${s.id}"><td>${svcCel(s)}</td><td>${osCel(s)}</td><td>${esc(quem)}</td><td class="num">${fmt(p)}</td><td class="num">${fmt(tm)}</td><td>${ok}</td></tr>`;
-      }).join('')}</tbody></table></div>`;
-}
+const INICIO_MES = new Date(2026, 9, 1);
+const FILTROS_VAZIOS = () => ({ foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' });
+const F = () => (S.rota === 'meus-servicos' ? S.fm : S.fp);
+const vis = () => (S.rota === 'meus-servicos' ? S.visMeus : S.visPainel);
 
-/* ───────────────────────── Página: Meus serviços ───────────────────────── */
-function paginaMeusServicos() {
-  const eu = S.persona.pessoa;
-  const minhas = SERVICOS.flatMap((s) => s.tarefas.filter((t) => t.resp === eu).map((t) => ({ s, t })));
-  const abertas = minhas.filter(({ t }) => ATIVA(t));
-  const concluidas = minhas.filter(({ t }) => t.status === 'concluida');
-  const sit = (l) => situacaoPrazo(l.t.prazo && dt(l.t.prazo));
-  const atr = abertas.filter((l) => sit(l) === 'atrasado').length;
-  const hoje = abertas.filter((l) => l.t.prazo && dias(HOJE, dt(l.t.prazo)) === 0).length;
-  if (S.visMeus === 'quadro') return quadroMeus(minhas, atr, hoje);
-  const cab = `<div class="ph"><div class="t"><h1>Meus serviços</h1>
-    <span class="muted num">${abertas.length ? `${pl(abertas.length, 'item com você', 'itens com você')}${atr ? ` · <span class="tx-danger">${atr} atrasado${atr > 1 ? 's' : ''}</span>` : ''}${hoje ? ` · <span class="tx-warning">${hoje} vence hoje</span>` : ''}` : 'O que está com você, o que vence primeiro e o que está atrasado.'}</span></div>${seletorVisao('visMeus')}</div>
-    <div class="tabs" role="tablist">
-      <button class="tab ${S.minhasAba === 'abertos' ? 'on' : ''}" data-minhas="abertos">Em aberto<span class="cnt ${atr ? 'w' : ''}">${abertas.length}</span></button>
-      <button class="tab ${S.minhasAba === 'concluidos' ? 'on' : ''}" data-minhas="concluidos">Concluídos</button>
-    </div>`;
-  if (S.minhasAba === 'concluidos') {
-    if (!concluidas.length) return cab + empty('circle-check', 'Nada concluído no período', 'Mude o período para ver entregas anteriores.');
-    return cab + `<div class="toolbar"><span class="inline">${I('calendar')}<span class="seg"><button class="on">Este mês</button><button>Mês passado</button><button>Personalizado</button></span></span></div>
-      <div class="tw"><table><thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Setor</th><th>Prazo</th><th>Término</th></tr></thead><tbody>
-      ${concluidas.map(({ s, t }) => `<tr class="click" data-ir="servico-${s.id}"><td>${svcCel(s)}${t.desc ? `<span class="sm muted">Tarefa: ${esc(t.desc)}</span>` : ''}</td><td>${osCel(s)}</td><td>${esc(SETORES.find((x) => x.id === s.setor).nome)}</td><td>${prazoCel(t.prazo && dt(t.prazo), true)}</td><td class="num">${fmt(dt(t.termino))}</td></tr>`).join('')}
-      </tbody></table></div>`;
+/* Período: presets relativos a hoje (10/10/2026, sábado) */
+const PRESETS = {
+  semana: ['Esta semana', new Date(2026, 9, 5), new Date(2026, 9, 11)],
+  prox7: ['Próximos 7 dias', new Date(2026, 9, 10), new Date(2026, 9, 17)],
+  mes: ['Este mês', new Date(2026, 9, 1), new Date(2026, 9, 31)],
+  mes_passado: ['Mês passado', new Date(2026, 8, 1), new Date(2026, 8, 30)],
+};
+const CAMPOS_DATA_SETOR = { prazo: 'Prazo', chegada: 'Chegada', conclusao: 'Conclusão' };
+const CAMPOS_DATA_MEUS = { prazo: 'Prazo', conclusao: 'Conclusão' };
+function intervalo(f) {
+  if (!f.dataCampo || !f.dataPreset) return null;
+  if (f.dataPreset === 'personalizado') return f.de || f.ate ? [f.de ? new Date(f.de + 'T00:00') : new Date(2000, 0, 1), f.ate ? new Date(f.ate + 'T23:59') : new Date(2100, 0, 1)] : null;
+  return [PRESETS[f.dataPreset][1], new Date(PRESETS[f.dataPreset][2].getTime() + 86399999)];
+}
+const rotuloData = (f, campos) => {
+  if (!intervalo(f)) return null;
+  const per = f.dataPreset === 'personalizado' ? `${f.de ? fmtC(new Date(f.de + 'T12:00')) : '…'} a ${f.ate ? fmtC(new Date(f.ate + 'T12:00')) : '…'}` : PRESETS[f.dataPreset][0].toLowerCase();
+  return `${campos[f.dataCampo]}: ${per}`;
+};
+const dentro = (d, r) => !!d && d >= r[0] && d <= r[1];
+
+/* Uma situação por item, em palavras (a mais importante primeiro) */
+function situacoes(s, prazo, encerrado) {
+  const out = [];
+  if (encerrado) return out;
+  if (prazo) {
+    const d = dias(HOJE, prazo);
+    if (d < 0) out.push(['danger', 'triangle-alert', `Atrasado ${pl(-d, 'dia', 'dias')}`, 'Passou do prazo e não foi concluído.']);
+    else if (d === 0) out.push(['warning', 'clock', 'Vence hoje', 'O prazo é hoje.']);
+    else if (d <= 7) out.push(['warning', 'clock', `Vence ${fmtC(prazo)}`, 'Vence nos próximos 7 dias.']);
+    else out.push(['neutral', 'calendar', `Prazo ${fmtC(prazo)}`, 'Dentro do prazo.']);
+  } else out.push(['warning', 'calendar-x', 'Sem prazo', 'Ninguém definiu prazo ao distribuir.']);
+  if (cienciaVigente(s)) out.push(['neutral', 'bell-off', MOTIVOS[s.ciencia.motivo], `${PESSOAS[s.ciencia.por].nome} confirmou em ${fmtC(dt(s.ciencia.em))} que está tudo bem. O aviso de parado fica silenciado por 7 dias.`]);
+  else if (emAlerta(s)) out.push(['warning', 'hourglass', `Parado há ${pl(diasSemMov(s), 'dia', 'dias')}`, 'Nenhuma mudança nas tarefas há 7 dias ou mais.']);
+  return out;
+}
+const chip = ([tom, ic, txt, dica]) => `<span class="kchip t-${tom}" title="${esc(dica)}">${I(ic)}${esc(txt)}</span>`;
+const avatares = (ks) => `<span class="avs">${ks.map((k) => `<span class="av sm" title="${esc(PESSOAS[k].nome)}">${iniciais(PESSOAS[k].nome)}</span>`).join('')}</span>`;
+const respsDe = (s) => [...new Set(s.tarefas.filter((t) => t.status !== 'cancelada').map((t) => t.resp))];
+const quemConcluiu = (s) => PESSOAS[s.tarefas.filter((t) => t.termino).sort((a, b) => dt(b.termino) - dt(a.termino))[0].resp].nome;
+
+/* ── Barra de filtros (compartilhada) ── */
+function botaoFiltro(id, icone, rotulo, valor) {
+  const f = F();
+  return `<span class="fwrap"><button class="fbtn ${valor ? 'on' : ''}" data-pop="${id}" aria-expanded="${S.pop === id}" aria-haspopup="true">${I(icone)}${rotulo}${valor ? `: <b>${esc(valor)}</b>` : ''}${I('chevron-down')}</button>
+    ${S.pop === id ? `<div class="fpop" role="dialog" aria-label="${rotulo}">${popover(id, f)}</div>` : ''}</span>`;
+}
+function popover(id, f) {
+  const opc = (campo, v, txt, extra = '') => `<button class="fopt ${f[campo] === v ? 'on' : ''}" data-fsel="${campo}:${v ?? ''}">${f[campo] === v ? I('check') : '<span class="ck"></span>'}<span class="fo-t">${txt}</span>${extra}</button>`;
+  if (id === 'pessoa') {
+    const eq = equipeDoSetor(SETORES.find((x) => x.id === S.setor));
+    return `<div class="fpop-h">Responsável</div>${opc('pessoa', null, 'Todas as pessoas')}
+      ${eq.map((e) => opc('pessoa', e.k, `<span class="inline"><span class="av sm">${iniciais(e.nome)}</span>${esc(e.nome)}</span>`, `<span class="fo-x num">${pl(e.ativos, 'ativo', 'ativos')}${e.atrasados ? ` · <span class="tx-danger">${e.atrasados} atras.</span>` : ''}</span>`)).join('')}
+      <div class="fpop-n">Itens ativos e atrasados de cada pessoa: a carga da equipe.</div>`;
   }
-  if (!abertas.length) return cab + empty('coffee', 'Nada com você agora', 'Quando alguém distribuir um serviço para você, ele aparece aqui.');
-  const grupos = [['atrasado', 'Atrasados', 'tx-danger'], ['vence_7_dias', 'Vencem nos próximos 7 dias', 'tx-warning'], ['sem_prazo', 'Sem prazo', 'tx-warning'], ['depois', 'Depois', '']];
-  return cab + `<div class="tw"><table>
-    <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Prazo</th><th>Status</th><th>Alerta</th><th></th></tr></thead>
-    <tbody>${grupos.map(([k, t, cls]) => {
-      const ls = abertas.filter((l) => sit(l) === k).sort((a, b) => (a.t.prazo ? dt(a.t.prazo) : 0) - (b.t.prazo ? dt(b.t.prazo) : 0));
-      if (!ls.length) return '';
-      return `<tr class="grp"><td colspan="6"><span class="${cls}">${t}</span> <span class="muted">· ${ls.length}</span></td></tr>` + ls.map(({ s, t: tf }) => `
-        <tr class="click" data-ir="servico-${s.id}">
-          <td>${svcCel(s)}${tf.desc ? `<span class="sm muted">Tarefa: ${esc(tf.desc)}</span>` : ''}</td><td>${osCel(s)}</td>
-          <td>${prazoCel(tf.prazo && dt(tf.prazo))}</td><td>${bStatus(tf.status)}</td><td>${alertaCel(s)}</td>
-          <td class="r"><span class="status-ctl">${tf.status === 'aberta'
-            ? `<button class="btn sm" data-status="${tf.id}:em_andamento" data-stop>${I('play')}Iniciar</button>`
-            : `<button class="btn sm pri" data-status="${tf.id}:concluida" data-stop>${I('check')}Concluir</button>`}</span></td>
-        </tr>`).join('');
-    }).join('')}</tbody></table></div>
-    <div class="note-wf"><b>Um clique muda o status.</b> Iniciar e concluir não abrem modal. Concluir a última tarefa conclui o serviço e, quando todos os serviços da OS terminam, libera a OS para o financeiro (regra do backend).</div>`;
+  if (id === 'cliente') {
+    const base = S.rota === 'meus-servicos' ? SERVICOS.filter((s) => s.tarefas.some((t) => t.resp === S.persona.pessoa)) : doSetor(S.setor);
+    const cls = [...new Set(base.map((s) => OS[s.os].cliente))].sort();
+    return `<div class="fpop-h">Cliente</div>${opc('cliente', null, 'Todos os clientes')}${cls.map((c) => opc('cliente', c, esc(c))).join('')}`;
+  }
+  if (id === 'prioridade') return `<div class="fpop-h">Prioridade da venda</div>${opc('prioridade', null, 'Todas')}${Object.entries(PRIOR).map(([k, v]) => opc('prioridade', k, v[2])).join('')}`;
+  if (id === 'agrupar') {
+    const ops = vis() === 'quadro' ? [['nenhum', 'Colunas por etapa'], ['pessoa', 'Raias por pessoa']] : [['nenhum', 'Sem agrupar'], ['pessoa', 'Por pessoa'], ['cliente', 'Por cliente']];
+    return `<div class="fpop-h">Agrupar</div>${ops.map(([v, t]) => opc('agrupar', v, t)).join('')}`;
+  }
+  if (id === 'data') {
+    const campos = S.rota === 'meus-servicos' ? CAMPOS_DATA_MEUS : CAMPOS_DATA_SETOR;
+    return `<div class="fpop-h">Filtrar pela data de</div><div class="seg seg-w">${Object.entries(campos).map(([k, v]) => `<button class="${(f.dataCampo || 'prazo') === k ? 'on' : ''}" data-fsel="dataCampo:${k}">${v}</button>`).join('')}</div>
+      <div class="fpop-h">Período</div>${Object.entries(PRESETS).map(([k, [t, a, b]]) => opc('dataPreset', k, t, `<span class="fo-x num">${fmtC(a)} a ${fmtC(b)}</span>`)).join('')}
+      ${opc('dataPreset', 'personalizado', 'Personalizado')}
+      ${f.dataPreset === 'personalizado' ? `<div class="grid2" style="padding:6px 8px 2px"><label class="field" for="f-de"><span class="sm muted">De</span><input class="inp" type="date" id="f-de" data-fdata="de" value="${f.de}"></label><label class="field" for="f-ate"><span class="sm muted">Até</span><input class="inp" type="date" id="f-ate" data-fdata="ate" value="${f.ate}"></label></div>` : ''}
+      <div class="fpop-f"><button class="btn ghost sm" data-fclear="data">Limpar data</button><button class="btn sm pri" data-pop="">Aplicar</button></div>`;
+  }
+  if (id === 'ajuda') return legenda();
+  return '';
 }
+function legenda() {
+  const l = (c, txt) => `<div class="leg">${c}<span>${txt}</span></div>`;
+  return `<div class="fpop-h">Como ler os cartões</div>
+    ${l(chip(['danger', 'triangle-alert', 'Atrasado 5 dias', '']), 'Passou do prazo e não foi concluído. O cartão ganha uma faixa vermelha.')}
+    ${l(chip(['warning', 'clock', 'Vence 14/10', '']), 'Vence nos próximos 7 dias.')}
+    ${l(chip(['neutral', 'calendar', 'Prazo 24/10', '']), 'Dentro do prazo.')}
+    ${l(chip(['warning', 'calendar-x', 'Sem prazo', '']), 'Distribuído sem prazo.')}
+    ${l(chip(['warning', 'hourglass', 'Parado há 9 dias', '']), 'Nenhuma mudança nas tarefas há 7 dias ou mais. Não é erro: é um aviso.')}
+    ${l(chip(['neutral', 'bell-off', 'Aguardando o cliente', '']), 'Alguém confirmou que o serviço está esperando algo. O aviso de parado fica silenciado por 7 dias.')}
+    ${l(`<span class="tx-danger inline">${I('chevrons-up')}</span>`, 'Venda com prioridade alta.')}
+    ${l(avatares(['rafael']), 'Quem está com o serviço.')}
+    ${S.rota === 'setor' && pode('tarefas.distribuir') ? l(`<span class="inline muted">${I('grip-vertical')}</span>`, 'Arraste um cartão da fila para “Distribuído” (ou para a raia de alguém) para distribuir.') : ''}
+    ${S.rota === 'meus-servicos' ? l(`<span class="inline muted">${I('grip-vertical')}</span>`, 'Arraste o cartão entre as colunas para mudar o status, ou use o botão do cartão.') : ''}`;
+}
+function barraFiltros(opcoes) {
+  const f = F();
+  const campos = S.rota === 'meus-servicos' ? CAMPOS_DATA_MEUS : CAMPOS_DATA_SETOR;
+  const ativos = [];
+  if (f.pessoa) ativos.push(['pessoa', `Pessoa: ${PESSOAS[f.pessoa].nome}`]);
+  if (f.cliente) ativos.push(['cliente', `Cliente: ${f.cliente}`]);
+  if (f.prioridade) ativos.push(['prioridade', `Prioridade: ${PRIOR[f.prioridade][2]}`]);
+  if (rotuloData(f, campos)) ativos.push(['data', rotuloData(f, campos)]);
+  if (f.q) ativos.push(['q', `Busca: “${f.q}”`]);
+  const chave = S.rota === 'meus-servicos' ? 'visMeus' : 'visPainel';
+  const agr = { nenhum: null, pessoa: vis() === 'quadro' ? 'Raias por pessoa' : 'Por pessoa', cliente: 'Por cliente' }[f.agrupar];
+  return `<div class="fbar">
+      <span class="seg" role="group" aria-label="Visualização"><button class="${S[chave] === 'quadro' ? 'on' : ''}" data-vis="${chave}:quadro" title="Colunas por etapa">${I('columns-3')}Quadro</button><button class="${S[chave] === 'lista' ? 'on' : ''}" data-vis="${chave}:lista" title="Tabela">${I('list')}Lista</button></span>
+      <span class="vsep"></span>
+      ${opcoes.includes('pessoa') ? botaoFiltro('pessoa', 'user', 'Pessoa', f.pessoa ? PESSOAS[f.pessoa].nome.split(' ')[0] : null) : ''}
+      ${botaoFiltro('cliente', 'building-2', 'Cliente', f.cliente ? f.cliente.split(' ').slice(0, 2).join(' ') : null)}
+      ${opcoes.includes('prioridade') ? botaoFiltro('prioridade', 'chevrons-up', 'Prioridade', f.prioridade ? PRIOR[f.prioridade][2] : null) : ''}
+      ${botaoFiltro('data', 'calendar-range', 'Data', intervalo(f) ? (f.dataPreset === 'personalizado' ? 'personalizado' : PRESETS[f.dataPreset][0]) : null)}
+      ${opcoes.includes('agrupar') ? botaoFiltro('agrupar', 'rows-3', 'Agrupar', agr) : ''}
+      <span class="sp"></span>
+      <label class="fsearch" for="f-q">${I('search')}<input id="f-q" data-fq value="${esc(f.q)}" placeholder="Buscar serviço, cliente ou OS"></label>
+      ${botaoFiltro('ajuda', 'circle-help', 'Como ler', null).replace('fwrap', 'fwrap fwrap-r')}
+    </div>
+    ${ativos.length ? `<div class="fchips">${ativos.map(([k, t]) => `<span class="fchip">${esc(t)}<button data-fclear="${k}" aria-label="Remover filtro">${I('x')}</button></span>`).join('')}<button class="btn ghost sm" data-flimpar>Limpar filtros</button></div>` : ''}`;
+}
+
+/* ── Indicadores clicáveis ── */
+function indicadores(lista, titulo) {
+  const f = F();
+  return `<div class="kpi-h"><h2>${titulo}</h2><span class="sm muted">Clique num indicador para ver só aqueles itens</span></div>
+    <div class="kpis2" role="group" aria-label="Indicadores">${lista.map(([id, rot, ic, tom, n, dica]) => {
+      const on = f.foco === id;
+      return `<button class="kpi2 ${on ? 'on' : ''}" data-foco="${id}" aria-pressed="${on}" title="${esc(dica)}${on && vis() === 'quadro' ? ' Clique de novo para ver todos.' : ''}">
+        <span class="k-l"><span class="k-ic t-${tom}">${I(ic)}</span>${rot}</span>
+        <span class="k-v num ${tom === 'danger' && n ? 'tx-danger' : ''}">${n}</span>
+        <span class="k-a ${!n && !on ? 'zero' : ''}">${on ? `${I('check')}Mostrando estes` : n ? `Ver ${n === 1 ? 'este' : 'estes'}${I('arrow-right')}` : 'Nenhum agora'}</span>
+      </button>`;
+    }).join('')}</div>`;
+}
+
+/* ───────────────── Painel do setor ───────────────── */
+const ETAPAS_COL = [['na_fila', 'Para distribuir', 'warning'], ['distribuido', 'Distribuído', 'neutral'], ['em_execucao', 'Em execução', 'info'], ['concluido', 'Concluído no mês', 'success']];
+const FOCO_SETOR = {
+  fila: (s) => etapa(s) === 'na_fila',
+  andamento: (s) => ['distribuido', 'em_execucao'].includes(etapa(s)),
+  atrasados: atrasado,
+  parados: emAlerta,
+  concluidos: (s) => etapa(s) === 'concluido',
+};
+function servicosDoPainel(setor, ignorarFoco) {
+  const f = S.fp; const r = intervalo(f);
+  const q = f.q.trim().toLowerCase();
+  return doSetor(setor.id).filter((s) => {
+    const e = etapa(s);
+    if (e === 'cancelado') return false;
+    if (e === 'concluido' && termino(s) < INICIO_MES && !(r && f.dataCampo === 'conclusao')) return false;
+    if (q && !`${s.cat} ${s.desc} ${OS[s.os].cliente} ${s.os}`.toLowerCase().includes(q)) return false;
+    if (f.pessoa && !s.tarefas.some((t) => t.resp === f.pessoa && t.status !== 'cancelada')) return false;
+    if (f.cliente && OS[s.os].cliente !== f.cliente) return false;
+    if (f.prioridade && OS[s.os].prioridade !== f.prioridade) return false;
+    if (r) {
+      const campo = f.dataCampo || 'prazo';
+      const d = campo === 'prazo' ? prazoServico(s) : campo === 'chegada' ? dt(s.chegou) : (e === 'concluido' ? termino(s) : null);
+      if (!dentro(d, r)) return false;
+    }
+    if (!ignorarFoco && f.foco && !FOCO_SETOR[f.foco](s)) return false;
+    return true;
+  });
+}
+
+function paginaSetor() {
+  const acompanha = setoresQueAcompanho();
+  if (!acompanha.length) return empty('lock', 'Você não acompanha nenhum setor', 'O painel aparece para quem tem a permissão de ver os serviços de um setor.');
+  if (!acompanha.some((s) => s.id === S.setor)) S.setor = acompanha[0].id;
+  const setor = SETORES.find((s) => s.id === S.setor);
+  const organiza = pode('tarefas.distribuir');
+  if (S.visPainel === 'lista' && !S.fp.foco) S.fp.foco = 'fila';
+  const base = servicosDoPainel(setor, true);
+  const n = (k) => base.filter(FOCO_SETOR[k]).length;
+  const kpis = [
+    ['fila', 'Para distribuir', 'inbox', 'warning', n('fila'), 'Chegaram ao setor e ainda não têm responsável.'],
+    ['andamento', 'Em andamento', 'circle-dot', 'info', n('andamento'), 'Distribuídos ou em execução.'],
+    ['atrasados', 'Atrasados', 'triangle-alert', 'danger', n('atrasados'), 'Passaram do prazo e não foram concluídos.'],
+    ['parados', 'Parados', 'hourglass', 'warning', n('parados'), 'Sem nenhuma mudança há 7 dias ou mais, sem ciência.'],
+    ['concluidos', 'Concluídos no mês', 'circle-check', 'success', n('concluidos'), 'Todas as tarefas concluídas neste mês.'],
+  ];
+  return `
+    <div class="ph"><div class="t"><h1>Painel do setor</h1><span class="muted">O que chegou, o que está com quem e o que precisa de atenção.</span></div>
+      ${acompanha.length > 1 ? `<label class="inline" for="sel-setor"><span class="sm muted">Setor</span><select class="inp" id="sel-setor" data-sel-setor style="width:auto;height:34px">${acompanha.map((s) => `<option value="${s.id}" ${s.id === S.setor ? 'selected' : ''}>${esc(s.nome)} (${contadores(s.id).na_fila} na fila)</option>`).join('')}</select></label>` : `<span class="inline muted">${I('network')}${esc(setor.nome)}</span>`}
+    </div>
+    ${setor.semOrganizador ? `<div class="alerta">${I('user-x')}<div class="tx"><b>Este setor ainda não tem quem organize</b>Nenhum membro de ${esc(setor.nome)} tem as permissões de acompanhar e distribuir. A diretoria distribui enquanto as funções são configuradas.</div><button class="btn sm">Configurar funções</button></div>` : ''}
+    ${indicadores(kpis, 'Resumo do setor')}
+    ${barraFiltros(['pessoa', 'prioridade', 'agrupar'])}
+    ${S.visPainel === 'quadro' ? quadroSetor(setor, organiza) : listaSetor(setor, organiza)}`;
+}
+
+function kcardServico(s, organiza) {
+  const e = etapa(s); const o = OS[s.os];
+  const arrasta = e === 'na_fila' && organiza;
+  let pe;
+  if (e === 'na_fila') {
+    const na = dias(dt(s.chegou));
+    pe = `<span class="sm ${na >= 5 ? 'tx-warning' : 'muted'}" title="Desde que a venda chegou ao setor">${na === 0 ? 'Chegou hoje' : `Na fila há ${pl(na, 'dia', 'dias')}`}</span>${organiza ? `<button class="btn sm pri" data-distribuir="${s.id}" data-stop>Distribuir</button>` : ''}`;
+  } else if (e === 'concluido') {
+    const p = prazoServico(s); const tm = termino(s);
+    pe = `<span class="sm muted">${esc(quemConcluiu(s))}</span>${p && tm > p ? chip(['danger', 'triangle-alert', `${pl(dias(p, tm), 'dia', 'dias')} após o prazo`, 'Concluído depois do prazo.']) : chip(['success', 'circle-check', fmtC(tm), 'Data de conclusão.'])}`;
+  } else {
+    pe = `${avatares(respsDe(s))}<span class="k-chips">${situacoes(s, prazoServico(s), false).map(chip).join('')}</span>`;
+  }
+  return `<article class="kcard ${atrasado(s) ? 'k-atr' : ''} ${arrasta ? 'k-drag' : ''}" data-ir="servico-${s.id}" tabindex="0" ${arrasta ? `draggable="true" data-drag="${s.id}"` : ''} title="${esc(s.desc)}">
+    <div class="k-top"><b>${esc(s.cat)}</b>${o.prioridade === 'alta' ? `<span class="tx-danger" title="Prioridade alta">${I('chevrons-up')}</span>` : ''}<span class="sp"></span><span class="sm muted num">OS ${s.os}</span></div>
+    <span class="k-cli">${esc(o.cliente)}</span>
+    <div class="k-foot">${pe}</div>
+  </article>`;
+}
+function ordenar2(col, ss) {
+  if (col === 'na_fila') return ss.sort((a, b) => dt(a.chegou) - dt(b.chegou));
+  if (col === 'concluido') return ss.sort((a, b) => termino(b) - termino(a));
+  const peso = (s) => (atrasado(s) ? 0 : emAlerta(s) ? 1 : 2);
+  return ss.sort((a, b) => peso(a) - peso(b) || (prazoServico(a) || Infinity) - (prazoServico(b) || Infinity));
+}
+function quadroSetor(setor, organiza) {
+  const ss = servicosDoPainel(setor, false);
+  const f = S.fp;
+  const cols = ETAPAS_COL.filter(([id]) => !f.foco || ss.some((s) => etapa(s) === id) || (id === 'distribuido' && f.foco === 'fila' && organiza));
+  const cab = ([id, t, tom], n) => `<div class="col-h"><span class="dot d-${tom}"></span><b>${t}</b><span class="cnt n">${n}</span></div>`;
+  if (f.agrupar !== 'pessoa') {
+    return `<div class="board" style="grid-template-columns:repeat(${cols.length},minmax(250px,1fr))">${cols.map((c) => {
+      const lista = ordenar2(c[0], ss.filter((s) => etapa(s) === c[0]));
+      const soltar = c[0] === 'distribuido' && organiza;
+      return `<section class="col" ${soltar ? 'data-drop="pessoa:"' : ''} aria-label="${c[1]}">${cab(c, lista.length)}
+        <div class="col-b">${lista.map((s) => kcardServico(s, organiza)).join('') || `<p class="col-vazia">${soltar ? 'Arraste um cartão da fila para cá para distribuir.' : 'Nada aqui.'}</p>`}</div></section>`;
+    }).join('')}</div>`;
+  }
+  const eq = equipeDoSetor(setor).filter((e) => !f.pessoa || e.k === f.pessoa);
+  const fila = ordenar2('na_fila', ss.filter((s) => etapa(s) === 'na_fila'));
+  const cols3 = ETAPAS_COL.slice(1);
+  return `<div class="raias-layout">
+    <section class="col fila-lateral" aria-label="Para distribuir">${cab(ETAPAS_COL[0], fila.length)}<div class="col-b">${fila.map((s) => kcardServico(s, organiza)).join('') || '<p class="col-vazia">Nada para distribuir.</p>'}</div></section>
+    <div class="lanes-wrap"><div class="lanes">
+      ${cols3.map((c) => `<div class="lanes-h">${cab(c, ss.filter((s) => etapa(s) === c[0]).length)}</div>`).join('')}
+      ${eq.map((e) => {
+        const dela = ss.filter((s) => etapa(s) !== 'na_fila' && s.tarefas.some((t) => t.resp === e.k && t.status !== 'cancelada'));
+        return `<div class="lane-h"><span class="av sm">${iniciais(e.nome)}</span><b>${esc(e.nome)}</b><span class="sm muted">${esc(e.funcao)} · ${pl(e.ativos, 'ativo', 'ativos')}</span>${e.atrasados ? chip(['danger', 'triangle-alert', `${e.atrasados} atrasado${e.atrasados > 1 ? 's' : ''}`, 'Itens atrasados desta pessoa.']) : ''}</div>
+          ${cols3.map(([col]) => {
+            const lista = ordenar2(col, dela.filter((s) => etapa(s) === col));
+            const soltar = col === 'distribuido' && organiza;
+            return `<div class="cell" ${soltar ? `data-drop="pessoa:${e.k}"` : ''}>${lista.map((s) => kcardServico(s, organiza)).join('') || (soltar ? `<p class="col-vazia">Solte aqui para distribuir para ${esc(e.nome.split(' ')[0])}.</p>` : '')}</div>`;
+          }).join('')}`;
+      }).join('')}
+    </div></div></div>`;
+}
+
+function listaSetor(setor, organiza) {
+  const f = S.fp;
+  const ss = servicosDoPainel(setor, false);
+  if (!ss.length) return empty('search-x', 'Nada com estes filtros', 'Mude o indicador selecionado ou limpe os filtros.');
+  const tipo = f.foco === 'fila' ? 'fila' : f.foco === 'concluidos' ? 'concluidos' : 'andamento';
+  const head = {
+    fila: '<th>Serviço</th><th>Cliente</th><th>OS</th><th>Na fila há</th><th>Prioridade</th><th></th>',
+    andamento: '<th>Serviço</th><th>Cliente</th><th>OS</th><th>Responsável</th><th>Situação</th><th></th>',
+    concluidos: '<th>Serviço</th><th>Cliente</th><th>OS</th><th>Concluído por</th><th>Término</th><th>Prazo</th>',
+  }[tipo];
+  const linha = (s) => {
+    const o = OS[s.os];
+    const base = `<td><b>${esc(s.cat)}</b></td><td>${esc(o.cliente)}</td><td class="num muted">${s.os}</td>`;
+    if (tipo === 'fila') {
+      const na = dias(dt(s.chegou));
+      return `${base}<td class="num ${na >= 5 ? 'tx-warning' : ''}">${na === 0 ? 'Chegou hoje' : pl(na, 'dia', 'dias')}</td><td>${bPrior(o.prioridade)}</td><td class="r">${organiza ? `<button class="btn sm pri" data-distribuir="${s.id}" data-stop>Distribuir</button>` : ''}</td>`;
+    }
+    if (tipo === 'concluidos') {
+      const p = prazoServico(s); const tm = termino(s);
+      return `${base}<td>${esc(quemConcluiu(s))}</td><td class="num">${fmt(tm)}</td><td>${p ? (tm <= p ? chip(['success', 'circle-check', 'No prazo', `Prazo ${fmt(p)}`]) : chip(['danger', 'triangle-alert', `${pl(dias(p, tm), 'dia', 'dias')} após`, `Prazo ${fmt(p)}`])) : '<span class="sm muted">Sem prazo</span>'}</td>`;
+    }
+    return `${base}<td>${respsDe(s).map((k) => esc(PESSOAS[k].nome)).join('<br>')}</td><td><span class="k-chips">${situacoes(s, prazoServico(s), false).map(chip).join('')}</span></td>
+      <td class="r">${emAlerta(s) ? `<button class="btn sm" data-ciencia="${s.id}" data-stop title="Confirmar que está tudo bem e silenciar o aviso por 7 dias">Estou ciente</button>` : ''}</td>`;
+  };
+  const col = tipo === 'fila' ? 'na_fila' : tipo === 'concluidos' ? 'concluido' : 'em_execucao';
+  const ordenados = ordenar2(col, ss);
+  let corpo;
+  if (f.agrupar === 'nenhum') corpo = ordenados.map((s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`).join('');
+  else {
+    const chave = (s) => f.agrupar === 'cliente' ? [OS[s.os].cliente] : (respsDe(s).length ? respsDe(s).map((k) => PESSOAS[k].nome) : ['Sem responsável']);
+    const g = {};
+    ordenados.forEach((s) => chave(s).forEach((k) => (g[k] ||= []).push(s)));
+    corpo = Object.keys(g).sort().map((k) => `<tr class="grp"><td colspan="6">${esc(k)} <span class="muted">· ${g[k].length}</span></td></tr>${g[k].map((s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`).join('')}`).join('');
+  }
+  return `<div class="tw"><table><thead><tr>${head}</tr></thead><tbody>${corpo}</tbody></table></div>`;
+}
+
+/* ───────────────── Meus serviços ───────────────── */
+const FOCO_MEUS = {
+  ativos: (l) => ATIVA(l.t),
+  atrasados: (l) => ATIVA(l.t) && situacaoPrazo(l.t.prazo && dt(l.t.prazo)) === 'atrasado',
+  vence7: (l) => ATIVA(l.t) && situacaoPrazo(l.t.prazo && dt(l.t.prazo)) === 'vence_7_dias',
+  concluidos: (l) => l.t.status === 'concluida',
+};
+function minhasTarefas(ignorarFoco) {
+  const f = S.fm; const r = intervalo(f); const q = f.q.trim().toLowerCase();
+  return SERVICOS.flatMap((s) => s.tarefas.filter((t) => t.resp === S.persona.pessoa).map((t) => ({ s, t }))).filter((l) => {
+    const { s, t } = l;
+    if (t.status === 'cancelada') return false;
+    if (t.status === 'concluida' && dt(t.termino) < INICIO_MES && !(r && f.dataCampo === 'conclusao')) return false;
+    if (q && !`${s.cat} ${s.desc} ${OS[s.os].cliente} ${s.os}`.toLowerCase().includes(q)) return false;
+    if (f.cliente && OS[s.os].cliente !== f.cliente) return false;
+    if (r) {
+      const d = (f.dataCampo || 'prazo') === 'prazo' ? (t.prazo && dt(t.prazo)) : (t.termino && dt(t.termino));
+      if (!dentro(d, r)) return false;
+    }
+    if (!ignorarFoco && f.foco && !FOCO_MEUS[f.foco](l)) return false;
+    return true;
+  });
+}
+function kcardTarefa({ s, t }) {
+  const o = OS[s.os]; const enc = t.status === 'concluida';
+  const acao = t.status === 'aberta' ? `<button class="btn sm" data-status="${t.id}:em_andamento" data-stop>Iniciar</button>`
+    : t.status === 'em_andamento' ? `<button class="btn sm pri" data-status="${t.id}:concluida" data-stop>Concluir</button>` : '';
+  const atr = !enc && situacaoPrazo(t.prazo && dt(t.prazo)) === 'atrasado';
+  return `<article class="kcard k-drag ${atr ? 'k-atr' : ''}" data-ir="servico-${s.id}" tabindex="0" draggable="true" data-drag-t="${t.id}" title="${esc(t.desc ? `${t.desc}: ${s.desc}` : s.desc)}">
+    <div class="k-top"><b>${esc(s.cat)}${t.desc ? ` <span class="muted" style="font-weight:500">· ${esc(t.desc)}</span>` : ''}</b>${o.prioridade === 'alta' ? `<span class="tx-danger" title="Prioridade alta">${I('chevrons-up')}</span>` : ''}<span class="sp"></span><span class="sm muted num">OS ${s.os}</span></div>
+    <span class="k-cli">${esc(o.cliente)}</span>
+    <div class="k-foot"><span class="k-chips">${enc ? chip(['success', 'circle-check', `Concluída ${fmtC(dt(t.termino))}`, 'Data de conclusão.']) : situacoes(s, t.prazo && dt(t.prazo), false).map(chip).join('')}</span>${acao}</div>
+  </article>`;
+}
+function paginaMeusServicos() {
+  if (S.visMeus === 'lista' && !S.fm.foco) S.fm.foco = 'ativos';
+  const base = minhasTarefas(true);
+  const n = (k) => base.filter(FOCO_MEUS[k]).length;
+  const kpis = [
+    ['ativos', 'Com você', 'list-checks', 'info', n('ativos'), 'Tarefas abertas ou em andamento.'],
+    ['atrasados', 'Atrasados', 'triangle-alert', 'danger', n('atrasados'), 'Passaram do prazo.'],
+    ['vence7', 'Vencem em 7 dias', 'clock', 'warning', n('vence7'), 'Prazo nos próximos 7 dias.'],
+    ['concluidos', 'Concluídos no mês', 'circle-check', 'success', n('concluidos'), 'Concluídos neste mês.'],
+  ];
+  const ls = minhasTarefas(false);
+  const peso = (l) => ({ atrasado: 0, vence_7_dias: 1, sem_prazo: 2, depois: 3 })[situacaoPrazo(l.t.prazo && dt(l.t.prazo))];
+  let corpo;
+  if (S.visMeus === 'quadro') {
+    const cols = [['aberta', 'A fazer', 'warning'], ['em_andamento', 'Em andamento', 'info'], ['concluida', 'Concluído no mês', 'success']]
+      .filter(([id]) => !S.fm.foco || ls.some((l) => l.t.status === id));
+    corpo = ls.length ? `<div class="board" style="grid-template-columns:repeat(${cols.length},minmax(260px,1fr))">${cols.map(([id, t, tom]) => {
+      const lista = ls.filter((l) => l.t.status === id).sort((a, b) => id === 'concluida' ? dt(b.t.termino) - dt(a.t.termino) : peso(a) - peso(b));
+      return `<section class="col" data-drop-t="${id}" aria-label="${t}"><div class="col-h"><span class="dot d-${tom}"></span><b>${t}</b><span class="cnt n">${lista.length}</span></div>
+        <div class="col-b">${lista.map(kcardTarefa).join('') || '<p class="col-vazia">Arraste um cartão para cá.</p>'}</div></section>`;
+    }).join('')}</div>` : empty('coffee', 'Nada com estes filtros', 'Quando alguém distribuir um serviço para você, ele aparece aqui.');
+  } else {
+    const conc = S.fm.foco === 'concluidos';
+    corpo = ls.length ? `<div class="tw"><table><thead><tr><th>Serviço</th><th>Cliente</th><th>OS</th><th>${conc ? 'Concluída em' : 'Situação'}</th><th>${conc ? '' : 'Status'}</th><th></th></tr></thead><tbody>
+      ${ls.sort((a, b) => conc ? dt(b.t.termino) - dt(a.t.termino) : peso(a) - peso(b)).map(({ s, t }) => `<tr class="click" data-ir="servico-${s.id}">
+        <td><b>${esc(s.cat)}</b>${t.desc ? ` <span class="muted">· ${esc(t.desc)}</span>` : ''}</td><td>${esc(OS[s.os].cliente)}</td><td class="num muted">${s.os}</td>
+        <td>${conc ? `<span class="num">${fmt(dt(t.termino))}</span>` : `<span class="k-chips">${situacoes(s, t.prazo && dt(t.prazo), false).map(chip).join('')}</span>`}</td>
+        <td>${conc ? '' : bStatus(t.status)}</td>
+        <td class="r">${t.status === 'aberta' ? `<button class="btn sm" data-status="${t.id}:em_andamento" data-stop>Iniciar</button>` : t.status === 'em_andamento' ? `<button class="btn sm pri" data-status="${t.id}:concluida" data-stop>Concluir</button>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>` : empty('coffee', 'Nada com estes filtros', 'Mude o indicador ou limpe os filtros.');
+  }
+  return `<div class="ph"><div class="t"><h1>Meus serviços</h1><span class="muted">O que está com você, o que vence primeiro e o que está atrasado.</span></div></div>
+    ${indicadores(kpis, 'Seu resumo')}
+    ${barraFiltros([])}
+    ${corpo}`;
+}
+
+/* ── Ações de status e arrastar ── */
+function mudarStatus(tid, st) {
+  const s = SERVICOS.find((sv) => sv.tarefas.some((t) => String(t.id) === String(tid)));
+  const t = s.tarefas.find((tt) => String(tt.id) === String(tid));
+  if (t.status === st) return;
+  const reabriu = t.status === 'concluida';
+  t.status = st; s.mov = '10/10';
+  if (st === 'em_andamento' && !t.inicio) t.inicio = '10/10';
+  if (st === 'concluida') { t.termino = '10/10'; if (!t.inicio) t.inicio = '10/10'; }
+  if (st !== 'concluida') delete t.termino;
+  toast(reabriu ? `${s.cat} reaberto.` : st === 'concluida' ? (etapa(s) === 'concluido' ? `${s.cat} concluído.` : 'Tarefa concluída.') : st === 'em_andamento' ? `${s.cat} iniciado.` : `${s.cat} voltou para A fazer.`);
+  render();
+}
+document.addEventListener('dragstart', (ev) => {
+  const c = ev.target.closest && ev.target.closest('[data-drag],[data-drag-t]');
+  if (!c) return;
+  ev.dataTransfer.setData('text/plain', JSON.stringify({ s: c.dataset.drag || null, t: c.dataset.dragT || null }));
+  ev.dataTransfer.effectAllowed = 'move';
+  c.classList.add('dragging');
+  document.body.classList.add(c.dataset.drag ? 'arrastando-s' : 'arrastando-t');
+});
+document.addEventListener('dragend', () => {
+  document.querySelectorAll('.dragging,.drop-on').forEach((x) => x.classList.remove('dragging', 'drop-on'));
+  document.body.classList.remove('arrastando-s', 'arrastando-t');
+});
+document.addEventListener('dragover', (ev) => {
+  const z = ev.target.closest && ev.target.closest(document.body.classList.contains('arrastando-s') ? '[data-drop]' : '[data-drop-t]');
+  if (!z) return;
+  ev.preventDefault();
+  document.querySelectorAll('.drop-on').forEach((x) => x !== z && x.classList.remove('drop-on'));
+  z.classList.add('drop-on');
+});
+document.addEventListener('drop', (ev) => {
+  const z = ev.target.closest && ev.target.closest('[data-drop],[data-drop-t]');
+  if (!z) return;
+  ev.preventDefault();
+  let d = {};
+  try { d = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (e) { return; }
+  document.querySelectorAll('.drop-on').forEach((x) => x.classList.remove('drop-on'));
+  if (d.s && z.dataset.drop != null) return abrirDistribuir(+d.s, z.dataset.drop.split(':')[1] || null);
+  if (d.t && z.dataset.dropT) return mudarStatus(d.t, z.dataset.dropT);
+});
 
 /* ───────────────────────── Página: Detalhe do serviço ───────────────────────── */
 function eventosDoServico(s) {
@@ -1318,204 +1578,6 @@ function modalAcrescentar() {
 }
 
 
-/* ───────────────────────── Modo quadro (variante em colunas por etapa) ───────────────────────── */
-/* Proposta de 10/10/2026, a pedido do usuário: mesma informação dos blocos, organizada como um quadro. */
-const seletorVisao = (chave) => `<span class="seg" role="group" aria-label="Visualização">
-  <button class="${S[chave] === 'quadro' ? 'on' : ''}" data-vis="${chave}:quadro">${I('columns-3')}Quadro</button>
-  <button class="${S[chave] === 'lista' ? 'on' : ''}" data-vis="${chave}:lista">${I('list')}Lista</button></span>`;
-const INICIO_MES = new Date(2026, 9, 1);
-
-/* Chip de prazo do cartão: tom pela situação de prazo calculada no backend */
-function kPrazo(prazo, encerrado) {
-  if (!prazo) return `<span class="kchip t-warning">${I('calendar-x')}Sem prazo</span>`;
-  const d = dias(HOJE, prazo);
-  if (encerrado) return `<span class="kchip t-neutral">${I('calendar')}${fmtC(prazo)}</span>`;
-  if (d < 0) return `<span class="kchip t-danger">${I('triangle-alert')}${-d}d atrasado</span>`;
-  if (d === 0) return `<span class="kchip t-warning">${I('clock')}Vence hoje</span>`;
-  if (d <= 7) return `<span class="kchip t-warning">${I('clock')}Vence ${fmtC(prazo)}</span>`;
-  return `<span class="kchip t-neutral">${I('calendar')}${fmtC(prazo)}</span>`;
-}
-function kAlerta(s) {
-  if (cienciaVigente(s)) return `<span class="kchip t-neutral" title="${esc(PESSOAS[s.ciencia.por].nome)} em ${fmtC(dt(s.ciencia.em))}">${I('bell-off')}${esc(MOTIVOS[s.ciencia.motivo])}</span>`;
-  if (emAlerta(s)) return `<span class="kchip t-warning">${I('hourglass')}${diasSemMov(s)}d sem movimentação</span>`;
-  return '';
-}
-const avatares = (s) => s.tarefas.filter((t) => t.status !== 'cancelada').map((t) => t.resp)
-  .filter((k, i, a) => a.indexOf(k) === i)
-  .map((k) => `<span class="av sm" title="${esc(PESSOAS[k].nome)}">${iniciais(PESSOAS[k].nome)}</span>`).join('');
-
-/* Cartão de serviço (painel do setor) */
-function kcardServico(s, organiza) {
-  const e = etapa(s); const o = OS[s.os];
-  const arrasta = e === 'na_fila' && organiza;
-  let meta = ''; let pe = '';
-  if (e === 'na_fila') {
-    const na = dias(dt(s.chegou)); const outros = outrosDaOS(s).length;
-    meta = `<span class="kchip ${na >= 5 ? 't-warning' : 't-neutral'}">${I('inbox')}${na === 0 ? 'Chegou hoje' : `Há ${pl(na, 'dia', 'dias')} na fila`}</span>${outros ? `<span class="kchip t-neutral" title="Outros serviços da mesma OS">${I('layers')}+${outros} na OS</span>` : ''}`;
-    pe = organiza ? `<button class="btn sm pri" data-distribuir="${s.id}" data-stop>${I('user-plus')}Distribuir</button>` : '';
-  } else if (e === 'concluido') {
-    const p = prazoServico(s); const tm = termino(s);
-    const quem = PESSOAS[s.tarefas.filter((t) => t.termino).sort((a, b) => dt(b.termino) - dt(a.termino))[0].resp].nome;
-    meta = `<span class="kchip t-success">${I('circle-check')}${fmtC(tm)}</span>${p ? (tm <= p ? `<span class="kchip t-success">No prazo</span>` : `<span class="kchip t-danger">${dias(p, tm)}d depois do prazo</span>`) : ''}`;
-    pe = `<span class="sm muted">${esc(quem)}</span>`;
-  } else {
-    meta = `${kPrazo(prazoServico(s))}${kAlerta(s)}`;
-    pe = `<span class="avs">${avatares(s)}</span>${emAlerta(s) ? `<button class="btn sm" data-ciencia="${s.id}" data-stop>${I('bell-off')}Ciente</button>` : ''}`;
-  }
-  return `<article class="kcard ${atrasado(s) ? 'k-atr' : ''} ${arrasta ? 'k-drag' : ''}" data-ir="servico-${s.id}" tabindex="0" ${arrasta ? `draggable="true" data-drag="${s.id}"` : ''}>
-    <div class="k-top"><b>${esc(s.cat)}</b>${o.prioridade === 'alta' ? `<span class="tx-danger" title="Prioridade alta">${I('chevrons-up')}</span>` : ''}</div>
-    <span class="sm muted k-desc">${esc(s.desc)}</span>
-    <span class="sm">${esc(o.cliente)} <span class="muted num">· OS ${s.os}</span></span>
-    <div class="k-meta">${meta}</div>
-    ${pe ? `<div class="k-foot">${pe}</div>` : ''}
-  </article>`;
-}
-
-const COLUNAS_SETOR = [
-  ['na_fila', 'Para distribuir', 'inbox', 'Chegou e ainda não tem responsável', 'warning'],
-  ['distribuido', 'Distribuído', 'user-check', 'Tem responsável; ninguém começou', 'neutral'],
-  ['em_execucao', 'Em execução', 'circle-dot', 'Alguém já começou', 'info'],
-  ['concluido', 'Concluídos no mês', 'circle-check', 'Todas as tarefas concluídas', 'success'],
-];
-function ordemColuna(col, ss) {
-  if (col === 'na_fila') return ss.sort((a, b) => dt(a.chegou) - dt(b.chegou));
-  if (col === 'concluido') return ss.sort((a, b) => termino(b) - termino(a));
-  const peso = (s) => atrasado(s) ? 0 : emAlerta(s) ? 1 : 2;
-  return ss.sort((a, b) => peso(a) - peso(b) || (prazoServico(a) || Infinity) - (prazoServico(b) || Infinity));
-}
-
-function quadroSetor(setor, organiza) {
-  const eq = equipeDoSetor(setor);
-  const todos = doSetor(setor.id).filter((s) => etapa(s) !== 'cancelado' && (etapa(s) !== 'concluido' || termino(s) >= INICIO_MES));
-  const passa = (s) => {
-    if (etapa(s) === 'na_fila') return true;
-    if (S.soAlerta && !(atrasado(s) || emAlerta(s))) return false;
-    if (S.filtroResp && !s.tarefas.some((t) => t.resp === S.filtroResp)) return false;
-    return true;
-  };
-  const ss = todos.filter(passa);
-  const daColuna = (col, lista = ss) => ordemColuna(col, lista.filter((s) => etapa(s) === col));
-  const ferramentas = `<div class="toolbar">
-      ${seletorVisao('visPainel')}
-      <span class="inline sm muted">Raias <span class="seg">${[['nenhuma', 'Nenhuma'], ['pessoa', 'Por pessoa']].map(([v, t]) => `<button class="${S.raias === v ? 'on' : ''}" data-raias="${v}">${t}</button>`).join('')}</span></span>
-      <button class="btn sm ${S.soAlerta ? 'pri' : ''}" data-so-alerta aria-pressed="${S.soAlerta}">${I('triangle-alert')}Só atrasados e parados</button>
-      <span class="sp"></span>
-      ${organiza ? `<span class="sm muted inline">${I('grip-vertical')}Arraste da fila para ${S.raias === 'pessoa' ? 'a raia de uma pessoa' : '“Distribuído”'} para distribuir</span>` : ''}
-    </div>
-    ${S.raias === 'nenhuma' ? `<div class="pchips" role="group" aria-label="Filtrar por pessoa"><span class="sm muted">Equipe</span>${eq.map((e) => `<button class="pchip ${S.filtroResp === e.k ? 'on' : ''}" data-resp="${S.filtroResp === e.k ? '' : e.k}" title="${e.ativos} ativos, ${e.atrasados} atrasados, mais antigo há ${e.antigo ?? 0} dias">
-        <span class="av sm">${iniciais(e.nome)}</span>${esc(e.nome)}<span class="num muted">${e.ativos}</span>${e.atrasados ? `<span class="pdot" title="${e.atrasados} atrasados">${e.atrasados}</span>` : ''}</button>`).join('')}</div>` : ''}`;
-
-  const cabCol = ([id, t, ic, dica, tom], n) => `<div class="col-h"><span class="dot d-${tom}"></span><b>${t}</b><span class="cnt ${id === 'na_fila' && n ? '' : 'n'}">${n}</span><span class="sp"></span><span class="ic-h" title="${esc(dica)}">${I(ic)}</span></div>`;
-
-  if (S.raias === 'nenhuma') {
-    return ferramentas + `<div class="board">${COLUNAS_SETOR.map((c) => {
-      const lista = daColuna(c[0]);
-      const soltar = c[0] === 'distribuido' && organiza;
-      return `<section class="col" ${soltar ? 'data-drop="pessoa:"' : ''} aria-label="${c[1]}">${cabCol(c, lista.length)}
-        <div class="col-b">${lista.map((s) => kcardServico(s, organiza)).join('') || `<p class="col-vazia">${c[0] === 'na_fila' ? 'Nada para distribuir.' : soltar ? 'Solte aqui um serviço da fila para distribuir.' : 'Nada aqui.'}</p>`}</div></section>`;
-    }).join('')}</div>`;
-  }
-
-  /* Raias por pessoa: a fila fica numa coluna lateral fixa; soltar na raia de alguém abre a distribuição já com a pessoa. */
-  const fila = daColuna('na_fila');
-  const cols3 = COLUNAS_SETOR.slice(1);
-  const raias = eq.filter((e) => !S.filtroResp || e.k === S.filtroResp).map((e) => {
-    const dela = ss.filter((s) => etapa(s) !== 'na_fila' && s.tarefas.some((t) => t.resp === e.k && t.status !== 'cancelada'));
-    return `<div class="lane-h"><span class="av sm">${iniciais(e.nome)}</span><b>${esc(e.nome)}</b><span class="sm muted">${esc(e.funcao)}</span>
-        <span class="sm muted num">· ${pl(e.ativos, 'ativo', 'ativos')}</span>${e.atrasados ? `<span class="kchip t-danger">${e.atrasados} atrasado${e.atrasados > 1 ? 's' : ''}</span>` : ''}${e.alerta ? `<span class="kchip t-warning">${e.alerta} parado${e.alerta > 1 ? 's' : ''}</span>` : ''}</div>
-      ${cols3.map(([col]) => {
-        const lista = daColuna(col, dela);
-        const soltar = col === 'distribuido' && organiza;
-        return `<div class="cell" ${soltar ? `data-drop="pessoa:${e.k}"` : ''}>${lista.map((s) => kcardServico(s, organiza)).join('') || (soltar ? `<p class="col-vazia">Solte aqui para distribuir para ${esc(e.nome.split(' ')[0])}.</p>` : '')}</div>`;
-      }).join('')}`;
-  }).join('');
-  return ferramentas + `<div class="raias-layout">
-      <section class="col fila-lateral" aria-label="Para distribuir">${cabCol(COLUNAS_SETOR[0], fila.length)}
-        <div class="col-b">${fila.map((s) => kcardServico(s, organiza)).join('') || '<p class="col-vazia">Nada para distribuir.</p>'}</div></section>
-      <div class="lanes-wrap"><div class="lanes">
-        ${cols3.map((c) => `<div class="lanes-h">${cabCol(c, daColuna(c[0]).length)}</div>`).join('')}
-        ${raias}
-      </div></div>
-    </div>`;
-}
-
-/* Meus serviços em quadro: cartões das minhas tarefas, arrastáveis entre A fazer, Em andamento e Concluídas. */
-function kcardTarefa({ s, t }) {
-  const o = OS[s.os];
-  const enc = t.status === 'concluida';
-  const acao = t.status === 'aberta' ? `<button class="btn sm" data-status="${t.id}:em_andamento" data-stop>${I('play')}Iniciar</button>`
-    : t.status === 'em_andamento' ? `<button class="btn sm pri" data-status="${t.id}:concluida" data-stop>${I('check')}Concluir</button>` : '';
-  const atr = !enc && situacaoPrazo(t.prazo && dt(t.prazo)) === 'atrasado';
-  return `<article class="kcard k-drag ${atr ? 'k-atr' : ''}" data-ir="servico-${s.id}" tabindex="0" draggable="true" data-drag-t="${t.id}">
-    <div class="k-top"><b>${esc(s.cat)}</b>${o.prioridade === 'alta' ? `<span class="tx-danger" title="Prioridade alta">${I('chevrons-up')}</span>` : ''}</div>
-    <span class="sm muted k-desc">${esc(t.desc ? `${t.desc} · ${s.desc}` : s.desc)}</span>
-    <span class="sm">${esc(o.cliente)} <span class="muted num">· OS ${s.os}</span></span>
-    <div class="k-meta">${enc ? `<span class="kchip t-success">${I('circle-check')}${fmtC(dt(t.termino))}</span>` : kPrazo(t.prazo && dt(t.prazo))}${enc ? '' : kAlerta(s)}</div>
-    ${acao ? `<div class="k-foot"><span></span>${acao}</div>` : ''}
-  </article>`;
-}
-function quadroMeus(minhas, atr, hoje) {
-  const peso = (l) => ({ atrasado: 0, vence_7_dias: 1, sem_prazo: 2, depois: 3 })[situacaoPrazo(l.t.prazo && dt(l.t.prazo))];
-  const cols = [
-    ['aberta', 'A fazer', 'circle-dashed', 'warning', minhas.filter((l) => l.t.status === 'aberta').sort((a, b) => peso(a) - peso(b))],
-    ['em_andamento', 'Em andamento', 'circle-dot', 'info', minhas.filter((l) => l.t.status === 'em_andamento').sort((a, b) => peso(a) - peso(b))],
-    ['concluida', 'Concluídas no mês', 'circle-check', 'success', minhas.filter((l) => l.t.status === 'concluida' && dt(l.t.termino) >= INICIO_MES).sort((a, b) => dt(b.t.termino) - dt(a.t.termino))],
-  ];
-  const ativos = cols[0][4].length + cols[1][4].length;
-  return `<div class="ph"><div class="t"><h1>Meus serviços</h1>
-      <span class="muted num">${ativos ? `${pl(ativos, 'item com você', 'itens com você')}${atr ? ` · <span class="tx-danger">${atr} atrasado${atr > 1 ? 's' : ''}</span>` : ''}${hoje ? ` · <span class="tx-warning">${hoje} vence hoje</span>` : ''}` : 'Nada com você agora.'}</span></div>
-      ${seletorVisao('visMeus')}</div>
-    <span class="sm muted inline">${I('grip-vertical')}Arraste o cartão para mudar o status, ou use o botão do cartão. Dentro de cada coluna, os atrasados vêm primeiro.</span>
-    <div class="board b3">${cols.map(([id, t, ic, tom, lista]) => `<section class="col" data-drop-t="${id}" aria-label="${t}">
-      <div class="col-h"><span class="dot d-${tom}"></span><b>${t}</b><span class="cnt n">${lista.length}</span></div>
-      <div class="col-b">${lista.map(kcardTarefa).join('') || `<p class="col-vazia">${id === 'concluida' ? 'Nada concluído neste mês.' : 'Solte aqui.'}</p>`}</div></section>`).join('')}</div>
-    <div class="note-wf"><b>Histórico:</b> meses anteriores ficam na visualização Lista, aba Concluídos (com período).</div>`;
-}
-
-function mudarStatus(tid, st) {
-  const s = SERVICOS.find((sv) => sv.tarefas.some((t) => String(t.id) === String(tid)));
-  const t = s.tarefas.find((tt) => String(tt.id) === String(tid));
-  if (t.status === st) return;
-  const reabriu = t.status === 'concluida';
-  t.status = st; s.mov = '10/10';
-  if (st === 'em_andamento' && !t.inicio) t.inicio = '10/10';
-  if (st === 'concluida') { t.termino = '10/10'; if (!t.inicio) t.inicio = '10/10'; }
-  if (st !== 'concluida') delete t.termino;
-  toast(reabriu ? `${s.cat} reaberto.` : st === 'concluida' ? (etapa(s) === 'concluido' ? `${s.cat} concluído.` : 'Tarefa concluída.') : st === 'em_andamento' ? `${s.cat} iniciado.` : `${s.cat} voltou para A fazer.`);
-  render();
-}
-
-/* Arrastar e soltar: atalho; os botões dos cartões fazem o mesmo pelo teclado. */
-document.addEventListener('dragstart', (ev) => {
-  const c = ev.target.closest && ev.target.closest('[data-drag],[data-drag-t]');
-  if (!c) return;
-  ev.dataTransfer.setData('text/plain', JSON.stringify({ s: c.dataset.drag || null, t: c.dataset.dragT || null }));
-  ev.dataTransfer.effectAllowed = 'move';
-  c.classList.add('dragging');
-  document.body.classList.add(c.dataset.drag ? 'arrastando-s' : 'arrastando-t');
-});
-document.addEventListener('dragend', () => {
-  document.querySelectorAll('.dragging,.drop-on').forEach((x) => x.classList.remove('dragging', 'drop-on'));
-  document.body.classList.remove('arrastando-s', 'arrastando-t');
-});
-document.addEventListener('dragover', (ev) => {
-  const z = ev.target.closest && ev.target.closest(document.body.classList.contains('arrastando-s') ? '[data-drop]' : '[data-drop-t]');
-  if (!z) return;
-  ev.preventDefault();
-  document.querySelectorAll('.drop-on').forEach((x) => x !== z && x.classList.remove('drop-on'));
-  z.classList.add('drop-on');
-});
-document.addEventListener('drop', (ev) => {
-  const z = ev.target.closest && ev.target.closest('[data-drop],[data-drop-t]');
-  if (!z) return;
-  ev.preventDefault();
-  let d = {};
-  try { d = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (e) { return; }
-  document.querySelectorAll('.drop-on').forEach((x) => x.classList.remove('drop-on'));
-  if (d.s && z.dataset.drop != null) return abrirDistribuir(+d.s, z.dataset.drop.split(':')[1] || null);
-  if (d.t && z.dataset.dropT) return mudarStatus(d.t, z.dataset.dropT);
-});
-
 /* Páginas de outros lotes */
 function paginaOutroLote(id) {
   const it = MENU.flatMap((g) => g.itens).find((x) => x.id === id) || { titulo: 'Resumo da venda', lote: 2 };
@@ -1675,6 +1737,23 @@ function irParaInicial() {
 document.addEventListener('click', (ev) => {
   const el = (sel) => ev.target.closest(sel);
   let x;
+  if (S.pop && !el('.fpop') && !el('[data-pop]')) { S.pop = null; render(); }
+  if ((x = el('[data-pop]'))) { const v = x.dataset.pop || null; S.pop = S.pop === v ? null : v; return render(); }
+  if ((x = el('[data-fsel]'))) {
+    const i = x.dataset.fsel.indexOf(':'); const k = x.dataset.fsel.slice(0, i); const v = x.dataset.fsel.slice(i + 1) || null;
+    const f = F(); f[k] = v;
+    if (k === 'agrupar' && !v) f.agrupar = 'nenhum';
+    if (k === 'dataPreset' && !f.dataCampo) f.dataCampo = 'prazo';
+    if (!['dataCampo', 'dataPreset'].includes(k) || (k === 'dataPreset' && v !== 'personalizado')) S.pop = null;
+    return render();
+  }
+  if ((x = el('[data-fclear]'))) {
+    const f = F(); const k = x.dataset.fclear;
+    if (k === 'data') Object.assign(f, { dataCampo: null, dataPreset: null, de: '', ate: '' }); else if (k === 'q') f.q = ''; else f[k] = null;
+    S.pop = null; return render();
+  }
+  if (el('[data-flimpar]')) { const f = F(); Object.assign(f, { pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '' }); return render(); }
+  if ((x = el('[data-foco]'))) { const f = F(); const id = x.dataset.foco; f.foco = f.foco === id && vis() === 'quadro' ? null : id; return render(); }
   if ((x = el('[data-tema]'))) {
     S.tema = x.dataset.tema;
     if (S.tema === 'sistema') document.documentElement.removeAttribute('data-theme');
@@ -1734,6 +1813,8 @@ document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Enter' && ev.target.matches('.it[data-ir],.kcard[data-ir]')) ir(ev.target.dataset.ir);
 });
 document.addEventListener('input', (ev) => {
+  if (ev.target.dataset.fq != null) { F().q = ev.target.value; return render(); }
+  if (ev.target.dataset.fdata) { F()[ev.target.dataset.fdata] = ev.target.value; return render(); }
   const t = ev.target;
   if (t.dataset.vfQ != null) { S.vf.q = t.value; return render(); }
   if (t.dataset.nv && S.nv) {
@@ -1750,6 +1831,7 @@ document.addEventListener('input', (ev) => {
   if (t.dataset.obs != null) modal.obs = t.value;
 });
 document.addEventListener('change', (ev) => {
+  if (ev.target.dataset.selSetor != null) { S.setor = +ev.target.value; return render(); }
   const t = ev.target;
   if (t.dataset.vfFin != null) { S.vf.fin = t.value; return render(); }
   if (modal && t.dataset.mCat != null) { modal.cat = t.value; modal.erro = ''; return renderModal(); }
@@ -1757,7 +1839,8 @@ document.addEventListener('change', (ev) => {
   if (modal && ev.target.dataset.pSel != null) { modal.partes[+ev.target.dataset.pSel].resp = ev.target.value || null; modal.erro = ''; }
 });
 document.getElementById('wf-persona').addEventListener('change', (ev) => {
-  S.personaId = ev.target.value; S.aba = 'fila'; S.filtroResp = null; S.popUser = false; S.minhasAba = 'abertos';
+  S.personaId = ev.target.value; S.aba = 'fila'; S.pop = null;
+  ['fp', 'fm'].forEach((k) => { S[k] = { foco: null, pessoa: null, cliente: null, prioridade: null, dataCampo: null, dataPreset: null, de: '', ate: '', q: '', agrupar: 'nenhum' }; }); S.filtroResp = null; S.popUser = false; S.minhasAba = 'abertos';
   irParaInicial();
 });
 window.addEventListener('resize', renderWf);

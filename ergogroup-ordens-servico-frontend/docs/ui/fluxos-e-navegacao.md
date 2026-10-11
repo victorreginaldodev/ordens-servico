@@ -259,6 +259,38 @@ Pedido do usuário em 10/10/2026: organizar a execução no estilo de um quadro 
 - **Painel em quadro:** dá para montar com `fila/`, `andamento/` e `concluidos/`, mas `andamento/` é por tarefa. O frontend teria de agrupar por serviço e deduzir a etapa (um serviço com uma tarefa concluída e outra aberta continua "em execução", e isso não aparece nas tarefas ativas).
 - *Proposta:* um bloco `GET /api/execucao/quadro/?setor=` que devolva os serviços do setor com etapa, prazo, situação de prazo, alerta, ciência e responsáveis. Seria uma lista por serviço, no formato do cartão.
 
+### 6.2.2 Revisão de UX dos indicadores, filtros e cartões (10/10/2026)
+
+**Pedido do usuário**, sobre o wireframe do painel (quadro e lista):
+- havia informação demais, e não ficava claro o que cada marca significava;
+- filtros demais na parte de cima (botões e chips), que poderiam ser dropdowns e ficar mais limpos;
+- os indicadores (KPIs) filtravam ao clicar, mas isso só era descoberto explorando. Eles devem continuar sendo indicadores e deixar claro que também são ação;
+- indicadores pedidos: para distribuir, em andamento, atrasados, sem movimentação e concluídos. "Sem prazo" é redundante e sai;
+- faltava filtro por data.
+
+**Solução no wireframe (proposta)**, aplicada ao Painel do setor e a Meus serviços:
+1. **Indicadores clicáveis.**
+   - Título "Resumo do setor" com a frase "Clique num indicador para ver só aqueles itens".
+   - Cada cartão traz ícone, rótulo, número e um rodapé de ação: "Ver estes →", "Nenhum agora" quando zerado, ou "✓ Mostrando estes" quando selecionado. O cartão selecionado ganha borda e fundo de destaque, e há realce ao passar o mouse.
+   - No quadro, clicar de novo mostra tudo. Na lista, os indicadores fazem o papel das antigas abas, e sempre há um selecionado.
+   - Painel: Para distribuir, Em andamento, Atrasados, Parados (sem movimentação) e Concluídos no mês.
+   - Meus serviços: Com você, Atrasados, Vencem em 7 dias e Concluídos no mês.
+2. **Uma barra de filtros.**
+   - Alternância Quadro | Lista.
+   - Dropdowns: **Pessoa** (com a carga de cada um: ativos e atrasados), **Cliente**, **Prioridade**, **Data** e **Agrupar**.
+   - Busca por serviço, cliente ou OS.
+   - **Como ler**: a legenda das marcas.
+   - Os filtros ativos aparecem como chips removíveis abaixo da barra, com "Limpar filtros".
+   - Os números dos indicadores respeitam os filtros da barra.
+3. **Filtro de data:** escolhe-se a data de referência (prazo, chegada ao setor ou conclusão; em Meus serviços, prazo ou conclusão) e o período (esta semana, próximos 7 dias, este mês, mês passado ou personalizado, de/até).
+4. **Agrupar:** no quadro, colunas por etapa ou raias por pessoa; na lista, sem agrupar, por pessoa ou por cliente. A antiga aba Equipe vira o dropdown Pessoa (carga) e as raias por pessoa.
+5. **Cartões e linhas mais simples:**
+   - serviço, número da OS, cliente e quem está com ele;
+   - no máximo duas situações, em palavras: "Atrasado 5 dias", "Vence 14/10", "Prazo 24/10", "Sem prazo", "Parado há 9 dias" ou o motivo da ciência;
+   - descrição, outros serviços da OS e data da venda saem do cartão: ficam no detalhe e no texto que aparece ao passar o mouse;
+   - na lista, uma informação por coluna.
+6. **Removidos:** a linha de chips da equipe, o botão "Só atrasados e parados" (agora é o indicador) e o texto fixo sobre arrastar (agora está em "Como ler").
+
 ### 6.3 Detalhe do serviço — `/servicos/:id`
 - **Permissão:** quem vê o serviço (404 para quem não vê).
 - **Blocos:**
