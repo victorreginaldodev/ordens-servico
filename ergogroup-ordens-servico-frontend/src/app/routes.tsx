@@ -11,7 +11,11 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import NotFound from '@/pages/NotFound';
 import UiKitPage from '@/pages/UiKitPage';
-import EmConstrucaoPage from '@/pages/EmConstrucaoPage';
+
+// Execução (R4)
+import MeusServicosPage from '@/features/execucao/pages/MeusServicosPage';
+import PainelDoSetorPage from '@/features/execucao/pages/PainelDoSetorPage';
+import DetalheDoServicoPage from '@/features/execucao/pages/DetalheDoServicoPage';
 
 // Analytics
 import OperacionalPage from '@/features/analytics/pages/OperacionalPage';
@@ -92,53 +96,17 @@ const AppRoutes = () => (
     <Route path="/analise/operacional" element={w(<OperacionalPage />)} />
     <Route path="/analise/financeiro" element={g(<AnaliseFinanceiroPage />, ['financeiro.ver_valores'])} />
 
-    {/* Meu trabalho: as páginas novas chegam na R4; rota, menu e permissão já valem */}
-    <Route
-      path="/meus-servicos"
-      element={w(
-        <EmConstrucaoPage
-          titulo="Meus serviços"
-          descricao="O que está com você, o que vence primeiro e o que está atrasado."
-          conteudo="Aqui vão aparecer as suas tarefas, com os atrasados primeiro e os botões de iniciar e concluir."
-        />,
-      )}
-    />
-    <Route
-      path="/visao-geral"
-      element={g(
-        <EmConstrucaoPage
-          titulo="Visão geral"
-          descricao="Todos os setores num lugar só: o que chegou, o que está com quem e o que precisa de atenção."
-          conteudo="Aqui vão aparecer os indicadores de todos os setores, o resumo por setor e a lista com filtro por setor."
-        />,
-        ['setores.todos'],
-      )}
-    />
+    {/* Meu trabalho (R4) */}
+    <Route path="/meus-servicos" element={w(<MeusServicosPage />)} />
+    <Route path="/visao-geral" element={g(<PainelDoSetorPage geral />, ['setores.todos'])} />
     {['/setor', '/setor/:setorId'].map((path) => (
       <Route
         key={path}
         path={path}
-        element={g(
-          <EmConstrucaoPage
-            titulo="Painel do setor"
-            descricao="O que chegou, o que está com quem e o que precisa de atenção."
-            conteudo="Aqui vão aparecer a fila para distribuir, o andamento por pessoa, os atrasados, os parados e os concluídos do mês."
-          />,
-          ['servicos.ver_setor'],
-          { nenhumaDe: ['setores.todos'], redirecionarPara: '/visao-geral' },
-        )}
+        element={g(<PainelDoSetorPage />, ['servicos.ver_setor'], { nenhumaDe: ['setores.todos'], redirecionarPara: '/visao-geral' })}
       />
     ))}
-    <Route
-      path="/servicos/:id"
-      element={w(
-        <EmConstrucaoPage
-          titulo="Serviço"
-          descricao="Etapa, prazo, tarefas e linha do tempo do serviço."
-          conteudo="Aqui vão aparecer as tarefas do serviço, o contexto da venda, os outros serviços da OS e a linha do tempo."
-        />,
-      )}
-    />
+    <Route path="/servicos/:id" element={w(<DetalheDoServicoPage />)} />
 
     {/* Vendas: as telas atuais de OS até a R5 */}
     <Route path="/vendas" element={g(<OrdemServicoListPage />, VER_VENDAS)} />

@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   darCiencia,
   distribuir,
+  editarTarefa,
+  excluirTarefa,
   getAlertas,
   getAndamento,
   getConcluidos,
@@ -12,6 +14,7 @@ import {
   getSetoresAcompanhados,
   type CienciaPayload,
   type DistribuirPayload,
+  type EdicaoDaTarefa,
   type FiltrosDaFila,
   type Periodo,
 } from './services';
@@ -122,4 +125,18 @@ export const useDarCiencia = () => {
       darCiencia(servicoId, payload),
     onSuccess: invalidar,
   });
+};
+
+/** Mudar status, reatribuir, mudar prazo ou descrição de uma tarefa. */
+export const useEditarTarefa = () => {
+  const invalidar = useInvalidarAposAcao();
+  return useMutation({
+    mutationFn: ({ tarefaId, payload }: { tarefaId: number; payload: EdicaoDaTarefa }) => editarTarefa(tarefaId, payload),
+    onSuccess: invalidar,
+  });
+};
+
+export const useExcluirTarefa = () => {
+  const invalidar = useInvalidarAposAcao();
+  return useMutation({ mutationFn: (tarefaId: number) => excluirTarefa(tarefaId), onSuccess: invalidar });
 };

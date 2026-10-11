@@ -95,3 +95,22 @@ export const darCiencia = async (servicoId: number, payload: CienciaPayload = {}
   const { data } = await api.post<DetalheDoServico>(`${BASE}/servicos/${servicoId}/ciencia/`, payload);
   return data;
 };
+
+/* ── Tarefas (`/api/ordens-servico/tarefas/{id}/`) ──
+ * O responsável muda só o status da própria tarefa. Reatribuir, mudar o prazo e excluir exigem
+ * `tarefas.distribuir` no setor; editar a tarefa de outra pessoa exige `tarefas.editar_setor`.
+ * `data_inicio` e `data_termino` são preenchidas pelo backend conforme o status. */
+
+export type StatusDaTarefa = Esquemas['StatusOSETarefaEnum'];
+export type EdicaoDaTarefa = Pick<Esquemas['PatchedTarefaRequest'], 'responsavel' | 'prazo' | 'descricao' | 'status'>;
+
+const TAREFAS = '/api/ordens-servico/tarefas';
+
+export const editarTarefa = async (id: number, payload: EdicaoDaTarefa): Promise<Esquemas['Tarefa']> => {
+  const { data } = await api.patch<Esquemas['Tarefa']>(`${TAREFAS}/${id}/`, payload);
+  return data;
+};
+
+export const excluirTarefa = async (id: number): Promise<void> => {
+  await api.delete(`${TAREFAS}/${id}/`);
+};

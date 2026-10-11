@@ -39,7 +39,7 @@ Leia antes de qualquer ação. O projeto tem dois projetos, reunidos num monorep
 7. `plano-execucao-comercial-financeiro.md`: fases 6 a 12 do backend (6 a 11 concluídas; a 12 é este frontend).
 
 No frontend:
-- `docs/ui/plano-redesenho-fluxos-e-telas.md`: **plano atual** do frontend (fases R0 a R8; R0 a R3 concluídas);
+- `docs/ui/plano-redesenho-fluxos-e-telas.md`: **plano atual** do frontend (fases R0 a R8; R0 a R4 concluídas);
 - `docs/api/contrato-por-dominio.md`: leitura do contrato da API por domínio;
 - `docs/ui/`: design system, UI kit, plano de setores e time, wireframes. Os briefs `listagem-ordens-brief.md`, `ordem-detalhe-brief.md` e `gestor-operacional-brief.md` usam o modelo antigo (líder, contrato, horas) e serão superados pela R1.
 
@@ -67,7 +67,8 @@ No frontend:
 - As telas antigas (`features/ordens`, `features/faturamento`) usam o contrato antigo e ficam como estão até serem substituídas (R4 a R7). Não as remende.
 - R1 (fluxos e navegação, `docs/ui/fluxos-e-navegacao.md`) e R2 (wireframes em `docs/ui/wireframes/lote*.html`) validadas em 11/10/2026: lista como padrão (quadro opcional), Visão geral para quem tem `setores.todos`, Vendas com indicadores clicáveis e filtros em dropdown.
 - R3 concluída em 11/10/2026: menu novo (`components/layout/navigation.ts`), tela inicial por permissão (`lib/telaInicial.ts`, rota `/inicio`), guarda de rota (`components/common/RequerPermissao.tsx`) e redirecionamento de `/ordens` para `/vendas`. O visual do header, da sidebar e do main NÃO muda (pedido do usuário): só o conteúdo. Meus serviços, Visão geral, Painel do setor e `/servicos/:id` estão como "em construção" até a R4.
-- Próxima fase: R4 (execução). Implementar cada fase só quando o usuário pedir.
+- R4 entregue em 11/10/2026 (falta o teste contra o backend local): `features/execucao/pages/` (Meus serviços, Painel do setor e Visão geral na mesma página, Detalhe do serviço), modais de distribuir, ciência e tarefa, e no kit `Indicadores`, `BarraDeFiltros` e `Chip`. Novas telas de lista seguem esse padrão (indicadores clicáveis + filtros em dropdown).
+- Próxima fase: R5 (venda). Implementar cada fase só quando o usuário pedir.
 
 ### Cuidados técnicos (backend)
 - MySQL não desfaz DDL em transação: uma alteração de schema por migração, separada da migração de dados.

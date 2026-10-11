@@ -199,9 +199,32 @@ Itens planejados:
 
 ---
 
-### R4 — Execução
+### R4 — Execução ✅ (aguardando o teste contra o backend local)
 
-Código novo em `src/features/execucao/` (`services.ts`, `hooks.ts`, `pages/`, `components/`).
+Entregue em 11/10/2026, no desenho validado na R2 (lista como padrão, quadro como opção, indicadores clicáveis, filtros em dropdown, agrupamento do primeiro wireframe). Header, sidebar e área principal não mudaram.
+
+| # | Resultado |
+|---|---|
+| 4.1 | `features/execucao/services.ts` e `hooks.ts` ganharam `editarTarefa`/`useEditarTarefa` (status, responsável, prazo, descrição) e `excluirTarefa`/`useExcluirTarefa`, com a mesma invalidação de distribuir e ciência. `useBlocosDoPainel.ts` carrega os cinco blocos de um ou de vários setores e junta tudo (com o setor de origem em cada item) |
+| 4.2 | Kit: `Indicadores` (indicador que também é filtro), `BarraDeFiltros` (`FiltroDropdown`, `OpcaoDeFiltro`, `FiltroDePeriodo`, `BuscaDeFiltros`, `ChipsDeFiltros`, `AlternarVisualizacao`) e `Chip`. `lib/periodo.ts`: esta semana, próximos 7 dias, este mês, mês passado e personalizado |
+| 4.3 | `pages/MeusServicosPage.tsx` (`/meus-servicos`): indicadores Com você, Atrasados, Vencem em 7 dias e Concluídos no mês; filtros Cliente e Data (prazo ou conclusão) e busca; Iniciar e Concluir na linha; quadro A fazer / Em andamento / Concluídas, com arrastar para mudar o status |
+| 4.4 | `pages/DetalheDoServicoPage.tsx` (`/servicos/:id`): etapa, prazo e situação, prioridade, início, término, movimentação e ciência; tarefas com Iniciar/Concluir/Reabrir para o responsável e "Editar" (responsável, prazo, status, parte, excluir) conforme `tarefas.distribuir` e `tarefas.editar_setor` no setor; venda sem valores; outros serviços da OS (com link só para quem acompanha setor ou vê vendas); linha do tempo; Distribuir/Dividir e Estou ciente por `pode_distribuir` e `pode_dar_ciencia` |
+| 4.5 | `pages/PainelDoSetorPage.tsx` (`/setor/:setorId` e `/visao-geral`): indicadores Para distribuir, Em andamento, Atrasados, Parados e Concluídos no mês (o escolhido fica na URL, `?foco=`); filtros Setor (Visão geral), Pessoa (com a carga), Cliente, Prioridade (na fila), Data (chegada, prazo ou conclusão, conforme o indicador), Agrupar e busca. Lista: fila com "Outros serviços da OS"; andamento, atrasados e parados agrupados por pessoa; concluídos com o resultado do prazo. Quadro: colunas por etapa, arrastar da fila para "Distribuído" abre a distribuição. Visão geral: tabela por setor que filtra ao clicar (`?setor=`) e coluna Setor na lista |
+| 4.6 | `components/DistribuirModal.tsx`: responsável (só `membro_do_setor`, com ativos e atrasados), prazo rápido (7, 15, 30 dias, sem prazo) ou data, observação; "Dividir entre pessoas" cria uma tarefa por parte |
+| 4.7 | `components/CienciaModal.tsx`: motivo opcional e observação; avisa que o prazo continua contando |
+| 4.8 | 403 em `setores/` → "Você não acompanha nenhum setor"; setor da URL que a pessoa não acompanha → lista dos que acompanha; 404 do serviço → "Serviço não encontrado" com a explicação; erros de distribuir, ciência e tarefa aparecem no modal com a mensagem do backend (ex.: responsável fora do setor) |
+
+**Verificação:** `tsc` sem erros (os arquivos novos também em modo estrito), `npm run build` ok, `npm run lint` sem problemas novos. Teste no navegador com a API simulada (gestora técnica, técnico e diretoria): distribuir pelo botão e arrastando, ciência, edição de prazo da tarefa, Iniciar e arrastar no quadro do técnico, agrupamento por pessoa e por OS, Visão geral com filtro por setor, largura de 400px sem rolagem horizontal; as chamadas saíram com o corpo certo e não houve erro na página.
+
+**Falta para fechar:** o teste manual contra o backend local com usuários reais (regra de entrega das fases).
+
+**Limitações conhecidas (propostas em `fluxos-e-navegacao.md` §10):**
+- o quadro deduz "Distribuído" ou "Em execução" das tarefas ativas quando o serviço não está nos alertas; o bloco `quadro/` resolveria;
+- a Visão geral faz cinco chamadas por setor;
+- `setores/` não diz se o setor está sem quem organize, então o aviso da Visão geral ainda não aparece;
+- o quadro ainda não tem raias por OS nem por pessoa (a lista tem os dois agrupamentos).
+
+Itens planejados:
 
 | # | Item | Detalhe |
 |---|---|---|

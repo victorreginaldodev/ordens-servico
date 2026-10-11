@@ -20,3 +20,19 @@ export {
 export { AndamentoServicos, type AndamentoServicosProps } from './AndamentoServicos';
 export { CondicaoPagamento, type CondicaoPagamentoProps } from './CondicaoPagamento';
 export { AlertaMovimentacao, type AlertaMovimentacaoProps } from './AlertaMovimentacao';
+export { Indicadores, type Indicador, type IndicadoresProps } from './Indicadores';
+export {
+  BarraDeFiltros,
+  SeparadorDeFiltros,
+  EspacoDeFiltros,
+  AlternarVisualizacao,
+  FiltroDropdown,
+  TituloDoFiltro,
+  NotaDoFiltro,
+  OpcaoDeFiltro,
+  FiltroDePeriodo,
+  BuscaDeFiltros,
+  ChipsDeFiltros,
+  type Visualizacao,
+} from './BarraDeFiltros';
+export { Chip, type ChipProps } from './Chip';
