@@ -25,6 +25,11 @@ export interface CatalogoItem {
   setorNome: string | null;
   /** Inativo: continua nos serviços já vendidos, mas não pode ser usado em serviços novos. */
   ativo: boolean;
+  /**
+   * Só na resposta de criar e editar: avisos do backend que não impedem salvar
+   * (ex.: o setor ainda não tem quem organize; os serviços cairiam numa fila sem responsável).
+   */
+  avisos?: string[];
 }
 
 export interface CatalogoPayload {
@@ -41,6 +46,7 @@ type CatalogoDTO = {
   setor: number | null;
   setor_nome?: string | null;
   ativo?: boolean;
+  avisos?: string[];
 };
 
 const CATALOGO_ENDPOINT = '/api/catalogo/catalogos/';
@@ -52,6 +58,7 @@ const catalogoToFrontend = (dto: CatalogoDTO): CatalogoItem => ({
   setor: dto.setor ?? null,
   setorNome: dto.setor_nome ?? null,
   ativo: dto.ativo ?? true,
+  ...(dto.avisos?.length ? { avisos: dto.avisos } : {}),
 });
 
 const catalogoToBackend = (payload: Partial<CatalogoPayload>) => ({

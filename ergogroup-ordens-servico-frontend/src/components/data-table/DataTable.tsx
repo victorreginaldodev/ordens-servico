@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/kit';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import { cn } from '@/lib/utils';
 import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { DataTableFacetedFilter } from './DataTableFacetedFilter';
@@ -88,7 +88,7 @@ export interface DataTableProps<T> {
   syncWithUrl?: boolean;
   defaultPageSize?: number;
   pageSizeOptions?: number[];
-  /** Sobrescreve a regra de perfil para colunas `financial` (padrão: useUserRole().canViewOrderValues). */
+  /** Sobrescreve a regra de perfil para colunas `financial` (padrão: a permissão `financeiro.ver_valores`). */
   canViewFinancial?: boolean;
   /** Distância do topo da área de rolagem para o cabeçalho fixo. O header do app fica fora dela, então o padrão é 0. */
   stickyOffset?: string;
@@ -150,8 +150,8 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);
-  const { canViewOrderValues } = useUserRole();
-  const showFinancial = canViewFinancial ?? canViewOrderValues;
+  const veValores = usePermissoes().pode('financeiro.ver_valores');
+  const showFinancial = canViewFinancial ?? veValores;
 
   // ── Colunas permitidas para o perfil ────────────────────────────────────────
   const visibleColumns = useMemo(

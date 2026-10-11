@@ -3,7 +3,7 @@ import { AlertCircle, ArrowDown, ArrowRight, ArrowUp, Info } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import { useUsers } from '@/features/time/hooks';
 import { descreverVinculos } from '@/lib/permissoes';
 import { MONTHS } from '../constants';
@@ -106,15 +106,6 @@ const STATUS_HSL: Record<string, string> = {
   concluida:    'hsl(142 68% 42%)',
   cancelada:    'hsl(215 15% 62%)',
   cancelado:    'hsl(215 15% 62%)',
-};
-
-// ── Complexidade ─────────────────────────────────────────────────────────────
-
-const complexMeta = (v: number | null | undefined) => {
-  if (v == null) return { label: '—', dot: 'hsl(215 15% 58%)', text: 'text-muted-foreground' };
-  if (v >= 2.5) return { label: 'Alta', dot: 'hsl(0 78% 58%)', text: 'text-red-600 dark:text-red-400' };
-  if (v >= 1.8) return { label: 'Média', dot: 'hsl(42 92% 50%)', text: 'text-amber-600 dark:text-amber-400' };
-  return { label: 'Baixa', dot: 'hsl(142 68% 42%)', text: 'text-green-600 dark:text-green-400' };
 };
 
 // ── Card base ─────────────────────────────────────────────────────────────────
@@ -284,8 +275,6 @@ function PrazoBar({ label, value, color }: { label: string; value: number | null
 
 function TecnicoCard({ tecnico, cargo, isOwn, highlight }: { tecnico: TecnicoProdutividadeItem; cargo: string; isOwn: boolean; highlight: boolean }) {
   const nome = tecnico.tecnico_nome ?? `Técnico #${tecnico.tecnico_id}`;
-  const cm = complexMeta(tecnico.complexidade_media_concluidas);
-  const horas = Number(tecnico.horas_estimadas_entregues ?? 0);
 
   const hist = [
     { k: 'Tarefas concl.', v: nf(tecnico.tarefas_concluidas), cls: 'text-foreground' },
@@ -295,8 +284,6 @@ function TecnicoCard({ tecnico, cargo, isOwn, highlight }: { tecnico: TecnicoPro
       v: tecnico.tempo_medio_tarefa_dias == null ? '—' : `${dec(tecnico.tempo_medio_tarefa_dias)}d`,
       cls: tecnico.tempo_medio_tarefa_dias == null ? 'text-muted-foreground' : 'text-foreground',
     },
-    { k: 'Complex. média', v: cm.label, cls: cm.text },
-    { k: 'Horas entregues', v: nf(horas), cls: 'text-foreground' },
   ];
 
   const agora = [
@@ -333,7 +320,7 @@ function TecnicoCard({ tecnico, cargo, isOwn, highlight }: { tecnico: TecnicoPro
             <div className="text-xs font-medium text-muted-foreground">{cargo}</div>
           </div>
         </div>
-        <div className="grid min-w-[280px] flex-1 grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid min-w-[280px] flex-1 grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-3">
           {hist.map((h) => (
             <div key={h.k} className="flex flex-col gap-[3px]">
               <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted-foreground">{h.k}</span>
@@ -390,7 +377,8 @@ const PAGE_SIZE = 10;
 const OperacionalPage = () => {
   const { data, isLoading, isError } = useAnaliseOperacional();
   const { data: usuarios = [] } = useUsers();
-  const { isTechnician } = useUserRole();
+  // Quem não acompanha setor nem vê todas as OS vê só a própria linha de produtividade.
+  const isTechnician = !usePermissoes().podeAlguma(['os.ver_todas', 'servicos.ver_setor']);
   const [catTab, setCatTab] = useState<'servico' | 'oso'>('servico');
   const [principaisCount, setPrincipaisCount] = useState(PAGE_SIZE);
   const [catalogoCount, setCatalogoCount] = useState(PAGE_SIZE);
@@ -805,27 +793,17 @@ const OperacionalPage = () => {
         />
         <div className="px-[22px] pb-[18px] pt-1.5">
           <div className="overflow-x-auto">
-            <div className="grid min-w-[640px] grid-cols-[minmax(0,1fr)_100px_90px_120px_110px] gap-4 border-b border-border py-3">
+            <div className="grid min-w-[420px] grid-cols-[minmax(0,1fr)_90px_110px] gap-4 border-b border-border py-3">
               <span className="text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted-foreground">Item</span>
-              <span className="text-center text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted-foreground">Complex.</span>
               <span className="text-right text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted-foreground">Concl.</span>
-              <span className="text-right text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted-foreground">Est. (horas)</span>
               <span className="text-right text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted-foreground">Real (dias)</span>
             </div>
             {catalogoTempo.length ? (
               catalogoTempoVisivel.map((c) => {
-                const cm = complexMeta(c.complexidade);
                 return (
-                  <div key={c.catalogo_id} className="grid min-w-[640px] grid-cols-[minmax(0,1fr)_100px_90px_120px_110px] items-center gap-4 border-b border-border py-[13px] last:border-b-0">
+                  <div key={c.catalogo_id} className="grid min-w-[420px] grid-cols-[minmax(0,1fr)_90px_110px] items-center gap-4 border-b border-border py-[13px] last:border-b-0">
                     <span className="truncate text-[13.5px] font-semibold text-foreground">{c.catalogo_nome}</span>
-                    <span className={cn('inline-flex items-center justify-center gap-1.5 text-[12.5px] font-semibold', cm.text)}>
-                      <span className="h-[7px] w-[7px] rounded-full" style={{ background: cm.dot }} />
-                      {cm.label}
-                    </span>
                     <span className="text-right text-[13.5px] font-semibold tabular-nums text-muted-foreground">{nf(c.total_concluidos)}</span>
-                    <span className="text-right text-[13.5px] font-semibold tabular-nums text-muted-foreground">
-                      {c.horas_estimadas != null ? Number(c.horas_estimadas).toLocaleString('pt-BR') : '—'}
-                    </span>
                     <span className="text-right text-sm font-bold tabular-nums text-foreground">{dec(c.media_dias) ?? '—'}</span>
                   </div>
                 );

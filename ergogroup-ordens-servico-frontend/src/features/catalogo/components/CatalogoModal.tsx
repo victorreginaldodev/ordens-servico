@@ -118,8 +118,12 @@ function EtapaForm({
     salvar.mutate(
       { id: item?.id, payload: { nome: v.nome, descricao: v.descricao || null, setor: Number(v.setor), ativo: v.ativo } },
       {
-        onSuccess: () => {
-          toast({ title: item ? 'Serviço atualizado' : 'Serviço adicionado ao catálogo', description: v.nome });
+        onSuccess: (salvo) => {
+          const titulo = item ? 'Serviço atualizado' : 'Serviço adicionado ao catálogo';
+          // O backend salva, mas avisa quando o setor não tem quem organize (a fila ficaria sem responsável).
+          // Um aviso só, no lugar da confirmação: o toast mostra uma mensagem por vez.
+          if (salvo.avisos?.length) toast({ title: `${titulo}, com um aviso`, description: salvo.avisos.join(' '), duration: 12_000 });
+          else toast({ title: titulo, description: v.nome });
           onFechar();
         },
         onError: (error) => {

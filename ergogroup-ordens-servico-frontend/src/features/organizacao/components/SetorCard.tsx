@@ -1,5 +1,5 @@
-import { Package, Users } from 'lucide-react';
-import { AtivoBadge, AvatarStack } from '@/components/kit';
+import { Package, UserX, Users } from 'lucide-react';
+import { AtivoBadge, AvatarStack, Chip } from '@/components/kit';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { ResumoSetor } from '../useResumoSetores';
@@ -13,7 +13,7 @@ interface SetorCardProps {
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
 export function SetorCard({ resumo, detalhesCarregando, onAbrir }: SetorCardProps) {
-  const { setor, membros, gestores, catalogos } = resumo;
+  const { setor, membros, catalogos } = resumo;
   return (
     <button
       type="button"
@@ -26,7 +26,13 @@ export function SetorCard({ resumo, detalhesCarregando, onAbrir }: SetorCardProp
     >
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-base font-semibold leading-snug">{setor.nome}</h2>
-        {!setor.ativo && <AtivoBadge ativo={false} />}
+        {!setor.ativo ? (
+          <AtivoBadge ativo={false} />
+        ) : setor.sem_organizador ? (
+          <Chip tom="warning" icone={UserX} dica="Ninguém tem as permissões de ver e distribuir os serviços deste setor: o que chegar fica na fila sem responsável.">
+            Sem quem organize
+          </Chip>
+        ) : null}
       </div>
 
       <p className={cn('line-clamp-2 text-sm', setor.descricao ? 'text-muted-foreground' : 'italic text-muted-foreground/70')}>
@@ -48,10 +54,10 @@ export function SetorCard({ resumo, detalhesCarregando, onAbrir }: SetorCardProp
             </span>
           </div>
         )}
-        {gestores.length > 0 && (
-          <span className="flex items-center gap-1.5">
-            <span className="text-2xs text-muted-foreground">Gestão</span>
-            <AvatarStack nomes={gestores.map((g) => g.usuario_nome)} max={3} />
+        {setor.organizadores.length > 0 && (
+          <span className="flex items-center gap-1.5" title={`Organiza: ${setor.organizadores.map((o) => o.nome).join(', ')}`}>
+            <span className="text-2xs text-muted-foreground">Organiza</span>
+            <AvatarStack nomes={setor.organizadores.map((o) => o.nome ?? '')} max={3} />
           </span>
         )}
       </div>

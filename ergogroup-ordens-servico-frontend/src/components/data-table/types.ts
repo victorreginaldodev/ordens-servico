@@ -21,7 +21,7 @@ declare module '@tanstack/react-table' {
     label?: string;
     align?: 'left' | 'right';
     priority?: ColumnPriority;
-    /** Só aparece para perfis que podem ver valores (useUserRole().canViewOrderValues). */
+    /** Só aparece para perfis que podem ver valores (`financeiro.ver_valores`). */
     financial?: boolean;
     /** Largura CSS da coluna (ex.: `140px`). Sem largura = flexível. */
     width?: string;

@@ -124,8 +124,6 @@ export interface DistribuicaoTempoOS {
 export interface TempoPorCatalogoItem {
   catalogo_id: number;
   catalogo_nome: string;
-  horas_estimadas: string | null;
-  complexidade: number | null;
   total_concluidos: number;
   media_dias: number;
 }
@@ -177,8 +175,6 @@ export interface TecnicoProdutividadeItem {
   tecnico_nome: string | null;
   tarefas_concluidas: number;
   tempo_medio_tarefa_dias: number | null;
-  complexidade_media_concluidas: number | null;
-  horas_estimadas_entregues: string;
   mini_os_concluidas: number;
   tarefas_em_aberto: number;
   mini_os_em_aberto: number;

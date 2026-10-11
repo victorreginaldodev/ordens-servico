@@ -148,6 +148,17 @@ function EtapaDetalhe({
         <DialogDescription>{setor.descricao || 'Sem descrição.'}</DialogDescription>
       </DialogHeader>
 
+      {setor.ativo && setor.sem_organizador ? (
+        <p className="rounded-lg border border-warning/40 bg-warning-subtle px-3 py-2 text-sm text-warning-strong">
+          <b>Este setor ainda não tem quem organize.</b> Ninguém tem as permissões de ver e distribuir os serviços dele, então o que
+          chegar fica na fila sem responsável. Dê a alguém do setor uma função com essas permissões.
+        </p>
+      ) : setor.organizadores.length ? (
+        <p className="text-sm text-muted-foreground">
+          Organiza o trabalho: <span className="text-foreground">{setor.organizadores.map((o) => o.nome).join(', ')}</span>
+        </p>
+      ) : null}
+
       {podeConfigurar && (
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => onEtapa({ tipo: 'form', id: setor.id })}>

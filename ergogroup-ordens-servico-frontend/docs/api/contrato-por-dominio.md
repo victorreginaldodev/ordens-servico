@@ -14,7 +14,7 @@ Leitura do contrato do backend (branch `v3`, antes `epic/v3`; fases 6 a 11) feit
 - **Cada domínio** reexporta os tipos com nomes do domínio em `features/<domínio>/services.ts`.
 - **Quando o backend mudar:** baixe o schema de novo, rode `npm run api:tipos` e `npx tsc -p tsconfig.app.json --noEmit`. Os erros de compilação apontam o que mudou.
 
-As telas antigas (`features/ordens`, `features/faturamento`) ainda usam os tipos escritos à mão e serão substituídas nas fases R4 a R6.
+As telas antigas de OS e de faturamento foram substituídas (R4 a R6) e removidas na R7.
 
 ## Regras transversais
 

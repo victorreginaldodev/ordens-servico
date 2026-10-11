@@ -1,37 +1,18 @@
 import api from '@/services/api';
 import type { UserProfile } from '@/services/auth';
+import type { Esquemas } from '@/api/tipos';
 import type { ResumoPermissoes, Vinculo } from '@/lib/permissoes';
 
 const endpoint = '/api/contas/usuarios/';
 
-// Shape retornado pelo endpoint de LISTAGEM (`UsuarioList` no schema) — não inclui
-// username/is_staff/is_superuser/last_login, que só vêm no detalhe (`UsuarioDetail`,
-// ver `ProfileResponse` abaixo). Buscar o detalhe antes de editar um usuário.
-export interface UsuarioApi {
-  id: number;
-  email: string;
-  nome_completo: string;
-  ativo: boolean;
-  /** Setores e funções da pessoa. */
-  vinculos: Vinculo[];
-  data_criacao: string;
-}
+// Tipos gerados do contrato (`src/api/schema.d.ts`). A listagem (`UsuarioList`) não traz
+// username/is_staff/is_superuser/last_login, que só vêm no detalhe (ver `ProfileResponse` abaixo).
+export type UsuarioApi = Esquemas['UsuarioList'];
 
 /** Setor e função na escrita de uma pessoa. Enviar a lista substitui todos os vínculos. */
-export interface VinculoPayload {
-  setor: number;
-  funcao: number;
-}
+export type VinculoPayload = Esquemas['VinculoRequest'];
 
-export interface CreateUserPayload {
-  email: string;
-  username: string;
-  nome_completo: string;
-  ativo: boolean;
-  vinculos?: VinculoPayload[];
-  password: string;
-  password_confirmacao: string;
-}
+export type CreateUserPayload = Esquemas['UsuarioCreateRequest'];
 
 export interface UpdateUserPayload {
   email?: string;

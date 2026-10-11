@@ -1,31 +1,21 @@
 import api from '@/services/api';
+import type { Esquemas } from '@/api/tipos';
 import type { Permissao } from '@/lib/permissoes';
 
 const BASE = '/api/organizacoes';
 
-export interface Setor {
-  id: number;
-  organizacao: number;
-  nome: string;
-  descricao: string | null;
-  ativo: boolean;
-  criado_em: string;
-  atualizado_em: string;
-}
+/** Setor como a API devolve (tipo gerado): inclui `organizadores` e `sem_organizador` (ADR 0008, 1). */
+export type Setor = Esquemas['Setor'];
 
-export interface Funcao {
-  id: number;
-  organizacao: number;
-  nome: string;
+/**
+ * Função (tipo gerado), com `permissoes` e `setores_detalhe` mais precisos do que o schema descreve
+ * (o schema dá `permissoes` opcional e `setores_detalhe` sem forma).
+ */
+export type Funcao = Omit<Esquemas['Funcao'], 'permissoes' | 'setores_detalhe' | 'descricao'> & {
   descricao: string | null;
-  ativo: boolean;
   permissoes: Permissao[];
-  /** Setores em que a função pode ser atribuída (obrigatório, ao menos um). */
-  setores: number[];
   setores_detalhe: Array<{ id: number; nome: string }>;
-  criado_em: string;
-  atualizado_em: string;
-}
+};
 
 /** A função pode ser usada neste setor? */
 export const funcaoLiberadaNoSetor = (funcao: Pick<Funcao, 'setores'>, setor: number | null | undefined) =>
@@ -72,15 +62,7 @@ export const excluirSetor = async (id: number): Promise<void> => {
 };
 
 /** Vínculo pessoa + setor + função (`MembroSetor` na API). */
-export interface Membro {
-  id: number;
-  usuario: number;
-  usuario_nome: string;
-  setor: number;
-  setor_nome: string;
-  funcao: number;
-  funcao_nome: string;
-}
+export type Membro = Esquemas['MembroSetor'];
 
 export const getMembros = async (): Promise<Membro[]> => {
   const { data } = await api.get(`${BASE}/membros/`);

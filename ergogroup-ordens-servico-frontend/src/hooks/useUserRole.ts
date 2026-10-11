@@ -1,6 +1,9 @@
 import { usePermissoes } from './usePermissoes';
 
 /**
+ * Usado só pelas telas da OS operacional e do catálogo operacional, que estão fora do escopo do
+ * redesenho (R7, 11/10/2026). Todo o resto usa `usePermissoes().pode()`.
+ *
  * Adaptador de transição: mantém as flags que as telas já usam, agora calculadas a partir
  * das permissões da pessoa (ver `usePermissoes`). Código novo deve usar `usePermissoes().pode()`
  * direto, passando o setor do serviço quando a regra é por setor.

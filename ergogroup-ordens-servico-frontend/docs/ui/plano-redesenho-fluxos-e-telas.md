@@ -305,7 +305,23 @@ Itens planejados:
 
 ---
 
-### R7 — Ajustes e remoção do legado
+### R7 — Ajustes e remoção do legado ✅
+
+Concluída em 11/10/2026.
+
+| # | Resultado |
+|---|---|
+| 7.1 | Setores: o cartão mostra "Sem quem organize" (`sem_organizador`) ou os avatares de quem organiza (`organizadores`, no lugar da "Gestão" deduzida das funções); o detalhe do setor traz o aviso ou a lista de quem organiza |
+| 7.2 | Catálogo: ao salvar, os `avisos` do backend (setor sem quem organize) aparecem na confirmação, que fica 12 segundos na tela |
+| 7.3 | `useUserRole` saiu da tabela padrão (`DataTable`, coluna de valores por `financeiro.ver_valores`) e da Análise operacional. Ficou só nas telas da OS operacional e do catálogo operacional, fora do escopo do redesenho; o hook diz isso no comentário |
+| 7.4 | Removidas a lista, o formulário e o detalhe antigos de OS (`features/ordens/pages/OrdemServico*`, `OrdemDetalhePage` e os componentes, hooks e serviços que só eles usavam, inclusive o PDF antigo) e a tela antiga de faturamento (`features/faturamento`). A OS operacional continua intacta |
+| 7.5 | Código morto removido, achado pelo alcance dos imports a partir de `main.tsx`: `types/index.ts`, `data/mockData.ts`, `data/analiseOperacionalMock.ts`, `config/features.ts`, `components/common/index.ts` e `MoneyValue`, `ThemeToggle`, `NavLink`, `ComponentUnderDevelopment`, `OrderSearch`, `components/order*` e dois gráficos sem uso da análise. Os componentes de `components/ui` (biblioteca) ficaram |
+| 7.6 | Análise operacional: "Complex. média" e "Horas entregues" saíram do cartão de cada pessoa (o backend já não envia), e "Complex." e "Est. (horas)" saíram da tabela por catálogo (ADR 0005) |
+| 7.7 | Tipos gerados no lugar dos escritos à mão: `Setor`, `Membro` e `Funcao` (organização; `Funcao` deriva do gerado, com `permissoes` e `setores_detalhe` mais precisos) e `UsuarioApi`, `VinculoPayload` e `CreateUserPayload` (time). `UpdateUserPayload` ficou à mão porque o schema da edição não descreve `ativo` e `vinculos`; os clientes continuam com o modelo próprio da tela |
+
+**Verificação:** `tsc` sem erros, `npm run build` ok, `npm run lint` com 28 problemas (eram 49; os que saíram estavam no código removido, nenhum novo). Teste no navegador com a API simulada: Setores (aviso e organizadores), Catálogo (aviso ao salvar), Time, Funções, Clientes, Meu perfil, Análise operacional e OS operacionais abrem sem erro; os testes da R4, R5 e R6 continuaram passando.
+
+Itens planejados:
 
 | # | Item |
 |---|---|
