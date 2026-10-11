@@ -283,7 +283,17 @@ Pedido do usuário em 10/10/2026: organizar a execução no estilo de um quadro 
    - Os filtros ativos aparecem como chips removíveis abaixo da barra, com "Limpar filtros".
    - Os números dos indicadores respeitam os filtros da barra.
 3. **Filtro de data:** escolhe-se a data de referência (prazo, chegada ao setor ou conclusão; em Meus serviços, prazo ou conclusão) e o período (esta semana, próximos 7 dias, este mês, mês passado ou personalizado, de/até).
-4. **Agrupar:** no quadro, colunas por etapa ou raias por pessoa; na lista, sem agrupar, por pessoa ou por cliente. A antiga aba Equipe vira o dropdown Pessoa (carga) e as raias por pessoa.
+4. **Agrupar:**
+   - no quadro: colunas por etapa, **raias por OS** ou raias por pessoa;
+   - na lista: sem agrupar, **por OS**, por pessoa ou por cliente;
+   - a antiga aba Equipe vira o dropdown Pessoa (carga) e as raias por pessoa.
+
+   **Agrupamento por OS** (o usuário apontou que é importantíssimo, 10/10/2026): cada venda vira uma raia, ou um grupo na lista, com:
+   - número, cliente, data e quem vendeu;
+   - chips com **todos os serviços da OS, inclusive de outros setores**, e a etapa de cada um;
+   - um link para o resumo da venda.
+
+   Nas raias, as OS com algo atrasado vêm primeiro e, depois, as que têm algo na fila (a venda mais antiga primeiro). Dá para arrastar um serviço da fila da OS para "Distribuído" na mesma raia.
 5. **Cartões e linhas mais simples:**
    - serviço, número da OS, cliente e quem está com ele;
    - no máximo duas situações, em palavras: "Atrasado 5 dias", "Vence 14/10", "Prazo 24/10", "Sem prazo", "Parado há 9 dias" ou o motivo da ciência;

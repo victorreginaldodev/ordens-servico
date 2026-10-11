@@ -332,6 +332,9 @@ tr.alerta-linha td{background:hsl(var(--warning-subtle)/.45)}
 .fchip svg{width:12px;height:12px}
 .leg{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:start;padding:6px 8px;font-size:12px;line-height:17px;color:hsl(var(--muted-foreground))}
 .k-top .sp{flex:1}
+.lane-os{gap:8px 12px}
+.os-res{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:auto}
+tr.grp .os-res{margin-left:12px;font-weight:400}
 .k-cli{font-size:13px;color:hsl(var(--foreground));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .k-chips{display:inline-flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
 .k-foot{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
@@ -802,7 +805,7 @@ function popover(id, f) {
   }
   if (id === 'prioridade') return `<div class="fpop-h">Prioridade da venda</div>${opc('prioridade', null, 'Todas')}${Object.entries(PRIOR).map(([k, v]) => opc('prioridade', k, v[2])).join('')}`;
   if (id === 'agrupar') {
-    const ops = vis() === 'quadro' ? [['nenhum', 'Colunas por etapa'], ['pessoa', 'Raias por pessoa']] : [['nenhum', 'Sem agrupar'], ['pessoa', 'Por pessoa'], ['cliente', 'Por cliente']];
+    const ops = vis() === 'quadro' ? [['nenhum', 'Colunas por etapa'], ['os', 'Raias por OS'], ['pessoa', 'Raias por pessoa']] : [['nenhum', 'Sem agrupar'], ['os', 'Por OS'], ['pessoa', 'Por pessoa'], ['cliente', 'Por cliente']];
     return `<div class="fpop-h">Agrupar</div>${ops.map(([v, t]) => opc('agrupar', v, t)).join('')}`;
   }
   if (id === 'data') {
@@ -840,7 +843,7 @@ function barraFiltros(opcoes) {
   if (rotuloData(f, campos)) ativos.push(['data', rotuloData(f, campos)]);
   if (f.q) ativos.push(['q', `Busca: “${f.q}”`]);
   const chave = S.rota === 'meus-servicos' ? 'visMeus' : 'visPainel';
-  const agr = { nenhum: null, pessoa: vis() === 'quadro' ? 'Raias por pessoa' : 'Por pessoa', cliente: 'Por cliente' }[f.agrupar];
+  const agr = { nenhum: null, os: vis() === 'quadro' ? 'Raias por OS' : 'Por OS', pessoa: vis() === 'quadro' ? 'Raias por pessoa' : 'Por pessoa', cliente: 'Por cliente' }[f.agrupar];
   return `<div class="fbar">
       <span class="seg" role="group" aria-label="Visualização"><button class="${S[chave] === 'quadro' ? 'on' : ''}" data-vis="${chave}:quadro" title="Colunas por etapa">${I('columns-3')}Quadro</button><button class="${S[chave] === 'lista' ? 'on' : ''}" data-vis="${chave}:lista" title="Tabela">${I('list')}Lista</button></span>
       <span class="vsep"></span>
@@ -956,6 +959,7 @@ function quadroSetor(setor, organiza) {
   const f = S.fp;
   const cols = ETAPAS_COL.filter(([id]) => !f.foco || ss.some((s) => etapa(s) === id) || (id === 'distribuido' && f.foco === 'fila' && organiza));
   const cab = ([id, t, tom], n) => `<div class="col-h"><span class="dot d-${tom}"></span><b>${t}</b><span class="cnt n">${n}</span></div>`;
+  if (f.agrupar === 'os') return raiasPorOS(setor, organiza, ss, cols, cab);
   if (f.agrupar !== 'pessoa') {
     return `<div class="board" style="grid-template-columns:repeat(${cols.length},minmax(250px,1fr))">${cols.map((c) => {
       const lista = ordenar2(c[0], ss.filter((s) => etapa(s) === c[0]));
@@ -981,6 +985,35 @@ function quadroSetor(setor, organiza) {
           }).join('')}`;
       }).join('')}
     </div></div></div>`;
+}
+
+/* Agrupamento por OS: os serviços de uma mesma venda juntos, para distribuir o pacote e ver como ele anda. */
+function resumoOS(os, setor) {
+  const ss = SERVICOS.filter((s) => s.os === os);
+  const fora = ss.filter((s) => s.setor !== setor.id);
+  return `<span class="os-res">${ss.map((s) => `<span class="chip" title="${esc(SETORES.find((x) => x.id === s.setor).nome)} · ${ETAPA[etapa(s)][2]}"><span class="dot d-${dotEtapa[etapa(s)]}"></span>${esc(s.cat)}${s.setor !== setor.id ? ` <span class="muted">· ${esc(SETORES.find((x) => x.id === s.setor).nome)}</span>` : ''}</span>`).join('')}
+    <a class="sm" href="#venda-${os}" data-stop>Resumo da venda</a></span>`;
+}
+function raiasPorOS(setor, organiza, ss, cols, cab) {
+  const porOS = {};
+  ss.forEach((s) => (porOS[s.os] ||= []).push(s));
+  /* OS com algo atrasado primeiro, depois com algo na fila (a mais antiga primeiro), depois o resto */
+  const peso = (os) => (porOS[os].some(atrasado) ? 0 : porOS[os].some((s) => etapa(s) === 'na_fila') ? 1 : 2);
+  const oss = Object.keys(porOS).map(Number).sort((a, b) => peso(a) - peso(b) || dt(OS[a].venda) - dt(OS[b].venda));
+  if (!oss.length) return empty('search-x', 'Nada com estes filtros', 'Mude o indicador selecionado ou limpe os filtros.');
+  return `<div class="lanes-wrap"><div class="lanes" style="grid-template-columns:repeat(${cols.length},minmax(230px,1fr));min-width:${cols.length * 240}px">
+    ${cols.map((c) => `<div class="lanes-h">${cab(c, ss.filter((s) => etapa(s) === c[0]).length)}</div>`).join('')}
+    ${oss.map((os) => {
+      const o = OS[os]; const doGrupo = porOS[os];
+      return `<div class="lane-h lane-os"><b>OS ${os}</b><span>${esc(o.cliente)}</span><span class="sm muted">venda ${fmtC(dt(o.venda))} · ${esc(PESSOAS[o.vendedor].nome)}</span>${o.prioridade === 'alta' ? `<span class="tx-danger inline sm">${I('chevrons-up')}Alta</span>` : ''}${resumoOS(os, setor)}</div>
+        ${cols.map(([col]) => {
+          const lista = ordenar2(col, doGrupo.filter((s) => etapa(s) === col));
+          const soltar = col === 'distribuido' && organiza && doGrupo.some((s) => etapa(s) === 'na_fila');
+          return `<div class="cell" ${soltar ? 'data-drop="pessoa:"' : ''}>${lista.map((s) => kcardServico(s, organiza)).join('')}</div>`;
+        }).join('')}`;
+    }).join('')}
+  </div></div>
+  <span class="sm muted">Cada raia é uma venda. Os chips ao lado do número mostram todos os serviços da OS, inclusive os de outros setores, com a etapa de cada um.</span>`;
 }
 
 function listaSetor(setor, organiza) {
@@ -1012,10 +1045,11 @@ function listaSetor(setor, organiza) {
   let corpo;
   if (f.agrupar === 'nenhum') corpo = ordenados.map((s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`).join('');
   else {
-    const chave = (s) => f.agrupar === 'cliente' ? [OS[s.os].cliente] : (respsDe(s).length ? respsDe(s).map((k) => PESSOAS[k].nome) : ['Sem responsável']);
+    const chave = (s) => f.agrupar === 'os' ? [`OS ${s.os} · ${OS[s.os].cliente}`] : f.agrupar === 'cliente' ? [OS[s.os].cliente] : (respsDe(s).length ? respsDe(s).map((k) => PESSOAS[k].nome) : ['Sem responsável']);
     const g = {};
     ordenados.forEach((s) => chave(s).forEach((k) => (g[k] ||= []).push(s)));
-    corpo = Object.keys(g).sort().map((k) => `<tr class="grp"><td colspan="6">${esc(k)} <span class="muted">· ${g[k].length}</span></td></tr>${g[k].map((s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`).join('')}`).join('');
+    const ordemGrupos = f.agrupar === 'os' ? Object.keys(g).sort((a, b) => +a.slice(3, 7) - +b.slice(3, 7)) : Object.keys(g).sort();
+    corpo = ordemGrupos.map((k) => `<tr class="grp"><td colspan="6">${esc(k)} <span class="muted">· ${pl(g[k].length, 'serviço', 'serviços')} aqui</span>${f.agrupar === 'os' ? resumoOS(+k.slice(3, 7), setor) : ''}</td></tr>${g[k].map((s) => `<tr class="click" data-ir="servico-${s.id}">${linha(s)}</tr>`).join('')}`).join('');
   }
   return `<div class="tw"><table><thead><tr>${head}</tr></thead><tbody>${corpo}</tbody></table></div>`;
 }
