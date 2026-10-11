@@ -489,6 +489,7 @@ A rota `/ordens/operacionais` (fora de escopo) continua igual. O redirecionament
 | 13 | Indicadores e filtros em dropdown também em Vendas e Cobranças | — | **Vendas: sim.** Cobranças: fica como está |
 
 ## 10. Lacunas encontradas para as próximas fases
+- **Encontradas na R5 (11/10/2026), propostas para o backend:** `OrdemServicoList` (lista de vendas) não traz se algum serviço está atrasado, os setores dos serviços nem a data de conclusão da OS. Por isso o indicador "Com atraso" e o filtro Setor de Vendas (decididos em 6.2.3, item 4) ficaram de fora e "Concluídas no mês" virou "Concluídas". Proposta: acrescentar `com_atraso` (ou `atrasados`), `setores` (ids) e `data_conclusao` à lista, ou os filtros `setor`, `com_atraso`, `vendido_por`, `venda_de`/`venda_ate`. Os contadores dos indicadores são calculados no frontend sobre a lista inteira.
 - **Encontradas na R4 (11/10/2026), propostas para o backend:**
   - `GET /api/execucao/setores/` poderia trazer `sem_organizador` (nenhum membro com `servicos.ver_setor` + `tarefas.distribuir`), para o aviso da Visão geral e do painel;
   - `LinhaDeTarefa` (andamento) poderia trazer a `etapa` do serviço; hoje o quadro deduz "Distribuído" ou "Em execução" pelas tarefas ativas, e um serviço com uma tarefa concluída e outra aberta aparece como "Distribuído". O bloco `quadro/` (pergunta 11) resolve isso de vez;

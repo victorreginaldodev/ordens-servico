@@ -241,7 +241,26 @@ Itens planejados:
 
 ---
 
-### R5 — Venda
+### R5 — Venda ✅ (aguardando o teste contra o backend local)
+
+Entregue em 11/10/2026. As telas antigas de OS (`features/ordens/pages/OrdemServico*`, `OrdemDetalhePage`) saíram das rotas e ficam no código até a R7.
+
+| # | Resultado |
+|---|---|
+| 5.1 | `features/vendas/pages/NovaVendaPage.tsx` (`/vendas/nova`): página em quatro etapas (cliente e venda → condição → serviços → revisão). Cliente e catálogo com busca (`components/SeletorBusca.tsx`); catálogos inativos não aparecem; cada serviço mostra "vai para <setor>". Condição por tipo, com as regras do backend conferidas antes de enviar (`condicao.ts`: `validarCondicao`) e a prévia do texto (`previaDaCondicao`). Contato da NF sugerido pelo representante do cliente. Revisão com a condição em texto e os serviços por setor, avisando quem recebe e-mail. Um `POST` com `servicos`; erros 400 voltam para a etapa e o campo |
+| 5.2 | Edição (`/vendas/:id/editar`): etapas 1 e 2; a 2 some para quem não vê valores (o `PATCH` não manda a condição). Serviços se acrescentam no resumo (`AcrescentarServicoModal`, `POST /servicos/`, avisa só o setor dele) |
+| 5.3 | `pages/VendasPage.tsx` (`/vendas`): indicadores Para distribuir, Em execução, Concluídas e A faturar (este só para quem vê valores); filtros Vendedor ("Minhas vendas" usa `?minhas=true`), Cliente, Financeiro e Data da venda, e busca por cliente ou número; colunas OS, Cliente, Venda, Vendedor, Andamento, Status e, com valores, Condição (o texto completo ao passar o mouse), Valor e Financeiro |
+| 5.4 | `pages/ResumoDaVendaPage.tsx` (`/vendas/:id`): status, andamento, prioridade e observação; serviços com setor, etapa, com quem (e quando começou ou concluiu), prazo e conclusão, abrindo o detalhe do serviço para quem acompanha setor ou vê todas as OS; condição e financeiro (liberação e lançamento) só com valores; ações PDF, Acrescentar serviço, Editar venda e Excluir venda (`os.excluir`, com confirmação) |
+| 5.5 | A linha do tempo da venda usa o `LinhaDoTempo` da R0 (o mesmo do detalhe do serviço) |
+| 5.6 | `components/ResumoDaVendaPdf.tsx`: PDF a partir do resumo da venda, gerado sob demanda (o `@react-pdf` só carrega ao clicar); sem valores, a condição não entra |
+
+**Verificação:** `tsc` sem erros (`features/vendas` também em modo estrito), `npm run build` ok, `npm run lint` sem problemas novos. Teste no navegador com a API simulada, como comercial (vê valores, pode excluir) e administrativo (sem valores): lista com indicadores e filtros, nova venda recorrente com dois serviços de setores diferentes (validação do valor mensal, contato da NF sugerido, revisão por setor), resumo, acrescentar serviço, PDF (arquivo válido), edição e exclusão; as chamadas saíram com o corpo certo e não houve erro na página. O teste da R4 continuou passando.
+
+**Falta para fechar:** o teste manual contra o backend local, criando vendas dos três tipos com serviços de setores diferentes e conferindo a fila de cada setor.
+
+**Diferenças em relação ao decidido em 11/10/2026 (limitação da API, proposta em `fluxos-e-navegacao.md` §10):** o indicador "Com atraso" e o filtro Setor não entraram, e "Concluídas no mês" virou "Concluídas", porque a lista de vendas não traz atraso, setores nem a data de conclusão.
+
+Itens planejados:
 
 | # | Item | Detalhe |
 |---|---|---|

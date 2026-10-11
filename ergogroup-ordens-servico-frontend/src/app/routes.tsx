@@ -21,10 +21,10 @@ import DetalheDoServicoPage from '@/features/execucao/pages/DetalheDoServicoPage
 import OperacionalPage from '@/features/analytics/pages/OperacionalPage';
 import AnaliseFinanceiroPage from '@/features/analytics/pages/FinanceiroPage';
 
-// Ordens
-import OrdemServicoListPage from '@/features/ordens/pages/OrdemServicoListPage';
-import OrdemServicoFormPage from '@/features/ordens/pages/OrdemServicoFormPage';
-import OrdemDetalhePage from '@/features/ordens/pages/OrdemDetalhePage';
+// Vendas (R5)
+import VendasPage from '@/features/vendas/pages/VendasPage';
+import NovaVendaPage from '@/features/vendas/pages/NovaVendaPage';
+import ResumoDaVendaPage from '@/features/vendas/pages/ResumoDaVendaPage';
 
 // Organização
 import CompanySettingsPage from '@/features/empresa/pages/CompanySettingsPage';
@@ -108,11 +108,11 @@ const AppRoutes = () => (
     ))}
     <Route path="/servicos/:id" element={w(<DetalheDoServicoPage />)} />
 
-    {/* Vendas: as telas atuais de OS até a R5 */}
-    <Route path="/vendas" element={g(<OrdemServicoListPage />, VER_VENDAS)} />
-    <Route path="/vendas/nova" element={g(<OrdemServicoFormPage />, ['os.gerenciar'])} />
-    <Route path="/vendas/:id" element={g(<OrdemDetalhePage />, VER_VENDAS)} />
-    <Route path="/vendas/:id/editar" element={g(<OrdemServicoFormPage />, ['os.gerenciar'])} />
+    {/* Vendas (R5) */}
+    <Route path="/vendas" element={g(<VendasPage />, VER_VENDAS)} />
+    <Route path="/vendas/nova" element={g(<NovaVendaPage />, ['os.gerenciar'])} />
+    <Route path="/vendas/:id" element={g(<ResumoDaVendaPage />, VER_VENDAS)} />
+    <Route path="/vendas/:id/editar" element={g(<NovaVendaPage />, ['os.gerenciar'])} />
 
     {/* Endereços antigos de OS (a rota estática de OS operacionais tem precedência sobre :id) */}
     <Route path="/ordens" element={<DeOrdensParaVendas />} />

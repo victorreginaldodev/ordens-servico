@@ -72,3 +72,8 @@ export const acrescentarServico = async (payload: NovoServicoPayload): Promise<E
   const { data } = await api.post<Esquemas['Servico']>('/api/ordens-servico/servicos/', payload);
   return data;
 };
+
+/** Exclui a venda e tudo o que pende dela (ADR 0002). Exige `os.excluir`. */
+export const excluirVenda = async (id: number): Promise<void> => {
+  await api.delete(`${ORDENS}/${id}/`);
+};

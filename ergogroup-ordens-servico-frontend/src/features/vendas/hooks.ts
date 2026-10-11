@@ -3,6 +3,7 @@ import {
   acrescentarServico,
   criarVenda,
   editarVenda,
+  excluirVenda,
   getResumoDaVenda,
   getVenda,
   getVendas,
@@ -70,4 +71,9 @@ export const useEditarVenda = () => {
 export const useAcrescentarServico = () => {
   const invalidar = useInvalidarVendas();
   return useMutation({ mutationFn: (payload: NovoServicoPayload) => acrescentarServico(payload), onSuccess: invalidar });
+};
+
+export const useExcluirVenda = () => {
+  const invalidar = useInvalidarVendas();
+  return useMutation({ mutationFn: (id: number) => excluirVenda(id), onSuccess: invalidar });
 };
