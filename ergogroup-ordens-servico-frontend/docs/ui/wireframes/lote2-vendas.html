@@ -1,0 +1,1521 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wireframe Vendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Wireframe do lote 2 (R2): vendas, nova venda e resumo da venda, sobre o protótipo do lote 1 (navegação e execução).
+   Tokens de docs/ui/design-system.md §2; layout: sidebar + área principal, como em navegacao.html. */
+:root{
+  --canvas:220 20% 96.5%;--background:0 0% 100%;--foreground:222 47% 11%;--card:0 0% 100%;
+  --muted:210 40% 96%;--muted-foreground:215 20% 42%;--border:214 32% 91%;--border-strong:214 24% 84%;
+  --accent:215 25% 93%;--primary:173 58% 31%;--primary-foreground:0 0% 100%;
+  --success:142 71% 40%;--success-subtle:138 76% 96%;--success-strong:142 72% 26%;
+  --warning:38 92% 50%;--warning-subtle:48 96% 94%;--warning-strong:26 90% 33%;
+  --danger:0 72% 51%;--danger-subtle:0 86% 96%;--danger-strong:0 70% 40%;
+  --info:221 83% 53%;--info-subtle:214 95% 96%;--info-strong:224 70% 42%;
+  --shadow:0 1px 2px hsl(222 47% 11%/.06),0 1px 1px hsl(222 47% 11%/.04);
+  --shadow-lg:0 12px 32px hsl(222 47% 11%/.16);
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:222 47% 4.5%;--background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 15%;--muted-foreground:215 20% 62%;--border:222 30% 16%;--border-strong:222 25% 24%;
+  --accent:222 30% 13%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --success:142 60% 45%;--success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning:38 92% 55%;--warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger:0 72% 55%;--danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info:217 91% 60%;--info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+  --shadow:0 1px 2px hsl(0 0% 0%/.4);--shadow-lg:0 12px 32px hsl(0 0% 0%/.5);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:222 47% 4.5%;--background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 15%;--muted-foreground:215 20% 62%;--border:222 30% 16%;--border-strong:222 25% 24%;
+  --accent:222 30% 13%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --success:142 60% 45%;--success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning:38 92% 55%;--warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger:0 72% 55%;--danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info:217 91% 60%;--info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+  --shadow:0 1px 2px hsl(0 0% 0%/.4);--shadow-lg:0 12px 32px hsl(0 0% 0%/.5);color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:hsl(var(--canvas));color:hsl(var(--foreground));font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid hsl(var(--primary));outline-offset:2px}
+svg.lucide{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+h1,h2,h3,p{margin:0}
+h1{font-size:20px;line-height:28px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:15px;line-height:22px;font-weight:700}
+.muted{color:hsl(var(--muted-foreground))}
+.num{font-variant-numeric:tabular-nums}
+.sm{font-size:12px;line-height:16px}
+a{color:hsl(var(--primary));text-decoration:none;font-weight:500}
+a:hover{text-decoration:underline}
+
+/* ── barra do wireframe (fora do produto) ── */
+.wf{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:8px 16px;font-size:12px;background:repeating-linear-gradient(45deg,hsl(var(--muted)),hsl(var(--muted)) 6px,hsl(var(--canvas)) 6px,hsl(var(--canvas)) 12px);border-bottom:1px dashed hsl(var(--muted-foreground)/.5)}
+.wf b{font-weight:700}
+.wf label{display:inline-flex;align-items:center;gap:6px}
+.wf select{font-size:12px;padding:3px 6px;border:1px solid hsl(var(--border-strong));border-radius:6px;background:hsl(var(--card))}
+.seg{display:inline-flex;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));padding:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;color:hsl(var(--muted-foreground))}
+.seg button.on{background:hsl(var(--foreground));color:hsl(var(--background))}
+.wf .regra{flex-basis:100%;color:hsl(var(--muted-foreground))}
+.wf .regra b{color:hsl(var(--foreground))}
+
+/* ── moldura do app ── */
+.app{display:flex;height:calc(100% - var(--wf-h,74px));min-height:560px}
+.sb{width:240px;flex-shrink:0;display:flex;flex-direction:column;background:hsl(var(--background));border-right:1px solid hsl(var(--border))}
+.sb-top{display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border-bottom:1px solid hsl(var(--border))}
+.mark{width:28px;height:28px;border-radius:8px;background:hsl(var(--primary));color:hsl(var(--primary-foreground));display:grid;place-items:center;font-weight:700;font-size:13px}
+.brand b{display:block;font-weight:700;line-height:16px}
+.brand small{display:block;font-size:11px;line-height:14px;color:hsl(var(--muted-foreground))}
+.nav{flex:1;overflow-y:auto;padding:4px 10px 10px}
+.grp-h{font-size:11px;line-height:16px;font-weight:600;letter-spacing:.02em;color:hsl(var(--muted-foreground));padding:14px 8px 4px}
+.it{display:flex;align-items:center;gap:10px;height:34px;padding:0 8px 0 10px;border-radius:8px;color:hsl(var(--muted-foreground));font-weight:500;cursor:pointer;white-space:nowrap;user-select:none}
+.it:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.it.on{background:hsl(var(--primary)/.09);color:hsl(var(--primary));font-weight:600}
+.it .lbl{flex:1;overflow:hidden;text-overflow:ellipsis}
+.it.fora{opacity:.55}
+.cnt{font-size:11px;font-weight:600;line-height:18px;min-width:20px;padding:0 6px;border-radius:999px;text-align:center;font-variant-numeric:tabular-nums;background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.sb-foot{border-top:1px solid hsl(var(--border));padding:10px;position:relative}
+.me{display:flex;align-items:center;gap:10px;padding:6px;border-radius:10px;cursor:pointer;border:0;background:none;width:100%;text-align:left}
+.me:hover{background:hsl(var(--accent))}
+.av{width:32px;height:32px;border-radius:50%;background:hsl(var(--primary)/.14);color:hsl(var(--primary));display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0}
+.av.sm{width:22px;height:22px;font-size:10px}
+.who{flex:1;min-width:0;line-height:17px}
+.who .n,.who .r{display:block}
+.who .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .r{font-size:12px;color:hsl(var(--muted-foreground));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pop{position:absolute;left:10px;right:10px;bottom:64px;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:10px;box-shadow:var(--shadow-lg);padding:6px;z-index:5}
+.pop .h{font-size:11px;font-weight:600;color:hsl(var(--muted-foreground));padding:6px 8px 4px}
+.pop button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:7px 8px;border-radius:6px;text-align:left}
+.pop button:hover{background:hsl(var(--accent))}
+.pop button.on{font-weight:600;color:hsl(var(--primary))}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:hsl(var(--background))}
+.hd{display:flex;align-items:center;gap:12px;height:56px;padding:0 24px;border-bottom:1px solid hsl(var(--border));flex-shrink:0}
+.crumbs{display:flex;align-items:center;gap:6px;min-width:0;flex:1;color:hsl(var(--muted-foreground));white-space:nowrap;overflow:hidden}
+.crumbs b{color:hsl(var(--foreground));font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.crumbs svg{width:14px;height:14px}
+.search{display:flex;align-items:center;gap:8px;width:260px;height:34px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:8px;color:hsl(var(--muted-foreground));background:hsl(var(--canvas))}
+.search span{flex:1}
+kbd{font-family:inherit;font-size:11px;line-height:16px;padding:0 5px;border:1px solid hsl(var(--border));border-bottom-width:2px;border-radius:5px;background:hsl(var(--card))}
+.menu-btn{display:none}
+.page{flex:1;overflow-y:auto;padding:24px 24px 48px}
+.page-in{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.ph{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.ph .t{flex:1;min-width:240px;display:flex;flex-direction:column;gap:4px}
+
+/* ── componentes ── */
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:8px;border:1px solid hsl(var(--border-strong));background:hsl(var(--card));font-weight:600;font-size:13px;white-space:nowrap}
+.btn:hover{background:hsl(var(--accent))}
+.btn.pri{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:transparent}
+.btn.pri:hover{background:hsl(var(--primary)/.9)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.btn.ghost{border-color:transparent;background:none}
+.btn.ghost:hover{background:hsl(var(--accent))}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.badge{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px 0 6px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.badge svg{width:13px;height:13px}
+.t-success{background:hsl(var(--success-subtle));color:hsl(var(--success-strong))}
+.t-warning{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.t-danger{background:hsl(var(--danger-subtle));color:hsl(var(--danger-strong))}
+.t-info{background:hsl(var(--info-subtle));color:hsl(var(--info-strong))}
+.t-neutral{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.tx-danger{color:hsl(var(--danger-strong))}.tx-warning{color:hsl(var(--warning-strong))}.tx-success{color:hsl(var(--success-strong))}
+.inline{display:inline-flex;align-items:center;gap:6px}
+.stack{display:flex;flex-direction:column;gap:2px;min-width:0}
+.card{background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:12px}
+.card-h{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid hsl(var(--border))}
+.card-h h2{flex:1}
+.card-b{padding:16px}
+
+/* setor e contadores */
+.setores{display:flex;gap:8px;flex-wrap:wrap}
+.setor-tab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 12px;border-radius:10px;border:1px solid hsl(var(--border));background:hsl(var(--card));text-align:left;min-width:180px}
+.setor-tab.on{border-color:hsl(var(--primary));box-shadow:0 0 0 1px hsl(var(--primary))}
+.setor-tab b{font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.kpi{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:12px;border:1px solid hsl(var(--border));background:hsl(var(--card));text-align:left}
+.kpi:hover{border-color:hsl(var(--border-strong))}
+.kpi .v{font-size:26px;line-height:32px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{display:flex;align-items:center;gap:6px;color:hsl(var(--muted-foreground));font-weight:500}
+.kpi.hero{background:hsl(var(--warning-subtle));border-color:hsl(var(--warning)/.45)}
+.kpi.hero .v,.kpi.hero .l{color:hsl(var(--warning-strong))}
+.kpi.on{box-shadow:0 0 0 2px hsl(var(--primary))}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid hsl(var(--border));overflow-x:auto}
+.tab{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:10px 12px;font-weight:600;color:hsl(var(--muted-foreground));border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab.on{color:hsl(var(--foreground));border-bottom-color:hsl(var(--primary))}
+.tab .cnt{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.tab .cnt.w{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.toolbar .sp{flex:1}
+
+.tw{overflow-x:auto;border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card))}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th{font-size:12px;font-weight:600;text-align:left;color:hsl(var(--muted-foreground));padding:9px 12px;border-bottom:1px solid hsl(var(--border));background:hsl(var(--canvas));white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid hsl(var(--border));vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer}
+tr.click:hover td{background:hsl(var(--accent)/.5)}
+tr.grp td{background:hsl(var(--canvas));font-weight:600;padding:8px 12px}
+td.r,th.r{text-align:right}
+.svc b{font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;padding:2px 7px;border-radius:6px;border:1px solid hsl(var(--border));color:hsl(var(--muted-foreground));white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.d-success{background:hsl(var(--success))}.d-warning{background:hsl(var(--warning))}.d-info{background:hsl(var(--info))}.d-danger{background:hsl(var(--danger))}.d-neutral{background:hsl(var(--muted-foreground))}
+
+.pessoa{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin-bottom:12px}
+.pessoa-h{display:flex;align-items:center;gap:10px;padding:10px 12px;background:hsl(var(--canvas));border:1px solid hsl(var(--border));border-bottom:0;border-radius:12px 12px 0 0}
+.pessoa-h + .tw{border-radius:0 0 12px 12px}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:hsl(var(--muted));min-width:120px}
+.bar span{display:block}
+
+.alerta{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.alerta.neutro{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.alerta .tx{flex:1;min-width:0}
+.alerta .tx b{display:block}
+
+.status-ctl{display:inline-flex;align-items:center;gap:6px}
+.grid-d{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px 12px}
+.kv dt{color:hsl(var(--muted-foreground))}
+.kv dd{margin:0;min-width:0}
+.outro{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid hsl(var(--border))}
+.outro:last-child{border-bottom:0;padding-bottom:0}
+.outro:first-child{padding-top:0}
+
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;display:flex;gap:12px;padding-bottom:18px}
+.tl li:last-child{padding-bottom:0}
+.tl li:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:1px;background:hsl(var(--border))}
+.tl .ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.tl .tx{padding-top:5px;min-width:0}
+
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:48px 16px;color:hsl(var(--muted-foreground))}
+.empty svg{width:28px;height:28px}
+.empty b{color:hsl(var(--foreground))}
+.note-wf{border:1px dashed hsl(var(--muted-foreground)/.6);border-radius:10px;padding:10px 12px;font-size:12px;line-height:17px;color:hsl(var(--muted-foreground));background:hsl(var(--canvas))}
+.note-wf b{color:hsl(var(--foreground))}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:hsl(222 47% 11%/.4);display:grid;place-items:center;padding:16px;z-index:20}
+.modal{width:min(560px,100%);max-height:calc(100% - 32px);display:flex;flex-direction:column;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:14px;box-shadow:var(--shadow-lg)}
+.modal-h{padding:18px 20px 12px;display:flex;flex-direction:column;gap:4px}
+.modal-b{padding:4px 20px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.modal-f{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid hsl(var(--border))}
+.modal-f .sp{flex:1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label{font-weight:600;font-size:13px}
+.inp{height:36px;padding:0 10px;border:1px solid hsl(var(--border-strong));border-radius:8px;background:hsl(var(--background));width:100%}
+textarea.inp{height:auto;min-height:64px;padding:8px 10px;resize:vertical}
+.pick{display:flex;flex-direction:column;border:1px solid hsl(var(--border));border-radius:10px;max-height:220px;overflow-y:auto}
+.pick button{display:flex;align-items:center;gap:10px;border:0;border-bottom:1px solid hsl(var(--border));background:none;padding:8px 10px;text-align:left}
+.pick button:last-child{border-bottom:0}
+.pick button:hover{background:hsl(var(--accent))}
+.pick button.on{background:hsl(var(--primary)/.09)}
+.pick .carga{margin-left:auto;display:flex;gap:4px}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{border:1px solid hsl(var(--border));background:hsl(var(--card));border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500}
+.quick button.on{border-color:hsl(var(--primary));color:hsl(var(--primary));background:hsl(var(--primary)/.08)}
+.parte{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1.3fr) auto;gap:8px;align-items:end;padding:10px;border:1px solid hsl(var(--border));border-radius:10px}
+.parte .field>label{font-size:12px;font-weight:500;color:hsl(var(--muted-foreground))}
+
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.form{display:flex;flex-direction:column;gap:16px}
+.tipos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.tipo{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1px solid hsl(var(--border));border-radius:10px;background:hsl(var(--card));text-align:left}
+.tipo svg{color:hsl(var(--muted-foreground));margin-bottom:2px}
+.tipo.on{border-color:hsl(var(--primary));box-shadow:0 0 0 1px hsl(var(--primary));background:hsl(var(--primary)/.05)}
+.tipo.on svg{color:hsl(var(--primary))}
+.preview{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:hsl(var(--canvas));border:1px dashed hsl(var(--border-strong))}
+.steps{list-style:none;margin:0;padding:0;display:flex;gap:6px;flex-wrap:wrap}
+.steps button{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:6px 10px 6px 6px;border-radius:999px;font-weight:600;color:hsl(var(--muted-foreground))}
+.steps button:disabled{cursor:default}
+.steps .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;background:hsl(var(--muted))}
+.steps .n svg{width:13px;height:13px}
+.steps li.on button{color:hsl(var(--foreground));background:hsl(var(--primary)/.08)}
+.steps li.on .n{background:hsl(var(--primary));color:hsl(var(--primary-foreground))}
+.steps li.ok .n{background:hsl(var(--success-subtle));color:hsl(var(--success-strong))}
+.svc-row{grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) minmax(0,.9fr) auto;align-items:start}
+.svc-row .btn{margin-top:26px}
+.toast{position:fixed;right:20px;bottom:20px;z-index:30;display:flex;align-items:center;gap:10px;max-width:420px;padding:12px 14px;border-radius:10px;background:hsl(var(--foreground));color:hsl(var(--background));box-shadow:var(--shadow-lg)}
+
+@media (max-width:1000px){
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid-d{grid-template-columns:minmax(0,1fr)}
+  .search{width:auto}.search span,.search kbd{display:none}
+}
+@media (max-width:760px){
+  .sb{position:fixed;left:0;top:0;bottom:0;z-index:15;transform:translateX(-100%);transition:transform .2s ease;box-shadow:var(--shadow-lg)}
+  .sb.open{transform:none}
+  .menu-btn{display:inline-flex}
+  .hd{padding:0 16px}
+  .page{padding:16px 16px 40px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .parte,.svc-row,.grid2,.grid3{grid-template-columns:minmax(0,1fr)}
+  .svc-row .btn{margin-top:0}
+  .setor-tab{min-width:0;flex:1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wf" id="wf">
+  <b>Wireframe · Lote 2: vendas</b> <span class="muted">(inclui o lote 1 para navegar até os serviços)</span>
+  <label for="wf-persona">Ver como
+    <select id="wf-persona"></select>
+  </label>
+  <span>Tema <span class="seg" id="wf-tema"></span></span>
+  <span class="muted">Dados fictícios · hoje = 10/10/2026 · docs/ui/fluxos-e-navegacao.md</span>
+  <span class="regra" id="wf-regra"></span>
+</div>
+
+<div class="app">
+  <aside class="sb" id="sb"></aside>
+  <div class="main">
+    <header class="hd" id="hd"></header>
+    <main class="page" id="page"></main>
+  </div>
+</div>
+<div id="layer"></div>
+
+<script>
+/* ───────────────────────── Dados fictícios ───────────────────────── */
+const HOJE = new Date(2026, 9, 10);
+const dt = (s) => { const [d, m] = s.split('/').map(Number); return new Date(2026, m - 1, d); };
+const fmt = (d) => d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` : '—';
+const fmtC = (d) => d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}` : '—';
+const dias = (a, b = HOJE) => Math.round((b - a) / 86400000);
+const iniciais = (n) => n.split(' ').filter((p) => p.length > 2).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+const pl = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+const SETORES = [
+  { id: 1, nome: 'Segurança do Trabalho' },
+  { id: 2, nome: 'Ergonomia', semOrganizador: true },
+];
+
+const PESSOAS = {
+  mariana: { nome: 'Mariana Souza Lima', funcao: 'Gestora Técnica', setor: 1 },
+  tiago: { nome: 'Tiago Nunes Barbosa', funcao: 'Sub-Gestor Técnico', setor: 1 },
+  rafael: { nome: 'Rafael Mendes Costa', funcao: 'Técnico', setor: 1 },
+  juliana: { nome: 'Juliana Pereira Alves', funcao: 'Técnica', setor: 1 },
+  bruno: { nome: 'Bruno Henrique Santos', funcao: 'Técnico', setor: 1 },
+  camila: { nome: 'Camila Rocha Ferreira', funcao: 'Técnica', setor: 1 },
+  leticia: { nome: 'Letícia Araújo Campos', funcao: 'Ergonomista', setor: 2 },
+  paulo: { nome: 'Paulo Roberto Andrade', funcao: 'Diretor', setor: null },
+  fernanda: { nome: 'Fernanda Lopes Martins', funcao: 'Comercial', setor: null },
+  ricardo: { nome: 'Ricardo Almeida Prado', funcao: 'Gestor Comercial', setor: null },
+  sandra: { nome: 'Sandra Oliveira Cruz', funcao: 'Financeiro', setor: null },
+  helena: { nome: 'Helena Batista Moura', funcao: 'Administrativo', setor: null },
+};
+
+/* OS: cliente, data da venda, quem vendeu, observação */
+const OS = {
+  1284: { cliente: 'Metalúrgica Vale Verde Ltda', venda: '08/10', vendedor: 'fernanda', prioridade: 'alta', obs: 'Unidade fabril e depósito em Contagem. Contato técnico: Sr. Wagner (31) 3333-1020.' },
+  1279: { cliente: 'Hospital São Lucas', venda: '03/10', vendedor: 'ricardo', prioridade: 'media', obs: 'Visitas só entre 14h e 17h. Levar documentação do PGR anterior.' },
+  1281: { cliente: 'Construtora Horizonte S.A.', venda: '06/10', vendedor: 'fernanda', prioridade: 'baixa', obs: 'Obra Residencial Ipê, trabalho em altura na fachada.' },
+  1286: { cliente: 'Padaria Pão de Mel ME', venda: '10/10', vendedor: 'helena', prioridade: 'media', obs: '' },
+  1277: { cliente: 'Transportes Rodoleve Ltda', venda: '01/10', vendedor: 'ricardo', prioridade: 'alta', obs: 'Pátio de abastecimento próprio.' },
+  1270: { cliente: 'Indústria Têxtil Alvorada', venda: '22/09', vendedor: 'fernanda', prioridade: 'alta', obs: 'Cliente pediu LTCAT para a perícia de 20/10. Prazo combinado: 05/10.' },
+  1265: { cliente: 'Supermercado Bom Preço', venda: '15/09', vendedor: 'ricardo', prioridade: 'media', obs: '' },
+  1268: { cliente: 'Frigorífico Serra Azul', venda: '20/09', vendedor: 'fernanda', prioridade: 'media', obs: 'Câmaras frias: levar EPI térmico.' },
+  1273: { cliente: 'Escola Infantil Pequeno Saber', venda: '29/09', vendedor: 'helena', prioridade: 'baixa', obs: '' },
+  1262: { cliente: 'Cooperativa Agro Sul', venda: '12/09', vendedor: 'ricardo', prioridade: 'media', obs: 'Treinamento para 18 eletricistas, em duas turmas.' },
+  1259: { cliente: 'Posto Estrela da Manhã', venda: '10/09', vendedor: 'fernanda', prioridade: 'media', obs: '' },
+  1283: { cliente: 'Call Center Conecta', venda: '07/10', vendedor: 'ricardo', prioridade: 'media', obs: '140 posições de atendimento.' },
+  1255: { cliente: 'Laticínios Boa Vista', venda: '02/09', vendedor: 'fernanda', prioridade: 'media', obs: '' },
+  1251: { cliente: 'Clínica Sorriso Pleno', venda: '28/08', vendedor: 'helena', prioridade: 'baixa', obs: '' },
+};
+
+/*
+ * Serviços: setor, catálogo, descrição, OS, criado (chegou ao setor), tarefas, última movimentação, ciência.
+ * Etapa calculada como no backend: sem tarefa = na fila; com tarefa aberta = distribuído; alguma em andamento = em execução.
+ */
+let SERVICOS = [
+  // fila — Segurança do Trabalho
+  { id: 501, setor: 1, os: 1284, cat: 'PGR', desc: 'Programa de Gerenciamento de Riscos: fábrica e depósito', chegou: '08/10', tarefas: [] },
+  { id: 502, setor: 1, os: 1284, cat: 'LTCAT', desc: 'Laudo Técnico das Condições Ambientais: fábrica', chegou: '08/10', tarefas: [] },
+  { id: 503, setor: 1, os: 1279, cat: 'Laudo de Insalubridade', desc: 'Centro cirúrgico e lavanderia', chegou: '03/10', tarefas: [] },
+  { id: 504, setor: 1, os: 1281, cat: 'Treinamento NR-35', desc: 'Trabalho em altura, 12 colaboradores', chegou: '06/10', tarefas: [] },
+  { id: 505, setor: 1, os: 1286, cat: 'PGR', desc: 'Programa de Gerenciamento de Riscos: loja única', chegou: '10/10', tarefas: [] },
+  { id: 506, setor: 1, os: 1277, cat: 'Laudo de Periculosidade', desc: 'Pátio de abastecimento', chegou: '01/10', tarefas: [] },
+  // em andamento — Segurança do Trabalho
+  { id: 510, setor: 1, os: 1279, cat: 'PGR', desc: 'Revisão anual do PGR', chegou: '03/10', mov: '07/10',
+    tarefas: [{ id: 9101, resp: 'rafael', status: 'em_andamento', prazo: '20/10', criada: '05/10', inicio: '07/10' }] },
+  { id: 511, setor: 1, os: 1270, cat: 'LTCAT', desc: 'Laudo para perícia: tecelagem e tinturaria', chegou: '22/09', mov: '01/10',
+    tarefas: [{ id: 9102, resp: 'rafael', status: 'em_andamento', prazo: '05/10', criada: '22/09', inicio: '24/09' }],
+    prazoAlterado: { de: '30/09', para: '05/10', por: 'mariana', em: '29/09' } },
+  { id: 512, setor: 1, os: 1281, cat: 'APR', desc: 'Análise Preliminar de Risco: fachada', chegou: '06/10', mov: '08/10',
+    tarefas: [{ id: 9103, resp: 'juliana', status: 'em_andamento', prazo: '15/10', criada: '07/10', inicio: '08/10' }] },
+  { id: 513, setor: 1, os: 1265, cat: 'PGR', desc: 'Programa de Gerenciamento de Riscos: 3 lojas', chegou: '15/09', mov: '26/09',
+    tarefas: [{ id: 9104, resp: 'juliana', status: 'em_andamento', prazo: '30/09', criada: '16/09', inicio: '18/09' }],
+    ciencia: { por: 'juliana', em: '08/10', motivo: 'cliente', obs: 'Cliente ainda não enviou a planta das lojas 2 e 3.' } },
+  { id: 514, setor: 1, os: 1268, cat: 'Laudo de Insalubridade', desc: 'Câmaras frias e desossa', chegou: '20/09', mov: '28/09',
+    tarefas: [{ id: 9105, resp: 'bruno', status: 'aberta', prazo: null, criada: '28/09' }] },
+  { id: 515, setor: 1, os: 1273, cat: 'PGR', desc: 'Programa de Gerenciamento de Riscos: escola', chegou: '29/09', mov: '04/10',
+    tarefas: [{ id: 9106, resp: 'bruno', status: 'aberta', prazo: '14/10', criada: '04/10' }] },
+  { id: 516, setor: 1, os: 1279, cat: 'LTCAT', desc: 'Laudo Técnico das Condições Ambientais: hospital', chegou: '03/10', mov: '06/10',
+    tarefas: [{ id: 9107, resp: 'camila', status: 'em_andamento', prazo: '24/10', criada: '06/10', inicio: '06/10' }] },
+  { id: 517, setor: 1, os: 1262, cat: 'Treinamento NR-10', desc: 'Segurança em eletricidade, 2 turmas', chegou: '12/09', mov: '05/10',
+    tarefas: [
+      { id: 9108, resp: 'camila', status: 'concluida', prazo: '30/09', criada: '15/09', inicio: '22/09', termino: '29/09', desc: 'Turma 1' },
+      { id: 9109, resp: 'camila', status: 'em_andamento', prazo: '08/10', criada: '15/09', inicio: '05/10', desc: 'Turma 2' },
+    ] },
+  { id: 518, setor: 1, os: 1259, cat: 'Laudo de Periculosidade', desc: 'Pista e tanques', chegou: '10/09', mov: '09/10',
+    tarefas: [{ id: 9110, resp: 'mariana', status: 'em_andamento', prazo: '17/10', criada: '12/09', inicio: '09/10' }] },
+  { id: 519, setor: 1, os: 1283, cat: 'PGR', desc: 'Programa de Gerenciamento de Riscos: call center', chegou: '07/10', mov: '09/10',
+    tarefas: [{ id: 9111, resp: 'tiago', status: 'aberta', prazo: '13/10', criada: '09/10' }] },
+  // concluídos no mês
+  { id: 520, setor: 1, os: 1277, cat: 'PGR', desc: 'Programa de Gerenciamento de Riscos: garagem e oficina', chegou: '01/10', mov: '09/10',
+    tarefas: [{ id: 9112, resp: 'rafael', status: 'concluida', prazo: '10/10', criada: '01/10', inicio: '02/10', termino: '09/10' }] },
+  { id: 521, setor: 1, os: 1255, cat: 'PGR', desc: 'Programa de Gerenciamento de Riscos: laticínio', chegou: '02/09', mov: '03/10',
+    tarefas: [{ id: 9113, resp: 'juliana', status: 'concluida', prazo: '30/09', criada: '03/09', inicio: '05/09', termino: '03/10' }] },
+  { id: 522, setor: 1, os: 1251, cat: 'Laudo de Insalubridade', desc: 'Consultórios e esterilização', chegou: '28/08', mov: '02/10',
+    tarefas: [{ id: 9114, resp: 'bruno', status: 'concluida', prazo: null, criada: '29/08', inicio: '15/09', termino: '02/10' }] },
+  { id: 523, setor: 1, os: 1262, cat: 'APR', desc: 'Análise Preliminar de Risco: subestação', chegou: '12/09', mov: '07/10',
+    tarefas: [{ id: 9115, resp: 'camila', status: 'concluida', prazo: '10/10', criada: '13/09', inicio: '01/10', termino: '07/10' }] },
+  // Ergonomia
+  { id: 530, setor: 2, os: 1284, cat: 'AET', desc: 'Análise Ergonômica do Trabalho: linha de montagem', chegou: '08/10', tarefas: [] },
+  { id: 531, setor: 2, os: 1283, cat: 'AET', desc: 'Análise Ergonômica do Trabalho: posições de atendimento', chegou: '07/10', tarefas: [] },
+  { id: 532, setor: 2, os: 1255, cat: 'AET', desc: 'Análise Ergonômica do Trabalho: envase', chegou: '02/09', mov: '12/09',
+    tarefas: [{ id: 9120, resp: 'leticia', status: 'em_andamento', prazo: '03/10', criada: '04/09', inicio: '12/09' }] },
+];
+
+/* ───────────────────────── Regras de domínio (espelho do backend) ───────────────────────── */
+const ATIVA = (t) => t.status === 'aberta' || t.status === 'em_andamento';
+const etapa = (s) => {
+  const ts = s.tarefas.filter((t) => t.status !== 'cancelada');
+  if (!s.tarefas.length) return 'na_fila';
+  if (ts.length && ts.every((t) => t.status === 'concluida')) return 'concluido';
+  if (ts.some((t) => t.status === 'em_andamento' || t.status === 'concluida')) return 'em_execucao';
+  return 'distribuido';
+};
+const prazoServico = (s) => {
+  const ps = s.tarefas.filter((t) => t.status !== 'cancelada' && t.prazo).map((t) => dt(t.prazo));
+  return ps.length ? new Date(Math.max(...ps)) : null;
+};
+const situacaoPrazo = (prazo) => {
+  if (!prazo) return 'sem_prazo';
+  const d = dias(HOJE, prazo);
+  if (d < 0) return 'atrasado';
+  if (d <= 7) return 'vence_7_dias';
+  return 'depois';
+};
+const ultimaMov = (s) => dt(s.mov || s.chegou);
+const diasSemMov = (s) => dias(ultimaMov(s));
+const cienciaVigente = (s) => !!s.ciencia && dt(s.ciencia.em) >= ultimaMov(s) && dias(dt(s.ciencia.em)) < 7;
+const emAlerta = (s) => ['distribuido', 'em_execucao'].includes(etapa(s)) && diasSemMov(s) >= 7 && !cienciaVigente(s);
+const ativo = (s) => ['na_fila', 'distribuido', 'em_execucao'].includes(etapa(s));
+const atrasado = (s) => ativo(s) && etapa(s) !== 'na_fila' && situacaoPrazo(prazoServico(s)) === 'atrasado';
+const responsaveis = (s) => [...new Set(s.tarefas.filter((t) => t.status !== 'cancelada').map((t) => PESSOAS[t.resp].nome))];
+const doSetor = (setor) => SERVICOS.filter((s) => s.setor === setor);
+/* Visibilidade do backend: os.ver_todas, servicos.ver_setor no setor, ou tarefa própria. */
+const vejo = (s) => pode('os.ver_todas') || setoresQueAcompanho().some((x) => x.id === s.setor) || s.tarefas.some((t) => t.resp === S.persona.pessoa);
+const termino = (s) => new Date(Math.max(...s.tarefas.filter((t) => t.termino).map((t) => dt(t.termino))));
+
+const contadores = (setor) => {
+  const ss = doSetor(setor);
+  return {
+    na_fila: ss.filter((s) => etapa(s) === 'na_fila').length,
+    em_andamento: ss.filter((s) => ['distribuido', 'em_execucao'].includes(etapa(s))).length,
+    atrasados: ss.filter(atrasado).length,
+    em_alerta: ss.filter(emAlerta).length,
+    sem_prazo: ss.filter((s) => ['distribuido', 'em_execucao'].includes(etapa(s)) && !prazoServico(s)).length,
+  };
+};
+
+/* ───────────────────────── Personas e permissões ───────────────────────── */
+/* Cada persona é descrita pelas permissões, como no backend. "proprio" = setor do vínculo. */
+const PERSONAS = {
+  gestora: { pessoa: 'mariana', rotulo: 'Gestora técnica (Gestor Técnico)', perms: ['servicos.ver_setor', 'tarefas.distribuir', 'os.gerenciar', 'os.ver_todas', 'financeiro.ver_valores'], setores: [1] },
+  tecnico: { pessoa: 'rafael', rotulo: 'Técnico', perms: [], setores: [] },
+  diretoria: { pessoa: 'paulo', rotulo: 'Diretoria (Diretor)', perms: ['servicos.ver_setor', 'tarefas.distribuir', 'os.gerenciar', 'os.ver_todas', 'financeiro.ver_valores', 'financeiro.registrar_cobranca', 'setores.todos'], setores: 'todos' },
+  comercial: { pessoa: 'fernanda', rotulo: 'Comercial', perms: ['os.gerenciar', 'os.ver_todas', 'financeiro.ver_valores'], setores: [] },
+  financeiro: { pessoa: 'sandra', rotulo: 'Financeiro', perms: ['financeiro.registrar_cobranca', 'financeiro.ver_valores', 'os.gerenciar', 'os.ver_todas'], setores: [] },
+  administrativo: { pessoa: 'helena', rotulo: 'Administrativo', perms: ['os.gerenciar', 'os.ver_todas'], setores: [] },
+};
+const pode = (p) => S.persona.perms.includes(p);
+const setoresQueAcompanho = () => S.persona.setores === 'todos' ? SETORES : SETORES.filter((s) => S.persona.setores.includes(s.id));
+
+/* Menu (fluxos-e-navegacao.md §4). `perm`: aparece com ao menos uma. `lote`: wireframe em outro lote. */
+const MENU = [
+  { grupo: 'Meu trabalho', itens: [
+    { id: 'meus-servicos', titulo: 'Meus serviços', icone: 'list-checks' },
+    { id: 'setor', titulo: 'Painel do setor', icone: 'layout-dashboard', perm: ['servicos.ver_setor'], contador: true },
+  ] },
+  { grupo: 'Comercial', itens: [
+    { id: 'vendas', titulo: 'Vendas', icone: 'handshake', perm: ['os.gerenciar', 'os.ver_todas'] },
+    { id: 'vendas-nova', titulo: 'Nova venda', icone: 'circle-plus', perm: ['os.gerenciar'] },
+  ] },
+  { grupo: 'Financeiro', itens: [
+    { id: 'cobrancas', titulo: 'Cobranças', icone: 'receipt', perm: ['financeiro.registrar_cobranca'], lote: 3 },
+  ] },
+  { grupo: 'Análise', itens: [
+    { id: 'analise-operacional', titulo: 'Operacional', icone: 'activity', fora: true },
+    { id: 'analise-financeiro', titulo: 'Financeiro', icone: 'wallet', perm: ['financeiro.ver_valores'], fora: true },
+  ] },
+  { grupo: 'Cadastros', itens: [
+    { id: 'clientes', titulo: 'Clientes', icone: 'building-2', fora: true },
+    { id: 'catalogo', titulo: 'Catálogo', icone: 'package', fora: true },
+  ] },
+  { grupo: 'Organização', itens: [
+    { id: 'time', titulo: 'Time', icone: 'users', fora: true },
+    { id: 'setores', titulo: 'Setores', icone: 'network', fora: true },
+  ] },
+];
+const visivel = (it) => !it.perm || it.perm.some(pode);
+
+/* Tela inicial (fluxos-e-navegacao.md §5) */
+const telaInicial = () => {
+  const todos = pode('setores.todos');
+  if (pode('tarefas.distribuir') && pode('servicos.ver_setor') && !todos) return ['setor', 'Regra 1: distribui e acompanha o setor do próprio vínculo → Painel do setor'];
+  if (pode('financeiro.registrar_cobranca') && !todos) return ['cobrancas', 'Regra 2: registra cobrança (sem setores.todos) → Cobranças'];
+  if (pode('os.gerenciar') || pode('os.ver_todas')) return ['vendas', 'Regra 3: gerencia ou vê vendas → Vendas'];
+  return ['meus-servicos', 'Regra 4: nenhuma das anteriores → Meus serviços'];
+};
+
+/* ───────────────────────── Estado ───────────────────────── */
+const S = {
+  personaId: 'comercial',
+  vf: { visao: 'todas', q: '', fin: '' },
+  nv: null,
+  get persona() { return PERSONAS[this.personaId]; },
+  rota: 'setor',
+  setor: 1,
+  aba: 'fila',
+  agrupar: 'nenhum',
+  filtroResp: null,
+  minhasAba: 'abertos',
+  tema: 'sistema',
+  popUser: false,
+  preferencia: {},
+};
+
+/* ───────────────────────── Peças de UI ───────────────────────── */
+const I = (n) => `<i data-lucide="${n}"></i>`;
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const badge = (tom, icone, texto) => `<span class="badge t-${tom}">${I(icone)}${esc(texto)}</span>`;
+const ETAPA = {
+  na_fila: ['warning', 'inbox', 'Na fila'], distribuido: ['neutral', 'user-check', 'Distribuído'],
+  em_execucao: ['info', 'circle-dot', 'Em execução'], concluido: ['success', 'circle-check', 'Concluído'], cancelado: ['neutral', 'circle-slash', 'Cancelado'],
+};
+const SITUACAO = {
+  atrasado: ['danger', 'triangle-alert', 'Atrasado'], vence_7_dias: ['warning', 'clock', 'Vence em 7 dias'],
+  depois: ['neutral', 'calendar-check', 'No prazo'], sem_prazo: ['warning', 'calendar-x', 'Sem prazo'],
+};
+const STATUS_T = { aberta: ['warning', 'circle-dashed', 'Aberta'], em_andamento: ['info', 'circle-dot', 'Em andamento'], concluida: ['success', 'circle-check', 'Concluída'], cancelada: ['neutral', 'circle-slash', 'Cancelada'] };
+const PRIOR = { alta: ['danger', 'chevrons-up', 'Alta'], media: ['warning', 'chevron-up', 'Média'], baixa: ['neutral', 'minus', 'Baixa'] };
+const MOTIVOS = { cliente: 'Aguardando o cliente', documentacao: 'Aguardando documentação', agendamento: 'Aguardando agendamento', terceiro: 'Aguardando terceiro', outro: 'Outro' };
+const bEtapa = (e) => badge(...ETAPA[e]);
+const bStatus = (s) => badge(...STATUS_T[s]);
+const bPrior = (p) => `<span class="inline sm tx-${PRIOR[p][0] === 'neutral' ? '' : PRIOR[p][0]}">${I(PRIOR[p][1])}${PRIOR[p][2]}</span>`;
+const dotEtapa = { na_fila: 'warning', distribuido: 'neutral', em_execucao: 'info', concluido: 'success', cancelado: 'neutral' };
+
+/* Prazo + estado relativo, como o PrazoIndicator do kit */
+const prazoCel = (prazo, encerrado) => {
+  if (!prazo) return `<span class="inline sm tx-warning">${I('calendar-x')}Sem prazo</span>`;
+  const d = dias(HOJE, prazo);
+  let estado = '';
+  if (!encerrado) {
+    if (d < 0) estado = `<span class="sm tx-danger inline">${I('triangle-alert')}${pl(-d, 'dia atrasado', 'dias atrasado')}</span>`;
+    else if (d === 0) estado = '<span class="sm tx-warning">vence hoje</span>';
+    else if (d <= 7) estado = `<span class="sm tx-warning">vence em ${pl(d, 'dia', 'dias')}</span>`;
+  }
+  return `<span class="stack"><span class="num">${fmt(prazo)}</span>${estado}</span>`;
+};
+const alertaCel = (s) => {
+  if (cienciaVigente(s)) {
+    const c = s.ciencia;
+    return `<span class="inline sm muted" title="${esc(c.obs || '')}">${I('bell-off')}${esc(MOTIVOS[c.motivo] || 'Ciente')} · ${esc(PESSOAS[c.por].nome)} em ${fmtC(dt(c.em))}</span>`;
+  }
+  if (emAlerta(s)) return `<span class="inline sm tx-warning" style="font-weight:600">${I('hourglass')}Sem movimentação há ${pl(diasSemMov(s), 'dia', 'dias')}</span>`;
+  return '';
+};
+const svcCel = (s) => `<span class="stack svc"><b>${esc(s.cat)}</b><span class="sm muted">${esc(s.desc)}</span></span>`;
+const osCel = (s) => `<span class="stack"><span>${esc(OS[s.os].cliente)}</span><a class="sm" href="#venda-${s.os}" data-stop>OS ${s.os}</a></span>`;
+const outrosDaOS = (s) => SERVICOS.filter((o) => o.os === s.os && o.id !== s.id);
+const chipsOutros = (s) => {
+  const os = outrosDaOS(s);
+  if (!os.length) return '<span class="sm muted">Só este serviço</span>';
+  return `<span class="chips">${os.map((o) => `<span class="chip" title="${esc(SETORES.find((x) => x.id === o.setor).nome)} · ${ETAPA[etapa(o)][2]}"><span class="dot d-${dotEtapa[etapa(o)]}"></span>${esc(o.cat)}${o.setor !== s.setor ? ` · ${esc(SETORES.find((x) => x.id === o.setor).nome)}` : ''}</span>`).join('')}</span>`;
+};
+const empty = (icone, titulo, texto) => `<div class="empty">${I(icone)}<b>${esc(titulo)}</b><span>${esc(texto)}</span></div>`;
+
+/* ───────────────────────── Sidebar e header ───────────────────────── */
+function renderSidebar() {
+  const p = PESSOAS[S.persona.pessoa];
+  const vinculo = p.setor ? `${p.funcao} · ${SETORES.find((s) => s.id === p.setor).nome}` : p.funcao;
+  const naFila = setoresQueAcompanho().reduce((n, s) => n + contadores(s.id).na_fila, 0);
+  const [inicial] = telaInicial();
+  const pref = S.preferencia[S.personaId];
+  const opcoes = MENU.flatMap((g) => g.itens).filter((it) => visivel(it) && !it.fora);
+  document.getElementById('sb').innerHTML = `
+    <div class="sb-top"><span class="mark">E</span><span class="brand"><b>Ergogroup OS</b><small>Gestão de ordens de serviço</small></span></div>
+    <nav class="nav" aria-label="Menu principal">
+      ${MENU.map((g) => {
+        const itens = g.itens.filter(visivel);
+        if (!itens.length) return '';
+        return `<div class="grp-h">${g.grupo}</div>${itens.map((it) => `
+          <div class="it ${S.rota === it.id ? 'on' : ''} ${it.fora ? 'fora' : ''}" data-ir="${it.id}" role="link" tabindex="0">
+            ${I(it.icone)}<span class="lbl">${it.titulo}</span>
+            ${it.contador && naFila ? `<span class="cnt" title="Serviços para distribuir">${naFila}</span>` : ''}
+          </div>`).join('')}`;
+      }).join('')}
+    </nav>
+    <div class="sb-foot">
+      ${S.popUser ? `<div class="pop" role="menu">
+        <div class="h">Abrir sempre em…</div>
+        <button data-pref="" class="${!pref ? 'on' : ''}">${I(!pref ? 'check' : 'dot')}Automático (pelas permissões)</button>
+        ${opcoes.map((o) => `<button data-pref="${o.id}" class="${pref === o.id ? 'on' : ''}">${I(pref === o.id ? 'check' : 'dot')}${o.titulo}</button>`).join('')}
+        <div class="h" style="border-top:1px solid hsl(var(--border));margin-top:4px">Conta</div>
+        <button>${I('user')}Meu perfil</button><button>${I('log-out')}Sair</button>
+      </div>` : ''}
+      <button class="me" data-act="user" aria-haspopup="menu" aria-expanded="${S.popUser}">
+        <span class="av">${iniciais(p.nome)}</span>
+        <span class="who"><span class="n">${esc(p.nome)}</span><span class="r">${esc(vinculo)}</span></span>
+        ${I('chevrons-up-down')}
+      </button>
+    </div>`;
+}
+
+function crumbs() {
+  const m = MENU.flatMap((g) => g.itens.map((it) => ({ ...it, grupo: g.grupo })));
+  if (S.rota.startsWith('servico-')) {
+    const s = SERVICOS.find((x) => x.id === +S.rota.slice(8));
+    const daFila = S.persona.setores === 'todos' || (Array.isArray(S.persona.setores) && S.persona.setores.includes(s.setor));
+    return [daFila ? 'Painel do setor' : 'Meus serviços', `${s.cat} · ${OS[s.os].cliente}`];
+  }
+  const it = m.find((x) => x.id === S.rota);
+  const mv = /^venda-(\d+)(-editar)?$/.exec(S.rota);
+  if (mv) return mv[2] ? [`Vendas › OS ${mv[1]}`, 'Editar'] : ['Vendas', `OS ${mv[1]} · ${OS[mv[1]] ? OS[mv[1]].cliente : ''}`];
+  return it ? [it.grupo, it.titulo] : ['', ''];
+}
+function renderHeader() {
+  const [g, t] = crumbs();
+  document.getElementById('hd').innerHTML = `
+    <button class="btn ghost sm menu-btn" data-act="menu" aria-label="Abrir menu">${I('menu')}</button>
+    <div class="crumbs">${g ? `<span>${esc(g)}</span>${I('chevron-right')}` : ''}<b>${esc(t)}</b></div>
+    <div class="search" title="Busca global: vendas por número ou cliente, e páginas">${I('search')}<span>Buscar venda ou cliente</span><kbd>Ctrl K</kbd></div>`;
+}
+
+/* ───────────────────────── Página: Painel do setor ───────────────────────── */
+function paginaSetor() {
+  const acompanha = setoresQueAcompanho();
+  if (!acompanha.length) return empty('lock', 'Você não acompanha nenhum setor', 'O painel aparece para quem tem a permissão de ver os serviços de um setor.');
+  if (!acompanha.some((s) => s.id === S.setor)) S.setor = acompanha[0].id;
+  const setor = SETORES.find((s) => s.id === S.setor);
+  const c = contadores(setor.id);
+  const organiza = pode('tarefas.distribuir');
+  const abas = [
+    ['fila', 'Para distribuir', c.na_fila, true], ['alertas', 'Alertas', c.atrasados + c.em_alerta, true],
+    ['andamento', 'Em andamento', c.em_andamento], ['equipe', 'Equipe', null], ['concluidos', 'Concluídos', null],
+  ];
+  return `
+    <div class="ph"><div class="t"><h1>Painel do setor</h1>
+      <span class="muted">O que chegou, o que está com quem e o que precisa de atenção.</span></div></div>
+    ${acompanha.length > 1 ? `<div class="setores" role="tablist" aria-label="Setores">${acompanha.map((s) => {
+      const cs = contadores(s.id);
+      return `<button class="setor-tab ${s.id === S.setor ? 'on' : ''}" data-setor="${s.id}" role="tab" aria-selected="${s.id === S.setor}">
+        <b>${esc(s.nome)}</b><span class="sm muted num">${cs.na_fila} para distribuir · ${cs.atrasados} atrasados · ${cs.em_alerta} em alerta</span></button>`;
+    }).join('')}</div>` : `<div class="inline muted">${I('network')}Setor: <b style="color:hsl(var(--foreground))">${esc(setor.nome)}</b></div>`}
+    ${setor.semOrganizador ? `<div class="alerta">${I('user-x')}<div class="tx"><b>Este setor ainda não tem quem organize</b>Nenhum membro de ${esc(setor.nome)} tem as permissões de acompanhar e distribuir. A diretoria consegue distribuir enquanto as funções são configuradas.</div><button class="btn sm">Configurar funções</button></div>` : ''}
+    <div class="kpis">
+      <button class="kpi hero ${S.aba === 'fila' ? 'on' : ''}" data-aba="fila"><span class="v">${c.na_fila}</span><span class="l">${I('inbox')}Para distribuir</span></button>
+      <button class="kpi ${S.aba === 'andamento' ? 'on' : ''}" data-aba="andamento"><span class="v">${c.em_andamento}</span><span class="l">${I('circle-dot')}Em andamento</span></button>
+      <button class="kpi" data-aba="alertas"><span class="v tx-danger">${c.atrasados}</span><span class="l">${I('triangle-alert')}Atrasados</span></button>
+      <button class="kpi" data-aba="alertas"><span class="v tx-warning">${c.em_alerta}</span><span class="l">${I('hourglass')}Sem movimentação</span></button>
+      <button class="kpi" data-aba="andamento"><span class="v">${c.sem_prazo}</span><span class="l">${I('calendar-x')}Sem prazo</span></button>
+    </div>
+    <div class="tabs" role="tablist">${abas.map(([id, t, n, w]) => `<button class="tab ${S.aba === id ? 'on' : ''}" data-aba="${id}" role="tab" aria-selected="${S.aba === id}">${t}${n != null ? `<span class="cnt ${w && n ? 'w' : ''}">${n}</span>` : ''}</button>`).join('')}</div>
+    ${{ fila: abaFila, alertas: abaAlertas, andamento: abaAndamento, equipe: abaEquipe, concluidos: abaConcluidos }[S.aba](setor, organiza)}`;
+}
+
+function abaFila(setor, organiza) {
+  const fila = doSetor(setor.id).filter((s) => etapa(s) === 'na_fila').sort((a, b) => dt(a.chegou) - dt(b.chegou));
+  if (!fila.length) return empty('inbox', 'Nada para distribuir', 'Tudo o que chegou ao setor já tem responsável.');
+  const linha = (s) => {
+    const o = OS[s.os];
+    const na = dias(dt(s.chegou));
+    return `<tr class="click" data-ir="servico-${s.id}">
+      <td>${svcCel(s)}</td>
+      <td>${osCel(s)}</td>
+      <td><span class="stack"><span class="num">${fmt(dt(o.venda))}</span><span class="sm muted">${esc(PESSOAS[o.vendedor].nome)}</span></span></td>
+      <td>${bPrior(o.prioridade)}</td>
+      <td class="num ${na >= 5 ? 'tx-warning' : ''}">${na === 0 ? 'Chegou hoje' : pl(na, 'dia', 'dias')}</td>
+      <td>${chipsOutros(s)}</td>
+      <td class="r">${organiza ? `<button class="btn sm pri" data-distribuir="${s.id}" data-stop>${I('user-plus')}Distribuir</button>` : ''}</td>
+    </tr>`;
+  };
+  let corpo;
+  if (S.agrupar === 'nenhum') corpo = fila.map(linha).join('');
+  else {
+    const chave = (s) => S.agrupar === 'cliente' ? OS[s.os].cliente : `OS ${s.os} · ${OS[s.os].cliente}`;
+    const grupos = {};
+    fila.forEach((s) => { (grupos[chave(s)] ||= []).push(s); });
+    corpo = Object.entries(grupos).map(([k, ss]) => `<tr class="grp"><td colspan="7">${esc(k)} <span class="muted">· ${pl(ss.length, 'serviço', 'serviços')}</span></td></tr>${ss.map(linha).join('')}`).join('');
+  }
+  return `
+    <div class="toolbar">
+      <span class="muted">Os mais antigos primeiro. Agrupar ajuda a dar serviços do mesmo cliente para a mesma pessoa.</span><span class="sp"></span>
+      <span class="inline sm muted">Agrupar por <span class="seg">${[['nenhum', 'Nenhum'], ['cliente', 'Cliente'], ['os', 'OS']].map(([v, t]) => `<button class="${S.agrupar === v ? 'on' : ''}" data-agrupar="${v}">${t}</button>`).join('')}</span></span>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Venda</th><th>Prioridade</th><th>Na fila há</th><th>Outros serviços da OS</th><th></th></tr></thead>
+      <tbody>${corpo}</tbody></table></div>
+    ${organiza ? '' : '<div class="note-wf"><b>Sem permissão de distribuir neste setor:</b> a fila aparece só para consulta, sem o botão Distribuir.</div>'}`;
+}
+
+function abaAlertas(setor) {
+  const lista = doSetor(setor.id).filter((s) => atrasado(s) || emAlerta(s) || (cienciaVigente(s) && ativo(s)))
+    .sort((a, b) => (atrasado(b) - atrasado(a)) || (diasSemMov(b) - diasSemMov(a)));
+  if (!lista.length) return empty('shield-check', 'Nenhum alerta', 'Nada atrasado nem parado há 7 dias ou mais.');
+  return `
+    <div class="toolbar"><span class="muted">Atrasados primeiro. "Sem movimentação" acende após 7 dias sem mudança nas tarefas. O sistema não marca nada como parado: só avisa.</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Motivo</th><th>Prazo</th><th>Responsáveis</th><th>Ciência</th><th></th></tr></thead>
+      <tbody>${lista.map((s) => {
+        const motivos = [];
+        if (atrasado(s)) motivos.push(badge('danger', 'triangle-alert', 'Atrasado'));
+        if (emAlerta(s)) motivos.push(badge('warning', 'hourglass', `Sem movimentação há ${pl(diasSemMov(s), 'dia', 'dias')}`));
+        return `<tr class="click" data-ir="servico-${s.id}">
+          <td>${svcCel(s)}</td><td>${osCel(s)}</td>
+          <td><span class="chips">${motivos.join('') || '<span class="sm muted">Silenciado</span>'}</span></td>
+          <td>${prazoCel(prazoServico(s))}</td>
+          <td>${responsaveis(s).map(esc).join('<br>')}</td>
+          <td>${cienciaVigente(s) ? alertaCel(s) : '<span class="sm muted">—</span>'}</td>
+          <td class="r">${emAlerta(s) ? `<button class="btn sm" data-ciencia="${s.id}" data-stop>${I('bell-off')}Estou ciente</button>` : ''}</td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`;
+}
+
+function tarefasAtivasDoSetor(setor) {
+  return doSetor(setor.id).flatMap((s) => s.tarefas.filter(ATIVA).map((t) => ({ s, t })));
+}
+function abaAndamento(setor) {
+  const linhas = tarefasAtivasDoSetor(setor).filter(({ t }) => !S.filtroResp || t.resp === S.filtroResp);
+  if (!linhas.length) return empty('circle-dot', 'Nada em andamento', 'Distribua serviços da fila para que apareçam aqui.');
+  const ordem = { atrasado: 0, vence_7_dias: 1, sem_prazo: 2, depois: 3 };
+  const porPessoa = {};
+  linhas.forEach((l) => { (porPessoa[l.t.resp] ||= []).push(l); });
+  const pessoas = Object.keys(porPessoa).sort((a, b) => PESSOAS[a].nome.localeCompare(PESSOAS[b].nome));
+  return `
+    <div class="toolbar">
+      <span class="muted">Agrupado por responsável; dentro de cada pessoa, os mais urgentes primeiro.</span><span class="sp"></span>
+      ${S.filtroResp ? `<span class="chip">${esc(PESSOAS[S.filtroResp].nome)} <button class="btn ghost sm" data-resp="" aria-label="Limpar filtro">${I('x')}</button></span>` : ''}
+    </div>
+    ${pessoas.map((k) => {
+      const ls = porPessoa[k].sort((a, b) => ordem[situacaoPrazo(a.t.prazo && dt(a.t.prazo))] - ordem[situacaoPrazo(b.t.prazo && dt(b.t.prazo))]);
+      const atr = ls.filter((l) => situacaoPrazo(l.t.prazo && dt(l.t.prazo)) === 'atrasado').length;
+      return `<div class="pessoa"><div class="pessoa-h"><span class="av sm">${iniciais(PESSOAS[k].nome)}</span><b>${esc(PESSOAS[k].nome)}</b><span class="muted sm">${esc(PESSOAS[k].funcao)}</span><span class="sp" style="flex:1"></span><span class="sm muted num">${pl(ls.length, 'item', 'itens')}${atr ? ` · <span class="tx-danger">${atr} atrasado${atr > 1 ? 's' : ''}</span>` : ''}</span></div>
+        <div class="tw"><table><thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Status</th><th>Prazo</th><th>Com a pessoa há</th><th>Alerta</th></tr></thead><tbody>
+        ${ls.map(({ s, t }) => `<tr class="click" data-ir="servico-${s.id}">
+          <td>${svcCel(s)}${t.desc ? `<span class="sm muted">Tarefa: ${esc(t.desc)}</span>` : ''}</td><td>${osCel(s)}</td><td>${bStatus(t.status)}</td>
+          <td>${prazoCel(t.prazo && dt(t.prazo))}</td><td class="num">${pl(dias(dt(t.criada)), 'dia', 'dias')}</td><td>${alertaCel(s)}</td></tr>`).join('')}
+        </tbody></table></div></div>`;
+    }).join('')}`;
+}
+
+function equipeDoSetor(setor) {
+  const membros = Object.entries(PESSOAS).filter(([, p]) => p.setor === setor.id).map(([k]) => k);
+  return membros.map((k) => {
+    const ls = tarefasAtivasDoSetor(setor).filter(({ t }) => t.resp === k);
+    const sit = (l) => situacaoPrazo(l.t.prazo && dt(l.t.prazo));
+    return {
+      k, ...PESSOAS[k], ativos: ls.length,
+      atrasados: ls.filter((l) => sit(l) === 'atrasado').length,
+      vence7: ls.filter((l) => sit(l) === 'vence_7_dias').length,
+      semPrazo: ls.filter((l) => sit(l) === 'sem_prazo').length,
+      alerta: ls.filter((l) => emAlerta(l.s)).length,
+      antigo: ls.length ? Math.max(...ls.map((l) => dias(dt(l.t.criada)))) : null,
+    };
+  });
+}
+function abaEquipe(setor) {
+  const eq = equipeDoSetor(setor);
+  if (!eq.length) return empty('users', 'Ninguém no setor', 'Vincule pessoas ao setor em Organização › Time.');
+  const max = Math.max(1, ...eq.map((e) => e.ativos));
+  return `
+    <div class="toolbar"><span class="muted">Carga sem horas: itens ativos por situação de prazo e há quanto tempo o mais antigo está com a pessoa. Clique numa pessoa para ver o que está com ela.</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Pessoa</th><th>Função</th><th class="r">Ativos</th><th>Distribuição</th><th class="r">Atrasados</th><th class="r">Vence em 7 dias</th><th class="r">Sem prazo</th><th class="r">Em alerta</th><th class="r">Mais antigo</th></tr></thead>
+      <tbody>${eq.sort((a, b) => b.ativos - a.ativos).map((e) => {
+        const depois = e.ativos - e.atrasados - e.vence7 - e.semPrazo;
+        const w = (n) => `${(n / max) * 100}%`;
+        return `<tr class="click" data-resp="${e.k}">
+          <td><span class="inline"><span class="av sm">${iniciais(e.nome)}</span>${esc(e.nome)}</span></td><td class="muted">${esc(e.funcao)}</td>
+          <td class="r num"><b>${e.ativos}</b></td>
+          <td><span class="bar" title="${e.atrasados} atrasados · ${e.vence7} vencem em 7 dias · ${e.semPrazo} sem prazo · ${depois} no prazo"><span class="d-danger" style="width:${w(e.atrasados)}"></span><span class="d-warning" style="width:${w(e.vence7)}"></span><span style="width:${w(e.semPrazo)};background:hsl(var(--warning)/.45)"></span><span class="d-neutral" style="width:${w(depois)};opacity:.5"></span></span></td>
+          <td class="r num ${e.atrasados ? 'tx-danger' : 'muted'}">${e.atrasados}</td><td class="r num ${e.vence7 ? 'tx-warning' : 'muted'}">${e.vence7}</td>
+          <td class="r num ${e.semPrazo ? 'tx-warning' : 'muted'}">${e.semPrazo}</td><td class="r num ${e.alerta ? 'tx-warning' : 'muted'}">${e.alerta}</td>
+          <td class="r num">${e.antigo == null ? '—' : pl(e.antigo, 'dia', 'dias')}</td></tr>`;
+      }).join('')}</tbody></table></div>`;
+}
+
+function abaConcluidos(setor) {
+  const lista = doSetor(setor.id).filter((s) => etapa(s) === 'concluido').sort((a, b) => termino(b) - termino(a));
+  if (!lista.length) return empty('circle-check', 'Nada concluído no período', 'Mude o período para ver entregas anteriores.');
+  const noPrazo = lista.filter((s) => prazoServico(s) && termino(s) <= prazoServico(s)).length;
+  const comPrazo = lista.filter((s) => prazoServico(s)).length;
+  return `
+    <div class="toolbar">
+      <span class="inline">${I('calendar')}<span class="seg"><button class="on">Este mês</button><button>Mês passado</button><button>Personalizado</button></span></span>
+      <span class="sp"></span><span class="muted num">${pl(lista.length, 'serviço concluído', 'serviços concluídos')} · ${noPrazo} de ${comPrazo} com prazo dentro do prazo</span>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Concluído por</th><th>Prazo</th><th>Término</th><th>No prazo</th></tr></thead>
+      <tbody>${lista.map((s) => {
+        const p = prazoServico(s); const tm = termino(s);
+        const ok = p ? (tm <= p ? badge('success', 'circle-check', 'No prazo') : badge('danger', 'triangle-alert', `${pl(dias(p, tm), 'dia', 'dias')} depois`)) : '<span class="sm muted">Sem prazo</span>';
+        const quem = PESSOAS[s.tarefas.filter((t) => t.termino).sort((a, b) => dt(b.termino) - dt(a.termino))[0].resp].nome;
+        return `<tr class="click" data-ir="servico-${s.id}"><td>${svcCel(s)}</td><td>${osCel(s)}</td><td>${esc(quem)}</td><td class="num">${fmt(p)}</td><td class="num">${fmt(tm)}</td><td>${ok}</td></tr>`;
+      }).join('')}</tbody></table></div>`;
+}
+
+/* ───────────────────────── Página: Meus serviços ───────────────────────── */
+function paginaMeusServicos() {
+  const eu = S.persona.pessoa;
+  const minhas = SERVICOS.flatMap((s) => s.tarefas.filter((t) => t.resp === eu).map((t) => ({ s, t })));
+  const abertas = minhas.filter(({ t }) => ATIVA(t));
+  const concluidas = minhas.filter(({ t }) => t.status === 'concluida');
+  const sit = (l) => situacaoPrazo(l.t.prazo && dt(l.t.prazo));
+  const atr = abertas.filter((l) => sit(l) === 'atrasado').length;
+  const hoje = abertas.filter((l) => l.t.prazo && dias(HOJE, dt(l.t.prazo)) === 0).length;
+  const cab = `<div class="ph"><div class="t"><h1>Meus serviços</h1>
+    <span class="muted num">${abertas.length ? `${pl(abertas.length, 'item com você', 'itens com você')}${atr ? ` · <span class="tx-danger">${atr} atrasado${atr > 1 ? 's' : ''}</span>` : ''}${hoje ? ` · <span class="tx-warning">${hoje} vence hoje</span>` : ''}` : 'O que está com você, o que vence primeiro e o que está atrasado.'}</span></div></div>
+    <div class="tabs" role="tablist">
+      <button class="tab ${S.minhasAba === 'abertos' ? 'on' : ''}" data-minhas="abertos">Em aberto<span class="cnt ${atr ? 'w' : ''}">${abertas.length}</span></button>
+      <button class="tab ${S.minhasAba === 'concluidos' ? 'on' : ''}" data-minhas="concluidos">Concluídos</button>
+    </div>`;
+  if (S.minhasAba === 'concluidos') {
+    if (!concluidas.length) return cab + empty('circle-check', 'Nada concluído no período', 'Mude o período para ver entregas anteriores.');
+    return cab + `<div class="toolbar"><span class="inline">${I('calendar')}<span class="seg"><button class="on">Este mês</button><button>Mês passado</button><button>Personalizado</button></span></span></div>
+      <div class="tw"><table><thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Setor</th><th>Prazo</th><th>Término</th></tr></thead><tbody>
+      ${concluidas.map(({ s, t }) => `<tr class="click" data-ir="servico-${s.id}"><td>${svcCel(s)}${t.desc ? `<span class="sm muted">Tarefa: ${esc(t.desc)}</span>` : ''}</td><td>${osCel(s)}</td><td>${esc(SETORES.find((x) => x.id === s.setor).nome)}</td><td>${prazoCel(t.prazo && dt(t.prazo), true)}</td><td class="num">${fmt(dt(t.termino))}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  }
+  if (!abertas.length) return cab + empty('coffee', 'Nada com você agora', 'Quando alguém distribuir um serviço para você, ele aparece aqui.');
+  const grupos = [['atrasado', 'Atrasados', 'tx-danger'], ['vence_7_dias', 'Vencem nos próximos 7 dias', 'tx-warning'], ['sem_prazo', 'Sem prazo', 'tx-warning'], ['depois', 'Depois', '']];
+  return cab + `<div class="tw"><table>
+    <thead><tr><th>Serviço</th><th>Cliente e OS</th><th>Prazo</th><th>Status</th><th>Alerta</th><th></th></tr></thead>
+    <tbody>${grupos.map(([k, t, cls]) => {
+      const ls = abertas.filter((l) => sit(l) === k).sort((a, b) => (a.t.prazo ? dt(a.t.prazo) : 0) - (b.t.prazo ? dt(b.t.prazo) : 0));
+      if (!ls.length) return '';
+      return `<tr class="grp"><td colspan="6"><span class="${cls}">${t}</span> <span class="muted">· ${ls.length}</span></td></tr>` + ls.map(({ s, t: tf }) => `
+        <tr class="click" data-ir="servico-${s.id}">
+          <td>${svcCel(s)}${tf.desc ? `<span class="sm muted">Tarefa: ${esc(tf.desc)}</span>` : ''}</td><td>${osCel(s)}</td>
+          <td>${prazoCel(tf.prazo && dt(tf.prazo))}</td><td>${bStatus(tf.status)}</td><td>${alertaCel(s)}</td>
+          <td class="r"><span class="status-ctl">${tf.status === 'aberta'
+            ? `<button class="btn sm" data-status="${tf.id}:em_andamento" data-stop>${I('play')}Iniciar</button>`
+            : `<button class="btn sm pri" data-status="${tf.id}:concluida" data-stop>${I('check')}Concluir</button>`}</span></td>
+        </tr>`).join('');
+    }).join('')}</tbody></table></div>
+    <div class="note-wf"><b>Um clique muda o status.</b> Iniciar e concluir não abrem modal. Concluir a última tarefa conclui o serviço e, quando todos os serviços da OS terminam, libera a OS para o financeiro (regra do backend).</div>`;
+}
+
+/* ───────────────────────── Página: Detalhe do serviço ───────────────────────── */
+function eventosDoServico(s) {
+  const ev = [];
+  const o = OS[s.os];
+  ev.push([dt(o.venda), PESSOAS[o.vendedor].nome, 'shopping-cart', 'info', `Venda registrada (OS ${s.os})`]);
+  ev.push([dt(s.chegou), null, 'inbox', 'warning', `${s.cat} chegou a ${SETORES.find((x) => x.id === s.setor).nome}`]);
+  s.tarefas.forEach((t) => {
+    const quemDistribuiu = s.setor === 2 ? 'Paulo Roberto Andrade' : 'Mariana Souza Lima';
+    ev.push([dt(t.criada), quemDistribuiu, 'user-check', 'info', `Distribuído para ${PESSOAS[t.resp].nome}${t.prazo ? `, prazo ${fmt(dt(s.prazoAlterado && s.prazoAlterado.de ? s.prazoAlterado.de : t.prazo))}` : ', sem prazo'}`]);
+    if (t.inicio) ev.push([dt(t.inicio), PESSOAS[t.resp].nome, 'play', 'info', `${PESSOAS[t.resp].nome} iniciou ${s.cat}${t.desc ? ` (${t.desc})` : ''}`]);
+    if (t.termino) ev.push([dt(t.termino), PESSOAS[t.resp].nome, 'circle-check', 'success', `${PESSOAS[t.resp].nome} concluiu ${s.cat}${t.desc ? ` (${t.desc})` : ''}`]);
+  });
+  if (s.prazoAlterado) { const pa = s.prazoAlterado; ev.push([dt(pa.em), PESSOAS[pa.por].nome, 'calendar-clock', 'warning', `Prazo de ${s.cat} (${PESSOAS[s.tarefas[0].resp].nome}) alterado de ${fmt(dt(pa.de))} para ${fmt(dt(pa.para))}`]); }
+  if (s.ciencia) ev.push([dt(s.ciencia.em), PESSOAS[s.ciencia.por].nome, 'bell-off', 'neutral', `Sem movimentação há ${dias(ultimaMov(s), dt(s.ciencia.em))} dias: ${PESSOAS[s.ciencia.por].nome} está ciente (${MOTIVOS[s.ciencia.motivo].toLowerCase()})`]);
+  if (etapa(s) === 'concluido') ev.push([termino(s), null, 'circle-check', 'success', `${s.cat} concluído`]);
+  return ev;
+}
+const linhaDoTempo = (s) => listaEventos(eventosDoServico(s).sort((a, b) => b[0] - a[0]));
+
+function paginaServico(id) {
+  const s = SERVICOS.find((x) => x.id === id);
+  if (!s) return empty('search-x', 'Serviço não encontrado', 'Ele pode ter sido excluído, ou você não tem acesso a ele.');
+  const o = OS[s.os];
+  const setor = SETORES.find((x) => x.id === s.setor);
+  const e = etapa(s);
+  const p = prazoServico(s);
+  const eu = S.persona.pessoa;
+  const minhaTarefa = s.tarefas.some((t) => t.resp === eu);
+  const acompanha = setoresQueAcompanho().some((x) => x.id === s.setor);
+  const podeDistribuir = pode('tarefas.distribuir') && acompanha && ativo(s);
+  const podeCiencia = (minhaTarefa || acompanha) && ['distribuido', 'em_execucao'].includes(e);
+  if (!vejo(s)) return empty('lock', 'Serviço não encontrado', 'Ele pode ter sido excluído, ou você não tem acesso a ele.');
+  return `
+    <div class="ph">
+      <div class="t">
+        <span class="inline sm muted">${I('network')}${esc(setor.nome)} · ${esc(o.cliente)} · OS ${s.os}</span>
+        <h1>${esc(s.cat)}: ${esc(s.desc)}</h1>
+        <span class="chips" style="gap:8px;margin-top:4px">${bEtapa(e)}${p ? badge(...SITUACAO[situacaoPrazo(p)]) : badge(...SITUACAO.sem_prazo)}${bPrior(o.prioridade)}</span>
+      </div>
+      <div class="toolbar">
+        ${podeDistribuir ? `<button class="btn ${e === 'na_fila' ? 'pri' : ''}" data-distribuir="${s.id}">${I(e === 'na_fila' ? 'user-plus' : 'users')}${e === 'na_fila' ? 'Distribuir' : 'Dividir com mais alguém'}</button>` : ''}
+        ${pode('os.gerenciar') || (pode('servicos.ver_setor') && acompanha) ? `<button class="btn ghost" aria-label="Mais ações">${I('ellipsis')}</button>` : ''}
+      </div>
+    </div>
+    ${emAlerta(s) ? `<div class="alerta">${I('hourglass')}<div class="tx"><b>Sem movimentação há ${pl(diasSemMov(s), 'dia', 'dias')}. Está tudo bem?</b>Se o serviço está esperando algo, registre a ciência: o alerta fica silenciado por 7 dias e o prazo continua contando.</div>${podeCiencia ? `<button class="btn sm" data-ciencia="${s.id}">${I('bell-off')}Estou ciente</button>` : ''}</div>` : ''}
+    ${cienciaVigente(s) ? `<div class="alerta neutro">${I('bell-off')}<div class="tx"><b>${esc(MOTIVOS[s.ciencia.motivo])}</b>${esc(PESSOAS[s.ciencia.por].nome)} registrou ciência em ${fmt(dt(s.ciencia.em))}${s.ciencia.obs ? `: “${esc(s.ciencia.obs)}”` : ''}. Volta a alertar se nada mudar em 7 dias.</div></div>` : ''}
+    <div class="grid-d">
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+        <section class="card">
+          <div class="card-h"><h2>Tarefas</h2><span class="sm muted">Prazo do serviço: <b class="num" style="color:hsl(var(--foreground))">${fmt(p)}</b> (o maior entre as tarefas)</span></div>
+          ${s.tarefas.length ? `<div style="overflow-x:auto"><table style="min-width:640px"><thead><tr><th>Responsável</th><th>Status</th><th>Prazo</th><th>Início</th><th>Término</th><th></th></tr></thead><tbody>
+            ${s.tarefas.map((t) => {
+              const minha = t.resp === eu;
+              const gerencio = pode('tarefas.distribuir') && acompanha;
+              return `<tr><td><span class="stack"><span class="inline"><span class="av sm">${iniciais(PESSOAS[t.resp].nome)}</span>${esc(PESSOAS[t.resp].nome)}</span>${t.desc ? `<span class="sm muted">${esc(t.desc)}</span>` : ''}</span></td>
+                <td>${bStatus(t.status)}</td><td>${prazoCel(t.prazo && dt(t.prazo), !ATIVA(t))}</td>
+                <td class="num">${t.inicio ? fmt(dt(t.inicio)) : '—'}</td><td class="num">${t.termino ? fmt(dt(t.termino)) : '—'}</td>
+                <td class="r">${minha && ATIVA(t) ? (t.status === 'aberta' ? `<button class="btn sm" data-status="${t.id}:em_andamento">${I('play')}Iniciar</button>` : `<button class="btn sm pri" data-status="${t.id}:concluida">${I('check')}Concluir</button>`) : ''}
+                  ${gerencio && ATIVA(t) ? `<button class="btn sm ghost" title="Reatribuir, mudar prazo, cancelar ou excluir">${I('ellipsis')}</button>` : ''}</td></tr>`;
+            }).join('')}</tbody></table></div>`
+            : `<div class="card-b">${empty('inbox', 'Ainda na fila do setor', podeDistribuir ? 'Distribua para definir responsável e prazo.' : 'Quem organiza o setor ainda vai distribuir.')}</div>`}
+        </section>
+        <section class="card"><div class="card-h"><h2>Linha do tempo</h2><span class="sm muted">Deste serviço e das tarefas dele</span></div><div class="card-b">${linhaDoTempo(s)}</div></section>
+      </div>
+      <aside style="display:flex;flex-direction:column;gap:20px;min-width:0">
+        <section class="card"><div class="card-h"><h2>Venda</h2><a href="#venda-${s.os}" class="sm">Resumo da venda</a></div>
+          <div class="card-b"><dl class="kv">
+            <dt>Cliente</dt><dd>${esc(o.cliente)}</dd>
+            <dt>OS</dt><dd class="num">${s.os}</dd>
+            <dt>Data da venda</dt><dd class="num">${fmt(dt(o.venda))}</dd>
+            <dt>Vendido por</dt><dd>${esc(PESSOAS[o.vendedor].nome)}</dd>
+            <dt>Prioridade</dt><dd>${bPrior(o.prioridade)}</dd>
+            <dt>Observação</dt><dd>${o.obs ? esc(o.obs) : '<span class="muted">—</span>'}</dd>
+          </dl><p class="sm muted" style="margin-top:12px">Sem valores nem condição de pagamento: eles ficam no resumo da venda, para quem pode ver.</p></div></section>
+        <section class="card"><div class="card-h"><h2>Outros serviços da OS</h2></div>
+          <div class="card-b">${outrosDaOS(s).length ? outrosDaOS(s).map((x) => `
+            <div class="outro"><span class="inline" style="justify-content:space-between">${vejo(x) ? `<a href="#servico-${x.id}">${esc(x.cat)}</a>` : `<b>${esc(x.cat)}</b>`}${bEtapa(etapa(x))}</span>
+            <span class="sm muted">${esc(SETORES.find((y) => y.id === x.setor).nome)}${responsaveis(x).length ? ` · ${responsaveis(x).map(esc).join(', ')}` : ''}</span></div>`).join('')
+            : '<span class="muted">Esta OS tem só este serviço.</span>'}</div></section>
+      </aside>
+    </div>`;
+}
+
+
+/* Condição de pagamento e faturamento de cada venda (ADRs 0007 e 0008). Datas dd/mm de 2026. */
+const FIN = {
+  1284: { valor: 18600, tipo: 'parcelado', parcelas: 3, intervalo: 30, venc: '10/11', forma: 'boleto', liberar: 'conclusao', nfNome: 'Wagner Silva', nfEmail: 'financeiro@valeverde.com.br' },
+  1279: { valor: 9800, tipo: 'a_vista', venc: '20/10', forma: 'pix', liberar: 'venda', nfNome: 'Setor de Compras', nfEmail: 'compras@saolucas.org.br' },
+  1281: { valor: 7400, tipo: 'parcelado', parcelas: 2, intervalo: 30, venc: '06/11', forma: 'boleto', liberar: 'conclusao', nfNome: 'Andréa Costa', nfEmail: 'nf@horizonte.com.br' },
+  1286: { valor: 2100, tipo: 'a_vista', forma: 'pix', liberar: 'venda', nfNome: 'Sr. Joaquim', nfEmail: 'paodemel@gmail.com' },
+  1277: { valor: 6900, tipo: 'a_vista', venc: '15/10', forma: 'transferencia', liberar: 'venda', nfNome: 'Financeiro', nfEmail: 'financeiro@rodoleve.com.br', lancado: { ref: 'NF 4567', data: '06/10', por: 'sandra' } },
+  1270: { valor: 12300, tipo: 'parcelado', parcelas: 4, intervalo: 30, venc: '05/11', forma: 'boleto', liberar: 'conclusao', nfNome: 'Débora Lins', nfEmail: 'contas@alvorada.ind.br' },
+  1265: { valor: 13800, tipo: 'recorrente', meses: 12, mensal: 1150, fecha: 25, vence: 5, forma: 'boleto', liberar: 'venda', nfNome: 'Contas a pagar', nfEmail: 'cap@bompreco.com.br', lancado: { ref: 'Asaas sub_88213', data: '16/09', por: 'sandra' } },
+  1268: { valor: 8200, tipo: 'a_vista', forma: 'pix', liberar: 'conclusao', nfNome: 'Rogério Pires', nfEmail: 'rogerio@serraazul.com.br' },
+  1273: { valor: 4500, tipo: 'parcelado', parcelas: 3, intervalo: 30, venc: '30/10', forma: 'boleto', liberar: 'conclusao', nfNome: 'Direção', nfEmail: 'direcao@pequenosaber.com.br' },
+  1262: { valor: 5400, tipo: 'a_vista', forma: 'transferencia', liberar: 'conclusao', nfNome: 'Cooperativa', nfEmail: 'adm@agrosul.coop.br' },
+  1259: { valor: 3900, tipo: 'a_vista', forma: 'pix', liberar: 'conclusao', nfNome: 'Gerência', nfEmail: 'posto.estrela@hotmail.com' },
+  1283: { valor: 36000, tipo: 'recorrente', meses: 24, mensal: 1500, fecha: 25, vence: 15, forma: 'boleto', liberar: 'venda', nfNome: 'Thaís Moreira', nfEmail: 'thais.moreira@conecta.com.br' },
+  1255: { valor: 9900, tipo: 'parcelado', parcelas: 2, intervalo: 30, venc: '15/10', forma: 'boleto', liberar: 'conclusao', nfNome: 'Financeiro', nfEmail: 'financeiro@boavista.com.br' },
+  1251: { valor: 3200, tipo: 'a_vista', forma: 'pix', liberar: 'conclusao', nfNome: 'Dra. Lúcia', nfEmail: 'clinica@sorrisopleno.com.br', lancado: { ref: 'NF 4512', data: '03/10', por: 'sandra' } },
+};
+const CLIENTES = [...new Set([...Object.values(OS).map((o) => o.cliente), 'Auto Peças Centauro', 'Gráfica Ponto Final', 'Restaurante Sabor da Serra'])].sort();
+/* Catálogo: o setor do catálogo é quem executa (ADR 0004). Inativos não aparecem em serviços novos. */
+const CATALOGO = [
+  { nome: 'PGR', setor: 1 }, { nome: 'LTCAT', setor: 1 }, { nome: 'APR', setor: 1 },
+  { nome: 'Laudo de Insalubridade', setor: 1 }, { nome: 'Laudo de Periculosidade', setor: 1 },
+  { nome: 'Treinamento NR-10', setor: 1 }, { nome: 'Treinamento NR-35', setor: 1 },
+  { nome: 'AET', setor: 2 }, { nome: 'Análise Ergonômica Preliminar', setor: 2 },
+];
+const ORGANIZADORES = { 1: ['mariana', 'tiago'], 2: [] };
+const FORMAS = { pix: 'PIX', boleto: 'Boleto', transferencia: 'Transferência', credito: 'Crédito', debito: 'Débito', dinheiro: 'Dinheiro', cheque: 'Cheque', outro: 'Outro' };
+const TIPOS = { a_vista: ['neutral', 'banknote', 'À vista'], parcelado: ['info', 'layers', 'Parcelado'], recorrente: ['info', 'repeat', 'Recorrente'] };
+
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtR = (v) => v == null || v === '' || Number.isNaN(Number(v)) ? '—' : brl.format(Number(v));
+const isoParaDm = (v) => v ? `${v.slice(8, 10)}/${v.slice(5, 7)}` : '';
+const dmParaIso = (v) => v ? `2026-${v.slice(3, 5)}-${v.slice(0, 2)}` : '';
+
+/* Espelho de OrdemServico.condicao_resumo no backend: o mesmo texto em todas as telas e nos e-mails. */
+function condicaoResumo(f) {
+  const partes = [];
+  if (f.tipo === 'parcelado') partes.push(`Parcelado em ${f.parcelas || '?'}x${f.intervalo ? ` a cada ${f.intervalo} dias` : ''}`);
+  else if (f.tipo === 'recorrente') {
+    partes.push(`Recorrente: ${f.meses || '?'} meses${f.mensal ? ` de ${fmtR(f.mensal)}` : ''}`);
+    if (f.fecha) partes.push(`fecha dia ${f.fecha}`);
+    if (f.vence) partes.push(`vence dia ${f.vence}`);
+  } else partes.push('À vista');
+  if (f.venc) partes.push(`1º vencimento ${fmt(dt(f.venc))}`);
+  return partes.join(', ');
+}
+
+const servicosDaOS = (id) => SERVICOS.filter((s) => s.os === +id);
+function andamentoOS(id) {
+  const a = { total: 0, na_fila: 0, distribuido: 0, em_execucao: 0, concluido: 0, cancelado: 0 };
+  servicosDaOS(id).forEach((s) => { a.total += 1; a[etapa(s)] += 1; });
+  return a;
+}
+function statusOS(id) {
+  const ss = servicosDaOS(id);
+  if (ss.length && ss.every((s) => etapa(s) === 'concluido')) return 'concluida';
+  if (ss.some((s) => ['em_execucao', 'concluido'].includes(etapa(s)))) return 'em_andamento';
+  return 'aberta';
+}
+/* Liberação: uma vez, na venda ou quando todos os serviços terminam. */
+function liberacao(id) {
+  const o = OS[id]; const f = FIN[id];
+  if (f.liberar === 'venda') return { liberada: true, em: dt(o.venda), por: PESSOAS[o.vendedor].nome, motivo: 'na venda' };
+  if (statusOS(id) === 'concluida') {
+    const ult = servicosDaOS(id).sort((a, b) => termino(b) - termino(a))[0];
+    const t = ult.tarefas.filter((x) => x.termino).sort((a, b) => dt(b.termino) - dt(a.termino))[0];
+    return { liberada: true, em: termino(ult), por: PESSOAS[t.resp].nome, motivo: 'todos os serviços concluídos' };
+  }
+  return { liberada: false };
+}
+const situacaoFin = (id) => FIN[id].lancado ? 'faturada' : liberacao(id).liberada ? 'a_faturar' : 'previsao';
+const SIT_FIN = { previsao: ['neutral', 'circle-dashed', 'Previsão'], a_faturar: ['warning', 'clock', 'A faturar'], faturada: ['success', 'circle-check', 'Faturada'] };
+const STATUS_OS = { aberta: ['warning', 'circle-dashed', 'Aberta'], em_andamento: ['info', 'circle-dot', 'Em andamento'], concluida: ['success', 'circle-check', 'Concluída'] };
+
+function andamentoCel(id) {
+  const a = andamentoOS(id);
+  const total = a.total - a.cancelado;
+  if (!total) return '<span class="muted">Sem serviços</span>';
+  const seg = [['concluido', 'success'], ['em_execucao', 'info'], ['distribuido', 'neutral'], ['na_fila', 'warning']];
+  const det = seg.filter(([k]) => a[k]).map(([k]) => `${a[k]} ${ETAPA[k][2].toLowerCase()}`).join(' · ');
+  return `<span class="stack" style="min-width:130px" title="${det}"><span class="num">${a.concluido} de ${total} concluído${total === 1 ? '' : 's'}</span>
+    <span class="bar" style="height:6px">${seg.map(([k, tom]) => a[k] ? `<span class="d-${tom}" style="width:${(a[k] / total) * 100}%${tom === 'neutral' ? ';opacity:.5' : ''}"></span>` : '').join('')}</span>
+    ${a.na_fila ? `<span class="sm tx-warning">${a.na_fila} na fila</span>` : ''}</span>`;
+}
+
+/* ───────────────────────── Página: Vendas ───────────────────────── */
+function paginaVendas() {
+  const veValores = pode('financeiro.ver_valores');
+  const eu = S.persona.pessoa;
+  const visoes = [['todas', 'Todas'], ['minhas', 'Minhas vendas'], ['na_fila', 'Com serviço na fila'], ['em_execucao', 'Em execução'], ['concluidas', 'Concluídas']];
+  const q = (S.vf.q || '').trim().toLowerCase();
+  const ids = Object.keys(OS).map(Number).sort((a, b) => b - a).filter((id) => {
+    const o = OS[id];
+    if (q && !(`${id}`.includes(q) || o.cliente.toLowerCase().includes(q))) return false;
+    if (S.vf.visao === 'minhas') return o.vendedor === eu;
+    if (S.vf.visao === 'na_fila') return andamentoOS(id).na_fila > 0;
+    if (S.vf.visao === 'em_execucao') return statusOS(id) === 'em_andamento';
+    if (S.vf.visao === 'concluidas') return statusOS(id) === 'concluida';
+    return true;
+  }).filter((id) => !veValores || !S.vf.fin || situacaoFin(id) === S.vf.fin);
+  return `
+    <div class="ph"><div class="t"><h1>Vendas</h1><span class="muted">Cada venda com o andamento da execução nos setores.</span></div>
+      ${pode('os.gerenciar') ? `<button class="btn pri" data-ir="vendas-nova">${I('plus')}Nova venda</button>` : ''}</div>
+    <div class="toolbar">
+      <span class="seg" role="tablist" aria-label="Visões">${visoes.map(([v, t]) => `<button class="${S.vf.visao === v ? 'on' : ''}" data-visao="${v}">${t}</button>`).join('')}</span>
+      <span class="sp"></span>
+      ${veValores ? `<label class="inline sm muted" for="vf-fin">Financeiro <select class="inp" id="vf-fin" data-vf-fin style="height:32px;width:auto"><option value="">Todas</option>${Object.entries(SIT_FIN).map(([k, v]) => `<option value="${k}" ${S.vf.fin === k ? 'selected' : ''}>${v[2]}</option>`).join('')}</select></label>` : ''}
+      <span class="search" style="width:240px;background:hsl(var(--background))">${I('search')}<input id="vf-q" data-vf-q value="${esc(S.vf.q)}" placeholder="Cliente ou número da OS" aria-label="Buscar vendas" style="border:0;outline:0;background:none;flex:1;min-width:0"></span>
+    </div>
+    ${ids.length ? `<div class="tw"><table>
+      <thead><tr><th>OS</th><th>Cliente</th><th>Venda</th><th>Andamento</th><th>Status</th>${veValores ? '<th>Condição</th><th class="r">Valor</th><th>Financeiro</th>' : ''}</tr></thead>
+      <tbody>${ids.map((id) => {
+        const o = OS[id]; const f = FIN[id];
+        return `<tr class="click" data-ir="venda-${id}">
+          <td class="num"><b>${id}</b></td>
+          <td>${esc(o.cliente)}</td>
+          <td><span class="stack"><span class="num">${fmt(dt(o.venda))}</span><span class="sm muted">${esc(PESSOAS[o.vendedor].nome)}</span></span></td>
+          <td>${andamentoCel(id)}</td>
+          <td>${badge(...STATUS_OS[statusOS(id)])}</td>
+          ${veValores ? `<td><span class="stack" style="align-items:flex-start;gap:4px">${badge(...TIPOS[f.tipo])}${condicaoResumo(f) !== TIPOS[f.tipo][2] ? `<span class="sm muted" style="max-width:240px">${esc(condicaoResumo(f))}</span>` : ''}</span></td>
+          <td class="r num">${fmtR(f.valor)}${f.mensal ? `<br><span class="sm muted">${fmtR(f.mensal)}/mês</span>` : ''}</td>
+          <td>${badge(...SIT_FIN[situacaoFin(id)])}${f.lancado ? `<br><span class="sm muted">${esc(f.lancado.ref)}</span>` : ''}</td>` : ''}
+        </tr>`;
+      }).join('')}</tbody></table></div>` : empty('search-x', 'Nenhuma venda encontrada', 'Mude a visão ou a busca.')}
+    ${veValores ? '' : '<div class="note-wf"><b>Sem permissão de ver valores:</b> condição, valor e situação financeira não aparecem (o backend não envia esses campos). Andamento e quem vendeu continuam visíveis.</div>'}`;
+}
+
+/* ───────────────────────── Página: Nova venda / editar ───────────────────────── */
+const NV_PADRAO = () => ({
+  modo: 'nova', id: null, passo: 1, erros: {}, cliente: '', data: '2026-10-10', prioridade: 'media', obs: '',
+  tipo: 'a_vista', valor: '', mensal: '', parcelas: '', intervalo: '30', venc: '', fecha: '', vence: '', forma: 'boleto',
+  liberar: 'conclusao', nfNome: '', nfEmail: '', servicos: [{ cat: '', desc: '', prioridade: '' }],
+});
+function iniciarEdicao(id) {
+  const o = OS[id]; const f = FIN[id];
+  S.nv = { ...NV_PADRAO(), modo: 'editar', id, cliente: o.cliente, data: dmParaIso(o.venda), prioridade: o.prioridade, obs: o.obs,
+    tipo: f.tipo, valor: String(f.valor), mensal: f.mensal ? String(f.mensal) : '', parcelas: String(f.parcelas || f.meses || ''),
+    intervalo: f.intervalo ? String(f.intervalo) : '', venc: dmParaIso(f.venc), fecha: f.fecha ? String(f.fecha) : '', vence: f.vence ? String(f.vence) : '',
+    forma: f.forma, liberar: f.liberar, nfNome: f.nfNome, nfEmail: f.nfEmail, servicos: [] };
+}
+const passosNV = () => {
+  if (S.nv.modo === 'editar') return pode('financeiro.ver_valores') ? [1, 2] : [1];
+  return [1, 2, 3, 4];
+};
+const NOMES_PASSO = { 1: 'Cliente e venda', 2: 'Condição de pagamento', 3: 'Serviços', 4: 'Revisão' };
+const finDoForm = (n) => ({ tipo: n.tipo, parcelas: n.parcelas, intervalo: n.intervalo, meses: n.parcelas, mensal: n.mensal, fecha: n.fecha, vence: n.vence, venc: isoParaDm(n.venc) });
+
+function validarPasso(p) {
+  const n = S.nv; const e = {};
+  if (p === 1 && !n.cliente) e.cliente = 'Escolha o cliente.';
+  if (p === 2) {
+    if (!n.valor) e.valor = 'Informe o valor total da venda.';
+    if (n.tipo === 'parcelado') {
+      if (!n.parcelas || +n.parcelas < 2) e.parcelas = 'O parcelado precisa de pelo menos 2 parcelas.';
+      if (!n.venc) e.venc = 'Informe o primeiro vencimento.';
+    }
+    if (n.tipo === 'recorrente') {
+      if (!n.parcelas || +n.parcelas < 1) e.parcelas = 'Informe o número de meses do recorrente.';
+      if (!n.vence) e.vence = 'Informe o dia de vencimento do recorrente.';
+      if (!n.mensal) e.mensal = 'Informe o valor mensal do recorrente.';
+    }
+  }
+  if (p === 3) {
+    if (!n.servicos.some((s) => s.cat)) e.servicos = 'Inclua pelo menos um serviço.';
+    n.servicos.forEach((s, i) => { if (s.cat && !s.desc.trim()) e[`desc${i}`] = 'Descreva o serviço (ex.: unidade, escopo).'; });
+  }
+  n.erros = e;
+  return !Object.keys(e).length;
+}
+
+const erro = (c) => S.nv.erros[c] ? `<span class="sm tx-danger inline">${I('circle-alert')}${esc(S.nv.erros[c])}</span>` : '';
+const campo = (id, rotulo, html, opcional, dica) => `<div class="field"><label for="${id}">${rotulo}${opcional ? ' <span class="muted" style="font-weight:400">(opcional)</span>' : ''}</label>${html}${dica ? `<span class="sm muted">${dica}</span>` : ''}${erro(id.replace('nv-', ''))}</div>`;
+const inp = (c, tipo = 'text', extra = '') => `<input class="inp" id="nv-${c}" data-nv="${c}" type="${tipo}" value="${esc(S.nv[c])}" ${extra}>`;
+
+function passo1() {
+  const n = S.nv;
+  return `<div class="grid2">
+    ${campo('nv-cliente', 'Cliente', `<select class="inp" id="nv-cliente" data-nv="cliente"><option value="">Escolha o cliente</option>${CLIENTES.map((c) => `<option ${n.cliente === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>`, false, 'Cliente novo: cadastre em Cadastros › Clientes.')}
+    ${campo('nv-data', 'Data da venda', inp('data', 'date'))}
+  </div>
+  <div class="field"><label>Prioridade</label><span class="seg">${Object.entries(PRIOR).map(([k, v]) => `<button type="button" class="${n.prioridade === k ? 'on' : ''}" data-nv-set="prioridade:${k}">${v[2]}</button>`).join('')}</span><span class="sm muted">Vira a prioridade padrão dos serviços.</span></div>
+  ${campo('nv-obs', 'Observação', `<textarea class="inp" id="nv-obs" data-nv="obs" placeholder="Ex.: endereço da unidade, contato técnico, restrições de horário">${esc(n.obs)}</textarea>`, true, 'Aparece para quem executa, no detalhe do serviço.')}`;
+}
+
+function passo2() {
+  const n = S.nv;
+  const tipoCard = (k, d) => `<button type="button" class="tipo ${n.tipo === k ? 'on' : ''}" data-nv-set="tipo:${k}" aria-pressed="${n.tipo === k}">${I(TIPOS[k][1])}<b>${TIPOS[k][2]}</b><span class="sm muted">${d}</span></button>`;
+  const especificos = {
+    a_vista: `<div class="grid2">${campo('nv-venc', 'Vencimento', inp('venc', 'date'), true)}</div>`,
+    parcelado: `<div class="grid3">${campo('nv-parcelas', 'Parcelas', inp('parcelas', 'number', 'min="2"'))}${campo('nv-intervalo', 'A cada (dias)', inp('intervalo', 'number', 'min="1"'), true)}${campo('nv-venc', '1º vencimento', inp('venc', 'date'))}</div>`,
+    recorrente: `<div class="grid3">${campo('nv-mensal', 'Valor mensal', inp('mensal', 'number', 'step="0.01" min="0"'))}${campo('nv-parcelas', 'Meses', inp('parcelas', 'number', 'min="1"'))}${campo('nv-vence', 'Dia de vencimento', inp('vence', 'number', 'min="1" max="31"'))}</div>
+      <div class="grid3">${campo('nv-fecha', 'Dia de fechamento', inp('fecha', 'number', 'min="1" max="31"'), true)}${campo('nv-venc', '1º vencimento', inp('venc', 'date'), true)}</div>`,
+  };
+  const sugestao = n.tipo === 'recorrente' && n.mensal && n.parcelas ? `${n.parcelas} × ${fmtR(n.mensal)} = ${fmtR(n.mensal * n.parcelas)}. O sistema não calcula um a partir do outro: confira se houve arredondamento negociado.` : 'No recorrente, o valor total é a soma dos meses negociada com o cliente.';
+  return `<div class="field"><label>Tipo</label><div class="tipos">${tipoCard('a_vista', 'Um pagamento')}${tipoCard('parcelado', 'Parcelas com intervalo fixo')}${tipoCard('recorrente', 'Mensalidade por N meses')}</div></div>
+    <div class="grid2">${campo('nv-valor', 'Valor total', inp('valor', 'number', 'step="0.01" min="0"'), false, n.tipo === 'recorrente' ? sugestao : '')}
+      ${campo('nv-forma', 'Forma de pagamento', `<select class="inp" id="nv-forma" data-nv="forma">${Object.entries(FORMAS).map(([k, v]) => `<option value="${k}" ${n.forma === k ? 'selected' : ''}>${v}</option>`).join('')}</select>`)}</div>
+    ${especificos[n.tipo]}
+    <div class="field"><label>Quando libera para o financeiro</label><div class="tipos">
+      <button type="button" class="tipo ${n.liberar === 'venda' ? 'on' : ''}" data-nv-set="liberar:venda">${I('zap')}<b>Na venda</b><span class="sm muted">O financeiro já pode faturar ao salvar.</span></button>
+      <button type="button" class="tipo ${n.liberar === 'conclusao' ? 'on' : ''}" data-nv-set="liberar:conclusao">${I('flag')}<b>Na conclusão</b><span class="sm muted">Quando todos os serviços terminarem.</span></button></div></div>
+    <div class="grid2">${campo('nv-nfNome', 'Contato para envio da NF', inp('nfNome'), true)}${campo('nv-nfEmail', 'E-mail da NF', inp('nfEmail', 'email'), true)}</div>
+    <div class="preview" id="nv-preview">${I('file-text')}<span><span class="sm muted">Como a condição vai aparecer para o comercial, o financeiro e nos e-mails</span><br><b>${esc(condicaoResumo(finDoForm(n)))}</b></span></div>`;
+}
+
+function passo3() {
+  const n = S.nv;
+  const porSetor = {};
+  n.servicos.filter((s) => s.cat).forEach((s) => { const st = CATALOGO.find((c) => c.nome === s.cat).setor; porSetor[st] = (porSetor[st] || 0) + 1; });
+  return `<span class="muted">Cada serviço vai para a fila do setor responsável pelo catálogo. Catálogos inativos não aparecem.</span>
+    ${n.servicos.map((s, i) => {
+      const cat = CATALOGO.find((c) => c.nome === s.cat);
+      return `<div class="parte svc-row">
+        <div class="field"><label for="nv-s-cat-${i}">Catálogo</label><select class="inp" id="nv-s-cat-${i}" data-nv-s="${i}:cat"><option value="">Escolha</option>${SETORES.map((st) => `<optgroup label="${esc(st.nome)}">${CATALOGO.filter((c) => c.setor === st.id).map((c) => `<option ${s.cat === c.nome ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</optgroup>`).join('')}</select>
+          ${cat ? `<span class="sm muted inline">${I('arrow-right')}Vai para ${esc(SETORES.find((x) => x.id === cat.setor).nome)}</span>` : ''}</div>
+        <div class="field"><label for="nv-s-desc-${i}">Descrição</label><input class="inp" id="nv-s-desc-${i}" data-nv-s="${i}:desc" value="${esc(s.desc)}" placeholder="Ex.: unidade fabril e depósito">${erro(`desc${i}`)}</div>
+        <div class="field"><label for="nv-s-pri-${i}">Prioridade</label><select class="inp" id="nv-s-pri-${i}" data-nv-s="${i}:prioridade"><option value="">Da venda (${PRIOR[n.prioridade][2]})</option>${Object.entries(PRIOR).map(([k, v]) => `<option value="${k}" ${s.prioridade === k ? 'selected' : ''}>${v[2]}</option>`).join('')}</select></div>
+        <button type="button" class="btn ghost sm" data-nv-rm="${i}" aria-label="Remover serviço" ${n.servicos.length === 1 ? 'disabled' : ''}>${I('trash-2')}</button></div>`;
+    }).join('')}
+    <button type="button" class="btn sm" data-nv-add style="align-self:flex-start">${I('plus')}Mais um serviço</button>
+    ${erro('servicos')}
+    ${Object.keys(porSetor).length ? `<div class="chips">${Object.entries(porSetor).map(([st, q]) => `<span class="chip">${I('network')}${esc(SETORES.find((x) => x.id === +st).nome)}: ${pl(q, 'serviço', 'serviços')}</span>`).join('')}</div>` : ''}`;
+}
+
+function passo4() {
+  const n = S.nv;
+  const f = finDoForm(n);
+  const porSetor = {};
+  n.servicos.filter((s) => s.cat).forEach((s) => { const st = CATALOGO.find((c) => c.nome === s.cat).setor; (porSetor[st] ||= []).push(s); });
+  const sec = (p, titulo, corpo) => `<section class="card"><div class="card-h"><h2>${titulo}</h2><button class="btn ghost sm" data-nv-ir="${p}">${I('pencil')}Alterar</button></div><div class="card-b">${corpo}</div></section>`;
+  return `${sec(1, 'Cliente e venda', `<dl class="kv"><dt>Cliente</dt><dd>${esc(n.cliente)}</dd><dt>Data da venda</dt><dd class="num">${fmt(new Date(n.data + 'T12:00'))}</dd><dt>Prioridade</dt><dd>${bPrior(n.prioridade)}</dd><dt>Observação</dt><dd>${n.obs ? esc(n.obs) : '<span class="muted">—</span>'}</dd></dl>`)}
+    ${sec(2, 'Condição de pagamento', `<dl class="kv"><dt>Condição</dt><dd>${badge(...TIPOS[n.tipo])} <b>${esc(condicaoResumo(f))}</b></dd><dt>Valor total</dt><dd class="num">${fmtR(n.valor)}</dd><dt>Forma</dt><dd>${FORMAS[n.forma]}</dd><dt>Libera</dt><dd>${n.liberar === 'venda' ? 'Na venda: o financeiro já pode faturar' : 'Quando todos os serviços terminarem'}</dd><dt>NF para</dt><dd>${n.nfNome || n.nfEmail ? esc([n.nfNome, n.nfEmail].filter(Boolean).join(' · ')) : '<span class="muted">—</span>'}</dd></dl>`)}
+    ${sec(3, 'Serviços e avisos', Object.entries(porSetor).map(([st, ss]) => {
+      const org = ORGANIZADORES[st];
+      return `<div class="outro"><b>${esc(SETORES.find((x) => x.id === +st).nome)}</b>
+        <span>${ss.map((s) => `${esc(s.cat)}: ${esc(s.desc)}`).join('<br>')}</span>
+        ${org.length ? `<span class="sm muted inline">${I('mail')}E-mail “${pl(ss.length, 'serviço', 'serviços')} para ${esc(SETORES.find((x) => x.id === +st).nome)}” para ${org.map((k) => esc(PESSOAS[k].nome)).join(' e ')}</span>`
+          : `<span class="sm tx-warning inline">${I('mail-x')}Setor sem organizador: ninguém recebe o aviso. A diretoria vê os serviços no painel.</span>`}</div>`;
+    }).join(''))}`;
+}
+
+function paginaNovaVenda() {
+  if (!pode('os.gerenciar')) return empty('lock', 'Sem permissão para registrar vendas', 'Peça acesso a quem configura as funções.');
+  const n = S.nv;
+  const passos = passosNV();
+  const idx = passos.indexOf(n.passo);
+  const ultimo = idx === passos.length - 1;
+  const corpo = { 1: passo1, 2: passo2, 3: passo3, 4: passo4 }[n.passo]();
+  return `
+    <div class="ph"><div class="t"><h1>${n.modo === 'editar' ? `Editar venda · OS ${n.id}` : 'Nova venda'}</h1>
+      <span class="muted">${n.modo === 'editar' ? 'Serviços são acrescentados ou ajustados no resumo da venda.' : 'Os serviços chegam à fila de cada setor quando você registrar a venda.'}</span></div></div>
+    <ol class="steps">${passos.map((p, i) => `<li class="${p === n.passo ? 'on' : i < idx ? 'ok' : ''}"><button type="button" ${i < idx ? `data-nv-ir="${p}"` : 'disabled'}><span class="n">${i < idx ? I('check') : i + 1}</span>${NOMES_PASSO[p]}</button></li>`).join('')}</ol>
+    <div class="card" style="max-width:860px"><div class="card-b form">${corpo}</div>
+      <div class="modal-f" style="justify-content:space-between">
+        <button class="btn" ${idx === 0 ? `data-ir="${n.modo === 'editar' ? `venda-${n.id}` : 'vendas'}"` : `data-nv-ir="${passos[idx - 1]}"`}>${idx === 0 ? 'Cancelar' : `${I('arrow-left')}Voltar`}</button>
+        <button class="btn pri" ${ultimo ? 'data-nv-salvar' : 'data-nv-prox'}>${ultimo ? `${I('check')}${n.modo === 'editar' ? 'Salvar alterações' : 'Registrar venda'}` : `Continuar${I('arrow-right')}`}</button>
+      </div></div>
+    ${S.nv.modo === 'nova' && !pode('financeiro.ver_valores') ? '<div class="note-wf"><b>Administrativo:</b> informa a condição ao criar a venda, mas depois não a vê (decisão do ADR 0008, 8). Na edição, a etapa de condição não aparece.</div>' : ''}`;
+}
+
+function salvarVenda() {
+  const n = S.nv;
+  const f = { valor: +n.valor, tipo: n.tipo, forma: n.forma, liberar: n.liberar, nfNome: n.nfNome, nfEmail: n.nfEmail, venc: isoParaDm(n.venc) || undefined };
+  if (n.tipo === 'parcelado') Object.assign(f, { parcelas: +n.parcelas, intervalo: n.intervalo ? +n.intervalo : undefined });
+  if (n.tipo === 'recorrente') Object.assign(f, { meses: +n.parcelas, mensal: +n.mensal, vence: +n.vence, fecha: n.fecha ? +n.fecha : undefined });
+  if (n.modo === 'editar') {
+    Object.assign(OS[n.id], { cliente: n.cliente, venda: isoParaDm(n.data), prioridade: n.prioridade, obs: n.obs });
+    if (pode('financeiro.ver_valores')) FIN[n.id] = { ...FIN[n.id], ...f };
+    toast('Venda atualizada.');
+    return ir(`venda-${n.id}`);
+  }
+  const id = Math.max(...Object.keys(OS).map(Number)) + 1;
+  OS[id] = { cliente: n.cliente, venda: isoParaDm(n.data), vendedor: S.persona.pessoa, prioridade: n.prioridade, obs: n.obs };
+  FIN[id] = f;
+  n.servicos.filter((s) => s.cat).forEach((s, i) => {
+    SERVICOS.push({ id: 600 + id * 10 + i, setor: CATALOGO.find((c) => c.nome === s.cat).setor, os: id, cat: s.cat, desc: s.desc, chegou: '10/10', tarefas: [] });
+  });
+  const setores = [...new Set(n.servicos.filter((s) => s.cat).map((s) => CATALOGO.find((c) => c.nome === s.cat).setor))];
+  toast(`Venda OS ${id} registrada. ${pl(setores.length, 'setor avisado', 'setores avisados')} por e-mail.`);
+  ir(`venda-${id}`);
+}
+
+/* ───────────────────────── Página: Resumo da venda ───────────────────────── */
+function eventosDaVenda(id) {
+  const o = OS[id]; const f = FIN[id];
+  const veValores = pode('financeiro.ver_valores');
+  const ev = [[dt(o.venda), PESSOAS[o.vendedor].nome, 'shopping-cart', 'info', `Venda registrada${veValores ? `: ${condicaoResumo(f)}` : ''}`]];
+  servicosDaOS(id).forEach((s) => eventosDoServico(s).filter((e) => e[2] !== 'shopping-cart').forEach((e) => ev.push(e)));
+  const lib = liberacao(id);
+  if (statusOS(id) === 'concluida') ev.push([lib.em || termino(servicosDaOS(id)[0]), null, 'circle-check', 'success', 'OS concluída: todos os serviços terminaram']);
+  if (lib.liberada) ev.push([lib.em, lib.motivo === 'na venda' ? PESSOAS[o.vendedor].nome : null, 'unlock', 'warning', `Liberada para faturar (${lib.motivo})`]);
+  if (f.lancado) ev.push([dt(f.lancado.data), PESSOAS[f.lancado.por].nome, 'receipt', 'success', `Faturada${veValores ? ` (ref. ${f.lancado.ref})` : ''}`]);
+  return ev.sort((a, b) => b[0] - a[0]);
+}
+const listaEventos = (ev) => `<ol class="tl">${ev.map(([q, quem, ic, tom, tx]) => `<li><span class="ic t-${tom}">${I(ic)}</span><div class="tx"><p>${esc(tx)}</p><p class="sm muted">${fmt(q)} · ${quem ? esc(quem) : 'sistema'}</p></div></li>`).join('')}</ol>`;
+
+function paginaVenda(id) {
+  const o = OS[id]; const f = FIN[id];
+  if (!o) return empty('search-x', 'Venda não encontrada', 'Ela pode ter sido excluída.');
+  const veValores = pode('financeiro.ver_valores');
+  const ss = servicosDaOS(id);
+  const a = andamentoOS(id);
+  const lib = liberacao(id);
+  return `
+    <div class="ph">
+      <div class="t"><span class="inline sm muted">${I('handshake')}OS ${id} · vendida em ${fmt(dt(o.venda))} por ${esc(PESSOAS[o.vendedor].nome)}</span>
+        <h1>${esc(o.cliente)}</h1>
+        <span class="chips" style="gap:8px;margin-top:4px">${badge(...STATUS_OS[statusOS(id)])}${bPrior(o.prioridade)}${veValores ? badge(...SIT_FIN[situacaoFin(id)]) : ''}</span></div>
+      <div class="toolbar">
+        ${pode('os.gerenciar') ? `<button class="btn" data-acrescentar="${id}">${I('plus')}Acrescentar serviço</button><button class="btn" data-editar-venda="${id}">${I('pencil')}Editar venda</button>` : ''}
+        <button class="btn ghost" title="PDF da OS">${I('file-down')}PDF</button>
+      </div>
+    </div>
+    <div class="grid-d">
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+        <section class="card">
+          <div class="card-h"><h2>Serviços</h2><span style="width:220px">${andamentoCel(id)}</span></div>
+          <div style="overflow-x:auto"><table style="min-width:720px"><thead><tr><th>Serviço</th><th>Setor</th><th>Etapa</th><th>Com quem</th><th>Prazo</th><th>Concluído</th></tr></thead><tbody>
+          ${ss.map((s) => {
+            const tem = s.tarefas.filter((t) => t.status !== 'cancelada');
+            const conc = etapa(s) === 'concluido' ? s.tarefas.filter((t) => t.termino).sort((x, y) => dt(y.termino) - dt(x.termino))[0] : null;
+            return `<tr class="${vejo(s) ? 'click' : ''}" ${vejo(s) ? `data-ir="servico-${s.id}"` : ''}>
+              <td>${svcCel(s)}</td><td>${esc(SETORES.find((x) => x.id === s.setor).nome)}</td><td>${bEtapa(etapa(s))}</td>
+              <td>${tem.length ? tem.map((t) => `<span class="stack"><span>${esc(PESSOAS[t.resp].nome)}</span><span class="sm muted">${t.inicio ? `início ${fmtC(dt(t.inicio))}` : 'não iniciou'}${t.termino ? ` · término ${fmtC(dt(t.termino))}` : ''}</span></span>`).join('') : '<span class="sm tx-warning">Na fila do setor</span>'}</td>
+              <td>${etapa(s) === 'na_fila' ? '<span class="muted">—</span>' : prazoCel(prazoServico(s), etapa(s) === 'concluido')}</td>
+              <td>${conc ? `<span class="stack"><span class="num">${fmt(dt(conc.termino))}</span><span class="sm muted">${esc(PESSOAS[conc.resp].nome)}</span></span>` : '<span class="muted">—</span>'}</td></tr>`;
+          }).join('')}</tbody></table></div>
+          ${a.na_fila ? `<div class="card-b" style="border-top:1px solid hsl(var(--border))"><span class="sm muted inline">${I('info')}${pl(a.na_fila, 'serviço ainda não foi distribuído', 'serviços ainda não foram distribuídos')} pelo setor. Quem organiza o setor foi avisado por e-mail.</span></div>` : ''}
+        </section>
+        <section class="card"><div class="card-h"><h2>Linha do tempo</h2><span class="sm muted">Da venda e de todos os serviços</span></div><div class="card-b">${listaEventos(eventosDaVenda(id))}</div></section>
+      </div>
+      <aside style="display:flex;flex-direction:column;gap:20px;min-width:0">
+        ${veValores ? `<section class="card"><div class="card-h"><h2>Condição</h2>${badge(...TIPOS[f.tipo])}</div><div class="card-b" style="display:flex;flex-direction:column;gap:12px">
+          <b>${esc(condicaoResumo(f))}</b>
+          <dl class="kv"><dt>Valor total</dt><dd class="num">${fmtR(f.valor)}</dd>${f.mensal ? `<dt>Valor mensal</dt><dd class="num">${fmtR(f.mensal)}</dd>` : ''}
+          <dt>Forma</dt><dd>${FORMAS[f.forma]}</dd><dt>Libera</dt><dd>${f.liberar === 'venda' ? 'Na venda' : 'Na conclusão dos serviços'}</dd>
+          <dt>NF para</dt><dd>${esc(f.nfNome)}<br><span class="sm muted">${esc(f.nfEmail)}</span></dd></dl></div></section>
+        <section class="card"><div class="card-h"><h2>Faturamento</h2></div><div class="card-b"><dl class="kv">
+          <dt>Liberação</dt><dd>${lib.liberada ? `<span class="stack"><span class="num">${fmt(lib.em)}</span><span class="sm muted">${esc(lib.motivo)}${lib.por ? ` · ${esc(lib.por)}` : ''}</span></span>` : `<span class="stack"><span>Ainda não liberada</span><span class="sm muted">Libera quando ${pl(a.total - a.cancelado, 'serviço terminar', 'serviços terminarem')} (${a.concluido} de ${a.total - a.cancelado})</span></span>`}</dd>
+          <dt>Lançamento</dt><dd>${f.lancado ? `<span class="stack"><span>${esc(f.lancado.ref)}</span><span class="sm muted">${fmt(dt(f.lancado.data))} · ${esc(PESSOAS[f.lancado.por].nome)}</span></span>` : '<span class="muted">Não lançada</span>'}</dd>
+        </dl></div></section>` : ''}
+        <section class="card"><div class="card-h"><h2>Observação</h2></div><div class="card-b">${o.obs ? esc(o.obs) : '<span class="muted">Sem observação.</span>'}</div></section>
+        ${veValores ? '' : '<div class="note-wf"><b>Sem permissão de ver valores:</b> as seções de condição e faturamento não aparecem; o resto do resumo, sim.</div>'}
+      </aside>
+    </div>`;
+}
+
+/* Modal: acrescentar serviço a uma venda existente (avisa só o setor dele) */
+function abrirAcrescentar(id) { modal = { tipo: 'acrescentar', os: id, cat: '', desc: '', erro: '' }; renderModal(); }
+function modalAcrescentar() {
+  const cat = CATALOGO.find((c) => c.nome === modal.cat);
+  return `<div class="scrim" data-fechar><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-t">
+    <div class="modal-h"><h2 id="m-t">Acrescentar serviço</h2><span class="muted">OS ${modal.os} · ${esc(OS[modal.os].cliente)}</span></div>
+    <div class="modal-b">
+      <div class="field"><label for="m-cat">Catálogo</label><select class="inp" id="m-cat" data-m-cat><option value="">Escolha</option>${SETORES.map((st) => `<optgroup label="${esc(st.nome)}">${CATALOGO.filter((c) => c.setor === st.id).map((c) => `<option ${modal.cat === c.nome ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</optgroup>`).join('')}</select>
+        ${cat ? `<span class="sm muted inline">${I('arrow-right')}Vai para a fila de ${esc(SETORES.find((x) => x.id === cat.setor).nome)}${ORGANIZADORES[cat.setor].length ? `, que é avisada por e-mail` : ': setor sem organizador, ninguém é avisado'}</span>` : ''}</div>
+      <div class="field"><label for="m-desc">Descrição</label><input class="inp" id="m-desc" data-m-desc value="${esc(modal.desc)}" placeholder="Ex.: galpão 2"></div>
+      ${modal.erro ? `<span class="sm tx-danger inline">${I('circle-alert')}${esc(modal.erro)}</span>` : ''}
+      ${pode('financeiro.ver_valores') ? '<div class="note-wf">O valor da venda não muda sozinho. Se o serviço novo foi cobrado à parte, ajuste a condição em Editar venda.</div>' : ''}
+    </div>
+    <div class="modal-f"><button class="btn" data-fechar-btn>Cancelar</button><button class="btn pri" data-confirmar>${I('plus')}Acrescentar</button></div>
+  </div></div>`;
+}
+
+/* Páginas de outros lotes */
+function paginaOutroLote(id) {
+  const it = MENU.flatMap((g) => g.itens).find((x) => x.id === id) || { titulo: 'Resumo da venda', lote: 2 };
+  if (it.fora) return `<div class="ph"><div class="t"><h1>${esc(it.titulo)}</h1></div></div>${empty('construction', 'Tela que continua como está', 'Só recebe ajustes na fase R7. Não faz parte do redesenho.')}`;
+  return `<div class="ph"><div class="t"><h1>${esc(it.titulo)}</h1></div></div>
+    ${empty('layout-template', `Wireframe no lote ${it.lote}`, it.lote === 2 ? 'Vendas, nova venda e resumo da venda vêm no lote 2.' : 'Cobranças e situação financeira vêm no lote 3.')}
+    <div class="note-wf"><b>Tela inicial desta persona:</b> ${esc(telaInicial()[1])}. Use "Ver como" na barra do wireframe para ver o painel e Meus serviços como gestora ou técnico.</div>`;
+}
+
+/* ───────────────────────── Modais ───────────────────────── */
+let modal = null;
+function abrirDistribuir(id) {
+  const s = SERVICOS.find((x) => x.id === id);
+  const setor = SETORES.find((x) => x.id === s.setor);
+  const eq = equipeDoSetor(setor);
+  modal = { tipo: 'distribuir', s, eq, partes: [{ resp: null, prazo: '', rapido: null, desc: '' }], erro: '' };
+  renderModal();
+}
+function abrirCiencia(id) {
+  modal = { tipo: 'ciencia', s: SERVICOS.find((x) => x.id === id), motivo: null, obs: '' };
+  renderModal();
+}
+const somaDias = (n) => { const d = new Date(HOJE); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+function renderModal() {
+  const L = document.getElementById('layer');
+  if (!modal) { L.innerHTML = ''; return; }
+  if (modal.tipo === 'acrescentar') { L.innerHTML = modalAcrescentar(); return icons(); }
+  if (modal.tipo === 'distribuir') {
+    const { s, eq, partes } = modal;
+    const dividir = partes.length > 1;
+    const carga = (e) => `<span class="carga"><span class="chip num">${pl(e.ativos, 'ativo', 'ativos')}</span>${e.atrasados ? `<span class="chip num tx-danger">${e.atrasados} atrasado${e.atrasados > 1 ? 's' : ''}</span>` : ''}</span>`;
+    L.innerHTML = `<div class="scrim" data-fechar><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-t">
+      <div class="modal-h"><h2 id="m-t">${s.tarefas.length ? 'Dividir' : 'Distribuir'} ${esc(s.cat)}</h2><span class="muted">${esc(OS[s.os].cliente)} · OS ${s.os} · ${esc(SETORES.find((x) => x.id === s.setor).nome)}</span></div>
+      <div class="modal-b">
+        ${!dividir ? `
+          <div class="field"><label>Responsável</label>
+            <div class="pick" role="listbox" aria-label="Membros do setor">${eq.map((e) => `<button type="button" role="option" aria-selected="${partes[0].resp === e.k}" class="${partes[0].resp === e.k ? 'on' : ''}" data-p-resp="0:${e.k}"><span class="av sm">${iniciais(e.nome)}</span><span class="stack"><span>${esc(e.nome)}</span><span class="sm muted">${esc(e.funcao)}</span></span>${carga(e)}</button>`).join('')}</div>
+            <span class="sm muted">Só membros do setor podem receber o serviço. A carga ao lado ajuda a escolher.</span></div>
+          <div class="field"><label for="m-prazo">Prazo</label>
+            <div class="quick">${[[7, 'Em 7 dias'], [15, 'Em 15 dias'], [30, 'Em 30 dias']].map(([n, t]) => `<button type="button" class="${partes[0].rapido === n ? 'on' : ''}" data-p-rapido="0:${n}">${t}</button>`).join('')}<button type="button" class="${partes[0].rapido === 0 ? 'on' : ''}" data-p-rapido="0:0">Sem prazo</button></div>
+            <input class="inp" type="date" id="m-prazo" data-p-prazo="0" value="${partes[0].prazo}">
+            ${partes[0].rapido === 0 ? '<span class="sm tx-warning inline">' + I('calendar-x') + 'Sem prazo é permitido, mas o serviço aparece em "Sem prazo" no painel.</span>' : ''}</div>
+          <div class="field"><label for="m-desc">Observação para quem vai executar <span class="muted" style="font-weight:400">(opcional)</span></label><textarea class="inp" id="m-desc" data-p-desc="0">${esc(partes[0].desc)}</textarea></div>
+          <button type="button" class="btn ghost sm" data-dividir style="align-self:flex-start">${I('split')}Dividir entre pessoas</button>`
+        : `
+          <span class="muted">Cada parte vira uma tarefa com responsável e prazo próprios. O prazo do serviço passa a ser o maior entre elas.</span>
+          ${partes.map((pt, i) => `<div class="parte">
+            <div class="field"><label for="p-r-${i}">Responsável</label><select class="inp" id="p-r-${i}" data-p-sel="${i}"><option value="">Escolha</option>${eq.map((e) => `<option value="${e.k}" ${pt.resp === e.k ? 'selected' : ''}>${esc(e.nome)} (${pl(e.ativos, 'ativo', 'ativos')})</option>`).join('')}</select></div>
+            <div class="field"><label for="p-p-${i}">Prazo</label><input class="inp" type="date" id="p-p-${i}" data-p-prazo="${i}" value="${pt.prazo}"></div>
+            <div class="field"><label for="p-d-${i}">Parte</label><input class="inp" id="p-d-${i}" data-p-desc="${i}" placeholder="Ex.: medições, relatório" value="${esc(pt.desc)}"></div>
+            <button type="button" class="btn ghost sm" data-p-remover="${i}" aria-label="Remover parte">${I('trash-2')}</button></div>`).join('')}
+          <button type="button" class="btn ghost sm" data-dividir style="align-self:flex-start">${I('plus')}Mais uma pessoa</button>`}
+        ${modal.erro ? `<span class="sm tx-danger inline">${I('circle-alert')}${esc(modal.erro)}</span>` : ''}
+      </div>
+      <div class="modal-f"><span class="sm muted sp">${dividir ? `${partes.length} tarefas` : 'Cria uma tarefa para o serviço inteiro'}</span><button class="btn" data-fechar-btn>Cancelar</button><button class="btn pri" data-confirmar>${I('check')}${dividir ? 'Distribuir partes' : 'Distribuir'}</button></div>
+    </div></div>`;
+  } else {
+    const { s } = modal;
+    L.innerHTML = `<div class="scrim" data-fechar><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-t">
+      <div class="modal-h"><h2 id="m-t">Estou ciente</h2><span class="muted">${esc(s.cat)} · ${esc(OS[s.os].cliente)} · sem movimentação há ${pl(diasSemMov(s), 'dia', 'dias')}</span></div>
+      <div class="modal-b">
+        <div class="field"><label>Motivo <span class="muted" style="font-weight:400">(opcional)</span></label>
+          <div class="quick">${Object.entries(MOTIVOS).map(([k, t]) => `<button type="button" class="${modal.motivo === k ? 'on' : ''}" data-motivo="${k}">${t}</button>`).join('')}</div></div>
+        <div class="field"><label for="m-obs">Observação <span class="muted" style="font-weight:400">(opcional)</span></label><textarea class="inp" id="m-obs" data-obs placeholder="Ex.: cliente vai enviar a planta até sexta">${esc(modal.obs)}</textarea></div>
+        <div class="note-wf">O alerta fica silenciado por 7 dias. Se o serviço se mover antes, a ciência deixa de valer. <b>O prazo continua contando.</b></div>
+      </div>
+      <div class="modal-f"><button class="btn" data-fechar-btn>Cancelar</button><button class="btn pri" data-confirmar>${I('bell-off')}Registrar ciência</button></div>
+    </div></div>`;
+  }
+  icons();
+}
+
+function confirmarModal() {
+  if (modal.tipo === 'acrescentar') {
+    if (!modal.cat || !modal.desc.trim()) { modal.erro = 'Escolha o catálogo e descreva o serviço.'; return renderModal(); }
+    const cat = CATALOGO.find((c) => c.nome === modal.cat);
+    SERVICOS.push({ id: 700 + SERVICOS.length, setor: cat.setor, os: modal.os, cat: cat.nome, desc: modal.desc, chegou: '10/10', tarefas: [] });
+    toast(`${cat.nome} acrescentado. Foi para a fila de ${SETORES.find((x) => x.id === cat.setor).nome}.`);
+    modal = null; renderModal(); return render();
+  }
+  if (modal.tipo === 'distribuir') {
+    const { s, partes } = modal;
+    if (partes.some((p) => !p.resp)) { modal.erro = 'Escolha o responsável de cada parte.'; return renderModal(); }
+    const toIso = (v) => v ? `${v.slice(8, 10)}/${v.slice(5, 7)}` : null;
+    partes.forEach((p, i) => s.tarefas.push({ id: Date.now() + i, resp: p.resp, status: 'aberta', prazo: toIso(p.prazo), criada: '10/10', desc: partes.length > 1 ? p.desc || `Parte ${i + 1}` : '' }));
+    s.mov = '10/10';
+    const nomes = partes.map((p) => PESSOAS[p.resp].nome).join(', ');
+    toast(`${s.cat} distribuído para ${nomes}${partes.length === 1 && partes[0].prazo ? `, prazo ${partes[0].prazo.split('-').reverse().join('/')}` : ''}.`);
+  } else {
+    modal.s.ciencia = { por: S.persona.pessoa, em: '10/10', motivo: modal.motivo || 'outro', obs: modal.obs };
+    if (!modal.motivo) modal.s.ciencia.motivo = 'outro';
+    toast('Ciência registrada. O alerta volta em 7 dias se nada mudar.');
+  }
+  modal = null; renderModal(); render();
+}
+
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach((x) => x.remove());
+  const t = document.createElement('div');
+  t.className = 'toast'; t.setAttribute('role', 'status');
+  t.innerHTML = `${I('circle-check')}<span>${esc(msg)}</span>`;
+  document.body.appendChild(t); icons();
+  setTimeout(() => t.remove(), 3800);
+}
+
+/* ───────────────────────── Render ───────────────────────── */
+function icons() { if (window.lucide) window.lucide.createIcons({ attrs: { 'aria-hidden': 'true' } }); }
+
+function renderWf() {
+  const sel = document.getElementById('wf-persona');
+  sel.innerHTML = Object.entries(PERSONAS).map(([k, p]) => `<option value="${k}" ${k === S.personaId ? 'selected' : ''}>${p.rotulo}</option>`).join('');
+  document.getElementById('wf-tema').innerHTML = [['claro', 'Claro'], ['escuro', 'Escuro'], ['sistema', 'Sistema']].map(([v, t]) => `<button class="${S.tema === v ? 'on' : ''}" data-tema="${v}">${t}</button>`).join('');
+  const [, regra] = telaInicial();
+  const pref = S.preferencia[S.personaId];
+  document.getElementById('wf-regra').innerHTML = `<b>Tela inicial:</b> ${pref ? `escolha pessoal (“Abrir sempre em…”) → ${esc(MENU.flatMap((g) => g.itens).find((x) => x.id === pref).titulo)}` : esc(regra)}. Clique na pessoa, no rodapé do menu, para escolher outra.`;
+  document.documentElement.style.setProperty('--wf-h', `${document.getElementById('wf').offsetHeight}px`);
+}
+
+function render() {
+  const foco = document.activeElement && document.activeElement.id;
+  const cursor = foco && document.activeElement.selectionStart;
+  renderSidebar();
+  renderHeader();
+  const r = S.rota;
+  let html;
+  if (r === 'setor') html = paginaSetor();
+  else if (r === 'meus-servicos') html = paginaMeusServicos();
+  else if (r.startsWith('servico-')) html = paginaServico(+r.slice(8));
+  else if (r === 'vendas') html = paginaVendas();
+  else if (r === 'vendas-nova' || /^venda-\d+-editar$/.test(r)) html = paginaNovaVenda();
+  else if (/^venda-\d+$/.test(r)) html = paginaVenda(+r.slice(6));
+  else html = paginaOutroLote(r);
+  document.getElementById('page').innerHTML = `<div class="page-in">${html}</div>`;
+  renderWf();
+  icons();
+  const el = foco && document.getElementById(foco);
+  if (el) { el.focus(); try { if (cursor != null) el.setSelectionRange(cursor, cursor); } catch (e) { /* date e number */ } }
+}
+
+function ir(rota) {
+  if (rota === 'vendas-nova') S.nv = NV_PADRAO();
+  const me = /^venda-(\d+)-editar$/.exec(rota);
+  if (me) iniciarEdicao(+me[1]);
+  S.rota = rota;
+  try { history.replaceState(null, '', `#${rota}`); } catch (e) { /* sem histórico no sandbox */ }
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('page').scrollTop = 0;
+  render();
+}
+function irParaInicial() {
+  const pref = S.preferencia[S.personaId];
+  ir(pref || telaInicial()[0]);
+}
+
+/* ───────────────────────── Eventos ───────────────────────── */
+document.addEventListener('click', (ev) => {
+  const el = (sel) => ev.target.closest(sel);
+  let x;
+  if ((x = el('[data-tema]'))) {
+    S.tema = x.dataset.tema;
+    if (S.tema === 'sistema') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', S.tema === 'escuro' ? 'dark' : 'light');
+    return renderWf();
+  }
+  if ((x = el('[data-act="user"]'))) { S.popUser = !S.popUser; return renderSidebar(), icons(); }
+  if ((x = el('[data-pref]'))) { S.preferencia[S.personaId] = x.dataset.pref || undefined; S.popUser = false; return irParaInicial(); }
+  if ((x = el('[data-act="menu"]'))) { document.getElementById('sb').classList.toggle('open'); return; }
+  if (modal) {
+    if (ev.target.matches('[data-fechar]') || el('[data-fechar-btn]')) { modal = null; return renderModal(); }
+    if ((x = el('[data-p-resp]'))) { const [i, k] = x.dataset.pResp.split(':'); modal.partes[+i].resp = k; modal.erro = ''; return renderModal(); }
+    if ((x = el('[data-p-rapido]'))) { const [i, n] = x.dataset.pRapido.split(':').map(Number); const p = modal.partes[i]; p.rapido = n; p.prazo = n ? somaDias(n) : ''; return renderModal(); }
+    if (el('[data-dividir]')) { modal.partes.push({ resp: null, prazo: modal.partes[0].prazo, rapido: null, desc: '' }); if (modal.partes.length === 2 && !modal.partes[0].desc) modal.partes[0].desc = ''; return renderModal(); }
+    if ((x = el('[data-p-remover]'))) { modal.partes.splice(+x.dataset.pRemover, 1); return renderModal(); }
+    if ((x = el('[data-motivo]'))) { modal.motivo = modal.motivo === x.dataset.motivo ? null : x.dataset.motivo; return renderModal(); }
+    if (el('[data-confirmar]')) return confirmarModal();
+    return;
+  }
+  if (S.popUser && !el('.sb-foot')) { S.popUser = false; renderSidebar(); icons(); }
+  if ((x = el('[data-visao]'))) { S.vf.visao = x.dataset.visao; return render(); }
+  if ((x = el('[data-nv-set]'))) { const [c, v] = x.dataset.nvSet.split(':'); S.nv[c] = v; S.nv.erros = {}; return render(); }
+  if ((x = el('[data-nv-ir]'))) { S.nv.passo = +x.dataset.nvIr; return render(); }
+  if (el('[data-nv-prox]')) { if (validarPasso(S.nv.passo)) { const ps = passosNV(); S.nv.passo = ps[ps.indexOf(S.nv.passo) + 1]; } return render(); }
+  if (el('[data-nv-salvar]')) { const ok = passosNV().every((p) => p === 4 || validarPasso(p) || ((S.nv.passo = p), false)); return ok ? salvarVenda() : render(); }
+  if (el('[data-nv-add]')) { S.nv.servicos.push({ cat: '', desc: '', prioridade: '' }); return render(); }
+  if ((x = el('[data-nv-rm]'))) { S.nv.servicos.splice(+x.dataset.nvRm, 1); return render(); }
+  if ((x = el('[data-acrescentar]'))) return abrirAcrescentar(+x.dataset.acrescentar);
+  if ((x = el('[data-editar-venda]'))) return ir(`venda-${x.dataset.editarVenda}-editar`);
+  if ((x = el('[data-distribuir]'))) { ev.preventDefault(); return abrirDistribuir(+x.dataset.distribuir); }
+  if ((x = el('[data-ciencia]'))) { ev.preventDefault(); return abrirCiencia(+x.dataset.ciencia); }
+  if ((x = el('[data-status]'))) {
+    ev.preventDefault();
+    const [tid, st] = x.dataset.status.split(':');
+    const s = SERVICOS.find((sv) => sv.tarefas.some((t) => String(t.id) === tid));
+    const t = s.tarefas.find((tt) => String(tt.id) === tid);
+    t.status = st; s.mov = '10/10';
+    if (st === 'em_andamento') t.inicio = '10/10';
+    if (st === 'concluida') t.termino = '10/10';
+    toast(st === 'concluida' ? (etapa(s) === 'concluido' ? `${s.cat} concluído.` : 'Tarefa concluída.') : `${s.cat} iniciado.`);
+    return render();
+  }
+  if ((x = el('[data-setor]'))) { S.setor = +x.dataset.setor; S.filtroResp = null; return render(); }
+  if ((x = el('[data-aba]'))) { S.aba = x.dataset.aba; return render(); }
+  if ((x = el('[data-agrupar]'))) { S.agrupar = x.dataset.agrupar; return render(); }
+  if ((x = el('[data-minhas]'))) { S.minhasAba = x.dataset.minhas; return render(); }
+  if ((x = el('[data-resp]'))) { S.filtroResp = x.dataset.resp || null; S.aba = 'andamento'; return render(); }
+  if ((x = el('a[href^="#"]'))) { ev.preventDefault(); return ir(x.getAttribute('href').slice(1)); }
+  if ((x = el('[data-ir]'))) { if (ev.target.closest('[data-stop]')) return; return ir(x.dataset.ir); }
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && modal) { modal = null; renderModal(); }
+  if (ev.key === 'Enter' && ev.target.matches('.it[data-ir]')) ir(ev.target.dataset.ir);
+});
+document.addEventListener('input', (ev) => {
+  const t = ev.target;
+  if (t.dataset.vfQ != null) { S.vf.q = t.value; return render(); }
+  if (t.dataset.nv && S.nv) {
+    S.nv[t.dataset.nv] = t.value;
+    const pv = document.getElementById('nv-preview');
+    if (pv) pv.querySelector('b').textContent = condicaoResumo(finDoForm(S.nv));
+    return;
+  }
+  if (t.dataset.nvS && S.nv) { const [i, c] = t.dataset.nvS.split(':'); S.nv.servicos[+i][c] = t.value; if (c === 'cat') render(); return; }
+  if (modal && t.dataset.mDesc != null) { modal.desc = t.value; return; }
+  if (!modal) return;
+  if (t.dataset.pPrazo != null) { const p = modal.partes[+t.dataset.pPrazo]; p.prazo = t.value; p.rapido = null; }
+  if (t.dataset.pDesc != null) modal.partes[+t.dataset.pDesc].desc = t.value;
+  if (t.dataset.obs != null) modal.obs = t.value;
+});
+document.addEventListener('change', (ev) => {
+  const t = ev.target;
+  if (t.dataset.vfFin != null) { S.vf.fin = t.value; return render(); }
+  if (modal && t.dataset.mCat != null) { modal.cat = t.value; modal.erro = ''; return renderModal(); }
+  if (t.dataset.nvS && S.nv && t.dataset.nvS.endsWith(':cat')) return;
+  if (modal && ev.target.dataset.pSel != null) { modal.partes[+ev.target.dataset.pSel].resp = ev.target.value || null; modal.erro = ''; }
+});
+document.getElementById('wf-persona').addEventListener('change', (ev) => {
+  S.personaId = ev.target.value; S.aba = 'fila'; S.filtroResp = null; S.popUser = false; S.minhasAba = 'abertos';
+  irParaInicial();
+});
+window.addEventListener('resize', renderWf);
+
+/* Abre direto numa tela com #setor, #meus-servicos ou #servico-511 */
+const h = (location.hash || '').slice(1);
+if (/^(setor|meus-servicos|servico-\d+|vendas|vendas-nova|venda-\d+)$/.test(h)) ir(h); else irParaInicial();
+</script>
+</body>
+</html>
