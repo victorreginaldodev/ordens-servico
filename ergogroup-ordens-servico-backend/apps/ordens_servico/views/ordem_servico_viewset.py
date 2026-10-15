@@ -6,11 +6,12 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
+from apps.catalogo.services import avisos_da_venda
 from apps.ordens_servico.serializers.linha_do_tempo_serializer import EventoDaLinhaDoTempoSerializer
 from apps.ordens_servico.services import comercial, linha_do_tempo
 from apps.ordens_servico.services.visibilidade import ordens_visiveis
-from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin
-from apps.ordens_servico.models import OrdemServico
+from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin, tem_permissao
+from apps.ordens_servico.models import OrdemServico, Servico
 from apps.ordens_servico.serializers import (
     OrdemServicoListSerializer,
     OrdemServicoSerializer,
@@ -28,15 +29,18 @@ from apps.ordens_servico.serializers import (
             'Suporta busca textual e filtragem por cliente, conclusão, cobrança e liberação.'
         ),
         parameters=[
-            OpenApiParameter('q', str, description='Busca por nome do cliente ou observação (parcial).'),
+            OpenApiParameter('q', str, description='Busca por nome do cliente ou, para quem vê valores, pela observação (parcial).'),
             OpenApiParameter('cliente', int, description='Filtrar pelo ID do cliente.'),
             OpenApiParameter('concluida', str, description='Filtrar por conclusão.', enum=['true', 'false']),
             OpenApiParameter('cobranca_realizada', str, description='Filtrar por status de cobrança.', enum=['true', 'false']),
             OpenApiParameter('liberada', str, description='Filtrar por liberação para cobrança.', enum=['true', 'false']),
             OpenApiParameter('minhas', str, description='Se "true", só as vendas registradas pelo usuário.', enum=['true']),
             OpenApiParameter(
-                'etapa', str, enum=['na_fila', 'distribuido', 'em_execucao', 'concluido', 'cancelado'],
-                description='OS com ao menos um serviço na etapa (ex.: `na_fila` = vendas com algo ainda não distribuído).',
+                'etapa', str, enum=['novo', 'a_distribuir', 'distribuido', 'em_execucao', 'concluido', 'cancelado'],
+                description=(
+                    'OS com ao menos um serviço na etapa (ex.: `novo` = vendas com algo que o setor ainda não '
+                    'recebeu).'
+                ),
             ),
         ],
     ),
@@ -47,9 +51,12 @@ from apps.ordens_servico.serializers import (
             'automaticamente com o usuário autenticado. Se `liberar_em=venda`, '
             'a OS já é criada com `liberada_para_cobranca=true`; com `liberar_em=conclusao`, '
             'é liberada quando todos os serviços terminam. A condição de pagamento é validada pelo '
-            '`tipo_condicao`: parcelado exige ao menos 2 parcelas e o primeiro vencimento '
-            '(`data_acordada_cobranca`); recorrente exige o número de meses (`quantidade_parcelas`) '
-            'e o `dia_vencimento`.'
+            '`tipo_condicao` (à vista ou parcelado): o vencimento é obrigatório e é a data combinada '
+            '(`data_acordada_cobranca`) ou os dias após a nota (`vencimento_dias_apos_nota`), nunca os dois; '
+            'no parcelado ele é o da 1ª parcela, as parcelas são mensais e são pelo menos 2, e '
+            '`dia_vencimento_demais` (1 a 31, opcional) fixa o dia das parcelas da 2ª em diante. '
+            'Catálogo inativo ou de setor inativo dá 400. A resposta traz `avisos` quando algum serviço foi para '
+            'um setor sem quem receba tarefas (a venda é registrada mesmo assim).'
         ),
     ),
     retrieve=extend_schema(
@@ -99,6 +106,12 @@ class OrdemServicoViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
             return OrdemServicoListSerializer
         return OrdemServicoSerializer
 
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        servicos = Servico.objects.filter(ordem_servico_id=response.data['id']).select_related('setor')
+        response.data['avisos'] = avisos_da_venda(servicos)
+        return response
+
     def get_queryset(self):
         queryset = super().get_queryset().order_by('cobranca_realizada', '-data_venda')
         user = self.request.user
@@ -114,9 +127,11 @@ class OrdemServicoViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
         etapa = self.request.query_params.get('etapa', '').strip()
 
         if q:
-            queryset = queryset.filter(
-                Q(cliente__nome__icontains=q) | Q(observacao__icontains=q)
-            )
+            # A observação é de pagamento e faturamento: só entra na busca de quem vê valores.
+            busca = Q(cliente__nome__icontains=q)
+            if tem_permissao(user, Permissao.FINANCEIRO_VER_VALORES):
+                busca |= Q(observacao__icontains=q)
+            queryset = queryset.filter(busca)
         if cliente_id:
             queryset = queryset.filter(cliente_id=cliente_id)
         if concluida in ('true', 'false'):

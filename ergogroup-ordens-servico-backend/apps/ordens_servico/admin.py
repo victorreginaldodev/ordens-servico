@@ -37,6 +37,11 @@ class ServicoAdmin(admin.ModelAdmin):
         'terminado_por', 'criado_em', 'atualizado_em', 'ultima_movimentacao_em',
     ]
 
+    def get_readonly_fields(self, request, obj=None):
+        # Catálogo e setor de um serviço existente mudam só pela API, que barra a troca de setor com tarefas.
+        campos = list(super().get_readonly_fields(request, obj))
+        return campos + ['catalogo', 'setor'] if obj is not None else campos
+
 
 @admin.register(Tarefa)
 class TarefaAdmin(admin.ModelAdmin):

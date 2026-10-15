@@ -16,11 +16,12 @@ def andamento(ordem):
 
 
 def filtrar_por_etapa(queryset, etapa):
-    """OS com ao menos um serviço na etapa informada (ex.: `na_fila` = vendas com algo ainda não distribuído)."""
+    """OS com ao menos um serviço na etapa informada (ex.: `novo` = vendas com algo que o setor ainda não recebeu)."""
     tem_tarefas = Exists(Tarefa.objects.filter(servico=OuterRef('pk')))
     servicos = Servico.objects.annotate(tem_tarefas=tem_tarefas)
     filtros = {
-        Etapa.NA_FILA: {'status': 'aberto', 'tem_tarefas': False},
+        Etapa.NOVO: {'status': 'aberto', 'tem_tarefas': False, 'recebido_em__isnull': True},
+        Etapa.A_DISTRIBUIR: {'status': 'aberto', 'tem_tarefas': False, 'recebido_em__isnull': False},
         Etapa.DISTRIBUIDO: {'status': 'aberto', 'tem_tarefas': True},
         Etapa.EM_EXECUCAO: {'status': 'em_andamento'},
         Etapa.CONCLUIDO: {'status': 'concluida'},
@@ -61,7 +62,6 @@ def resumo_da_venda(ordem, usuario):
         'criada_em': ordem.criada_em,
         'status': ordem.status,
         'prioridade': ordem.prioridade,
-        'observacao': ordem.observacao,
         'andamento': andamento(ordem),
         'servicos': [{
             'id': servico.id,
@@ -81,18 +81,17 @@ def resumo_da_venda(ordem, usuario):
     if tem_permissao(usuario, Permissao.FINANCEIRO_VER_VALORES):
         resumo['condicoes'] = {
             'valor': ordem.valor,
-            'valor_mensal': ordem.valor_mensal,
             'tipo_condicao': ordem.tipo_condicao,
             'condicao_resumo': ordem.condicao_resumo,
             'forma_pagamento': ordem.forma_pagamento,
             'quantidade_parcelas': ordem.quantidade_parcelas,
             'data_acordada_cobranca': ordem.data_acordada_cobranca,
-            'intervalo_parcelas_dias': ordem.intervalo_parcelas_dias,
-            'dia_fechamento': ordem.dia_fechamento,
-            'dia_vencimento': ordem.dia_vencimento,
+            'vencimento_dias_apos_nota': ordem.vencimento_dias_apos_nota,
+            'dia_vencimento_demais': ordem.dia_vencimento_demais,
             'liberar_em': ordem.liberar_em,
             'nome_contato_envio_nf': ordem.nome_contato_envio_nf,
             'contato_envio_nf': ordem.contato_envio_nf,
+            'observacao': ordem.observacao,
         }
         resumo['financeiro'] = {
             'liberada_para_cobranca': ordem.liberada_para_cobranca,

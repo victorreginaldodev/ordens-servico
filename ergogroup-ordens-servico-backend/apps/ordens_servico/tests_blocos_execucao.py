@@ -30,7 +30,7 @@ class BlocosBase(APITestCase):
         self.ergonomia = Setor.objects.create(organizacao=ergogroup, nome='Ergonomia')
         coordenacao = Funcao.objects.create(organizacao=ergogroup, nome='Coordenação de Ergonomia')
         coordenacao.setores.add(self.ergonomia)
-        coordenacao.definir_permissoes([Permissao.SERVICOS_VER_SETOR, Permissao.TAREFAS_DISTRIBUIR])
+        coordenacao.definir_permissoes([Permissao.SERVICOS_VER_SETOR, Permissao.TAREFAS_DISTRIBUIR, Permissao.TAREFAS_RECEBER])
         self.coordenadora = criar_usuario(None, nome_completo='Coordenadora')
         MembroSetor.objects.create(usuario=self.coordenadora, setor=self.ergonomia, funcao=coordenacao)
 
@@ -76,7 +76,8 @@ class SetoresAcompanhadosTestCase(BlocosBase):
         setor = response.data[0]
         self.assertTrue(setor['organiza'])
         self.assertEqual(
-            (setor['na_fila'], setor['em_andamento'], setor['atrasados'], setor['sem_prazo']), (1, 2, 1, 0),
+            (setor['novos'], setor['a_distribuir'], setor['em_andamento'], setor['atrasados'], setor['sem_prazo']),
+            (1, 0, 2, 1, 0),
         )
 
     def test_diretoria_ve_todos_os_setores_de_execucao(self):
@@ -87,7 +88,7 @@ class SetoresAcompanhadosTestCase(BlocosBase):
     def test_setor_novo_aparece_para_a_sua_coordenadora(self):
         response = self.get(self.coordenadora, 'execucao-setores')
 
-        self.assertEqual([(setor['nome'], setor['na_fila']) for setor in response.data], [('Ergonomia', 1)])
+        self.assertEqual([(setor['nome'], setor['novos']) for setor in response.data], [('Ergonomia', 1)])
 
     def test_quem_nao_acompanha_setor_recebe_403(self):
         for usuario in (self.comercial, self.tecnico):
@@ -179,6 +180,8 @@ class AndamentoTestCase(BlocosBase):
         )
         self.assertEqual(response.data[0]['situacao_prazo'], 'atrasado')
         self.assertEqual(response.data[1]['situacao_prazo'], 'vence_7_dias')
+        # O "o que será feito" do serviço vem junto (a `descricao` da linha é a da tarefa).
+        self.assertEqual(response.data[0]['servico_descricao'], self.tarefa_atrasada.servico.descricao)
 
     def test_filtra_por_responsavel(self):
         response = self.get(self.gestor, 'execucao-andamento', setor=self.seguranca.id, responsavel=self.outro_tecnico.id)
@@ -216,6 +219,29 @@ class AlertasECienciaTestCase(BlocosBase):
         response = self.client.post(reverse('execucao-ciencia', args=[self.distribuido.id]), {})
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_explicar_a_pausa_exige_o_motivo_e_outro_exige_a_observacao(self):
+        self.envelhecer(self.distribuido, 10)
+        self.client.force_authenticate(user=self.tecnico)
+        url = reverse('execucao-ciencia', args=[self.distribuido.id])
+
+        self.assertEqual(self.client.post(url, {}).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.client.post(url, {'motivo': 'outro'}).status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.post(url, {'motivo': 'outro', 'observacao': 'Esperando a CIPA'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['ciencia_ate'], (self.hoje + timedelta(days=7)).isoformat())
+
+    def test_a_pausa_explicada_aparece_nas_linhas_de_tarefa(self):
+        self.envelhecer(self.distribuido, 10)
+        self.client.force_authenticate(user=self.tecnico)
+        self.client.post(reverse('execucao-ciencia', args=[self.distribuido.id]), {'motivo': 'cliente'})
+
+        linha = next(l for l in self.get(self.tecnico, 'execucao-meus-servicos').data
+                     if l['servico_id'] == self.distribuido.id)
+
+        self.assertEqual((linha['servico_ciencia_vigente'], linha['servico_ciencia_motivo']), (True, 'cliente'))
+        self.assertEqual(linha['servico_ciencia_ate'], (self.hoje + timedelta(days=7)).isoformat())
 
     def test_servico_concluido_nao_recebe_ciencia(self):
         self.client.force_authenticate(user=self.gestor)
@@ -301,6 +327,8 @@ class DetalheDoServicoTestCase(BlocosBase):
         self.assertTrue(response.data['pode_dar_ciencia'])
         self.assertEqual(response.data['ordem_servico']['cliente_nome'], 'Cliente Blocos')
         self.assertNotIn('valor', response.data['ordem_servico'])
+        # A observação da OS é de pagamento e faturamento: não chega aos setores.
+        self.assertNotIn('observacao', response.data['ordem_servico'])
         self.assertEqual(len(response.data['outros_servicos_da_os']), 4)
 
     def test_gestora_pode_distribuir(self):

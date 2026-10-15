@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -18,6 +20,18 @@ class StatusServico(models.TextChoices):
     EM_ANDAMENTO = 'em_andamento', 'Em Andamento'
     CONCLUIDA = 'concluida', 'Concluído'
     CANCELADO = 'cancelado', 'Cancelado'
+
+
+def status_pelas_tarefas(status_das_tarefas):
+    """Status do serviço que as tarefas implicam. A tarefa cancelada não conta (decidido em 14/10/2026,
+    faturamento/04): o serviço conclui quando as demais terminam, como a OS com um serviço cancelado.
+    Sem tarefa, ou só com canceladas, o serviço fica aberto (precisa ser distribuído de novo)."""
+    ativas = [status for status in status_das_tarefas if status != 'cancelada']
+    if ativas and all(status == 'concluida' for status in ativas):
+        return StatusServico.CONCLUIDA
+    if any(status in ('em_andamento', 'concluida') for status in ativas):
+        return StatusServico.EM_ANDAMENTO
+    return StatusServico.ABERTO
 
 
 class Servico(models.Model):
@@ -73,6 +87,16 @@ class Servico(models.Model):
     alerta_ciente_motivo = models.CharField(max_length=15, choices=MotivoCiencia.choices, null=True, blank=True)
     alerta_ciente_observacao = models.TextField(null=True, blank=True)
 
+    # Ciência de recebimento (ADR 0009): o setor confirma que o serviço chegou. Separa "novo" de "a distribuir".
+    recebido_em = models.DateTimeField(null=True, blank=True)
+    recebido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='servicos_recebidos',
+    )
+
     class Meta:
         ordering = ['ordem_servico', 'status']
         verbose_name = 'Serviço'
@@ -108,6 +132,13 @@ class Servico(models.Model):
         """A ciência só vale enquanto nada se moveu depois dela."""
         return bool(self.alerta_ciente_em and self.alerta_ciente_em >= self.ultima_movimentacao_em)
 
+    @property
+    def ciencia_ate(self):
+        """Até quando a pausa explicada silencia o aviso (a ciência vale por `DIAS_ALERTA_SEM_MOVIMENTACAO` dias)."""
+        if not self.ciencia_vigente:
+            return None
+        return timezone.localtime(self.alerta_ciente_em).date() + timedelta(days=settings.DIAS_ALERTA_SEM_MOVIMENTACAO)
+
     def registrar_movimentacao(self):
         agora = timezone.now()
         Servico.objects.filter(pk=self.pk).update(ultima_movimentacao_em=agora)
@@ -130,6 +161,36 @@ class Servico(models.Model):
         Servico.objects.filter(pk=self.pk).update(**updates)
         for campo, valor in updates.items():
             setattr(self, campo, valor)
+
+    @property
+    def recebido(self):
+        return self.recebido_em is not None
+
+    def registrar_recebimento(self, por, automatico=False):
+        """Ciência de recebimento do setor (ADR 0009). Só para serviço aberto e ainda não recebido; repetir não muda
+        nada. A automática (ao ganhar a primeira tarefa) não vira evento próprio na linha do tempo."""
+        from apps.auditoria.models import AcaoAuditoria
+        from apps.auditoria.utils import registrar_update_direto
+
+        # Confere no banco: a instância pode estar desatualizada (ex.: o serviço passado para várias tarefas).
+        atual = Servico.objects.filter(pk=self.pk).values('recebido_em', 'recebido_por_id', 'status').first()
+        self.recebido_em, self.recebido_por_id = atual['recebido_em'], atual['recebido_por_id']
+        if self.recebido or atual['status'] != StatusServico.ABERTO:
+            return False
+        updates = {'recebido_em': timezone.now(), 'recebido_por_id': getattr(por, 'pk', por)}
+        if automatico:
+            registrar_update_direto(
+                self, updates, acao=AcaoAuditoria.ATUALIZACAO, motivo='Ciência registrada na distribuição.',
+            )
+        else:
+            registrar_update_direto(
+                self, updates, acao=AcaoAuditoria.RECEBIMENTO, motivo='Ciência de recebimento do serviço.',
+            )
+        Servico.objects.filter(pk=self.pk).update(**updates)
+        for campo, valor in updates.items():
+            setattr(self, campo, valor)
+        self.registrar_movimentacao()
+        return True
 
     def save(self, *args, **kwargs):
         self.definir_setor_pelo_catalogo()
@@ -178,8 +239,9 @@ class Servico(models.Model):
                 .order_by('-data_termino', '-atualizado_em', '-id')
                 .first()
             )
-            todos_concluidos = not tarefas.exclude(status='concluida').exists()
-            tem_execucao = tarefas.filter(status__in=['em_andamento', 'concluida']).exists()
+            calculado = status_pelas_tarefas(tarefas.values_list('status', flat=True))
+            todos_concluidos = calculado == StatusServico.CONCLUIDA
+            tem_execucao = calculado == StatusServico.EM_ANDAMENTO
 
             if self.data_inicio != primeira_data_inicio:
                 updates['data_inicio'] = primeira_data_inicio

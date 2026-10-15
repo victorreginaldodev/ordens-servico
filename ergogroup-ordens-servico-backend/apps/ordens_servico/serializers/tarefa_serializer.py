@@ -1,10 +1,12 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from apps.ordens_servico.models import Tarefa, Prioridade
 from apps.ordens_servico.models.tarefa import validar_responsavel_no_setor
 from apps.ordens_servico.services.distribuicao import exigir_distribuicao_no_setor
+from apps.ordens_servico.services.execucao import ETAPAS_TAREFA, etapa_da_tarefa
 
 Usuario = get_user_model()
 
@@ -15,6 +17,7 @@ class TarefaListSerializer(serializers.ModelSerializer):
     prioridade_display = serializers.CharField(source='get_prioridade_display', read_only=True)
     cliente_nome = serializers.CharField(source='servico.ordem_servico.cliente.nome', read_only=True)
     catalogo_nome = serializers.CharField(source='servico.catalogo.nome', read_only=True, default=None)
+    etapa = serializers.SerializerMethodField()
 
     class Meta:
         model = Tarefa
@@ -23,8 +26,12 @@ class TarefaListSerializer(serializers.ModelSerializer):
             'cliente_nome', 'catalogo_nome',
             'descricao', 'status', 'status_display',
             'prioridade', 'prioridade_display', 'prazo',
-            'data_inicio', 'data_termino', 'criada_em', 'atualizado_em',
+            'data_inicio', 'data_termino', 'recebida_em', 'etapa', 'criada_em', 'atualizado_em',
         ]
+
+    @extend_schema_field(serializers.ChoiceField(choices=ETAPAS_TAREFA))
+    def get_etapa(self, obj):
+        return etapa_da_tarefa(obj)
 
 
 class TarefaSerializer(serializers.ModelSerializer):
@@ -33,6 +40,7 @@ class TarefaSerializer(serializers.ModelSerializer):
     prioridade = serializers.ChoiceField(choices=Prioridade.choices, required=False)
     prioridade_display = serializers.CharField(source='get_prioridade_display', read_only=True)
     responsavel = serializers.PrimaryKeyRelatedField(queryset=Usuario.objects.all())
+    etapa = serializers.SerializerMethodField()
 
     class Meta:
         model = Tarefa
@@ -40,9 +48,13 @@ class TarefaSerializer(serializers.ModelSerializer):
             'id', 'servico', 'responsavel', 'responsavel_nome',
             'descricao', 'status', 'status_display',
             'prioridade', 'prioridade_display', 'prazo',
-            'data_inicio', 'data_termino', 'criada_em', 'atualizado_em',
+            'data_inicio', 'data_termino', 'recebida_em', 'etapa', 'criada_em', 'atualizado_em',
         ]
-        read_only_fields = ['data_inicio', 'data_termino', 'criada_em', 'atualizado_em']
+        read_only_fields = ['data_inicio', 'data_termino', 'recebida_em', 'criada_em', 'atualizado_em']
+
+    @extend_schema_field(serializers.ChoiceField(choices=ETAPAS_TAREFA))
+    def get_etapa(self, obj):
+        return etapa_da_tarefa(obj)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)

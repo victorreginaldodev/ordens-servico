@@ -10,21 +10,26 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.ordens_servico.models import Servico
+from apps.ordens_servico.models import Servico, Tarefa
 from apps.ordens_servico.models.tarefa import StatusTarefa
 from apps.ordens_servico.serializers.execucao_serializer import (
     AlertaSerializer,
     CienciaSerializer,
     ConcluidosSerializer,
+    ContadoresMeusServicosSerializer,
     DetalheDoServicoSerializer,
     DistribuirSerializer,
     ItemDaFilaSerializer,
     LinhaDeTarefaSerializer,
     MembroDaEquipeSerializer,
+    ReceberServicosSerializer,
+    ReceberTarefasSerializer,
+    ServicosRecebidosSerializer,
     SetorAcompanhadoSerializer,
+    TarefasRecebidasSerializer,
 )
 from apps.ordens_servico.services import execucao
-from apps.ordens_servico.services.visibilidade import servicos_visiveis
+from apps.ordens_servico.services.visibilidade import servicos_visiveis, tarefas_visiveis
 from apps.organizacoes.models import Setor
 from apps.organizacoes.permissoes import Permissao, setores_com_permissao
 
@@ -58,6 +63,23 @@ def setor_acompanhado(request):
     return setor
 
 
+def _etapa(request, permitidas):
+    valor = request.query_params.get('etapa', '').strip() or None
+    if valor is not None and valor not in permitidas:
+        raise ValidationError({'etapa': f'Use {", ".join(permitidas)} ou deixe em branco.'})
+    return valor
+
+
+def _todos_ou_404(queryset, ids):
+    """Os objetos dos `ids` que a pessoa vê; se faltar algum, 404 (não revela o que ela não vê)."""
+    ids = list(dict.fromkeys(ids))
+    objetos = {objeto.id: objeto for objeto in queryset.filter(pk__in=ids)}
+    faltando = [pk for pk in ids if pk not in objetos]
+    if faltando:
+        raise NotFound(f'Não encontrado: {", ".join(map(str, faltando))}.')
+    return [objetos[pk] for pk in ids]
+
+
 def servico_visivel(request, pk):
     return get_object_or_404(servicos_visiveis(Servico.objects.all(), request.user), pk=pk)
 
@@ -87,11 +109,13 @@ class FilaView(APIView):
     @extend_schema(
         summary='Fila de triagem do setor',
         description=(
-            'Serviços do setor que chegaram e ainda não foram distribuídos, mais antigos primeiro, com o contexto '
-            'da venda e os outros serviços da mesma OS. Agrupar por cliente ou por OS é decisão da tela.'
+            'Serviços do setor que chegaram e ainda não foram distribuídos: os novos (sem ciência do setor) '
+            'primeiro, depois os a distribuir; em cada grupo, os mais antigos primeiro. Traz o contexto da venda e '
+            'os outros serviços da mesma OS. Agrupar por cliente ou por OS é decisão da tela.'
         ),
         parameters=[
             PARAMETRO_SETOR,
+            OpenApiParameter('etapa', str, enum=['novo', 'a_distribuir'], description='Só uma das etapas.'),
             OpenApiParameter('cliente', int, description='Filtrar pelo cliente.'),
             OpenApiParameter('ordem_servico', int, description='Filtrar pela OS.'),
             OpenApiParameter('prioridade', str, description='Filtrar pela prioridade.'),
@@ -102,6 +126,7 @@ class FilaView(APIView):
     def get(self, request):
         setor = setor_acompanhado(request)
         filtros = {chave: request.query_params.get(chave) for chave in ('cliente', 'ordem_servico', 'prioridade')}
+        filtros['etapa'] = _etapa(request, execucao.ETAPAS_DA_FILA)
         return Response(ItemDaFilaSerializer(execucao.fila(setor, filtros), many=True).data)
 
 
@@ -132,13 +157,18 @@ class AndamentoView(APIView):
     @extend_schema(
         summary='Em andamento no setor',
         description='Tarefas ativas do setor, as mais urgentes primeiro. A tela agrupa por responsável.',
-        parameters=[PARAMETRO_SETOR, OpenApiParameter('responsavel', int, description='Filtrar pelo responsável.')],
+        parameters=[
+            PARAMETRO_SETOR,
+            OpenApiParameter('responsavel', int, description='Filtrar pelo responsável.'),
+            OpenApiParameter('etapa', str, enum=list(execucao.ETAPAS_ATIVAS_TAREFA), description='Etapa da tarefa.'),
+        ],
         responses={200: LinhaDeTarefaSerializer(many=True)},
         tags=['execução'],
     )
     def get(self, request):
         setor = setor_acompanhado(request)
-        linhas = execucao.andamento(setor, request.query_params.get('responsavel'))
+        linhas = execucao.andamento(setor, request.query_params.get('responsavel'),
+                                    _etapa(request, execucao.ETAPAS_ATIVAS_TAREFA))
         return Response(LinhaDeTarefaSerializer(linhas, many=True).data)
 
 
@@ -160,10 +190,11 @@ class AlertasView(APIView):
 
 class CienciaView(APIView):
     @extend_schema(
-        summary='Estou ciente do alerta',
+        summary='Explicar a pausa',
         description=(
-            '"Está tudo bem, deixar assim": silencia o alerta de serviço sem movimentação por mais N dias, com '
-            'motivo opcional. Pode dar ciência quem tem tarefa no serviço ou quem acompanha o setor.'
+            'O serviço está sem andamento porque espera algo: o motivo (obrigatório; "outro" exige a observação) '
+            'silencia o aviso por N dias e fica visível para o setor (`ciencia_ate`). Se o trabalho andou, o certo é '
+            'atualizar a tarefa. Pode explicar quem tem tarefa no serviço ou quem acompanha o setor.'
         ),
         request=CienciaSerializer,
         responses={200: DetalheDoServicoSerializer},
@@ -200,9 +231,10 @@ class EquipeView(APIView):
     @extend_schema(
         summary='Equipe e carga do setor',
         description=(
-            'Por membro do setor: itens ativos por situação de prazo, em alerta e idade do mais antigo. Inclui quem '
-            'ainda tem tarefa ativa no setor sem ser membro. Serve também de lista de responsáveis na distribuição '
-            '(só os membros podem receber tarefas).'
+            'Por pessoa que recebe tarefas do setor (lotada com "Recebe tarefas" ou que "também executa" aqui): '
+            'itens ativos por situação de prazo, em alerta e idade do mais antigo. Inclui quem ainda tem tarefa ativa '
+            'no setor sem receber mais (`recebe_tarefas` falso). Serve de lista de responsáveis na distribuição: só '
+            'quem tem `recebe_tarefas` pode ser escolhido.'
         ),
         parameters=[PARAMETRO_SETOR],
         responses={200: MembroDaEquipeSerializer(many=True)},
@@ -221,6 +253,8 @@ class MeusServicosView(APIView):
             'Não exige permissão: cada um vê só o que é seu.'
         ),
         parameters=[OpenApiParameter('status', str, enum=['concluida'], description='Histórico de concluídas.'),
+                    OpenApiParameter('etapa', str, enum=list(execucao.ETAPAS_ATIVAS_TAREFA),
+                                     description='Etapa da tarefa (sem `status`).'),
                     *PERIODO],
         responses={200: LinhaDeTarefaSerializer(many=True)},
         tags=['execução'],
@@ -229,8 +263,68 @@ class MeusServicosView(APIView):
         status_param = request.query_params.get('status', '').strip() or None
         if status_param not in (None, StatusTarefa.CONCLUIDA):
             raise ValidationError({'status': 'Use `concluida` ou deixe em branco.'})
-        linhas = execucao.meus_servicos(request.user, status_param, _data(request, 'de'), _data(request, 'ate'))
+        linhas = execucao.meus_servicos(request.user, status_param, _data(request, 'de'), _data(request, 'ate'),
+                                        _etapa(request, execucao.ETAPAS_ATIVAS_TAREFA))
         return Response(LinhaDeTarefaSerializer(linhas, many=True).data)
+
+
+class ContadoresMeusServicosView(APIView):
+    @extend_schema(
+        summary='Contadores de Meus serviços',
+        description='Quantas tarefas ativas da pessoa estão em cada etapa: nova, a iniciar e em andamento.',
+        responses={200: ContadoresMeusServicosSerializer},
+        tags=['execução'],
+    )
+    def get(self, request):
+        return Response(ContadoresMeusServicosSerializer(execucao.contadores_meus_servicos(request.user)).data)
+
+
+class ReceberServicosView(APIView):
+    @extend_schema(
+        summary='Confirmar recebimento de serviços',
+        description=(
+            'Ciência do setor de que os serviços chegaram (ADR 0009): passam de novo para a distribuir. Aceita '
+            'vários de uma vez. Exige `tarefas.distribuir` no setor de cada serviço; se faltar em algum, nada é '
+            'gravado. Serviço que já tinha ciência volta em `ja_recebidos`. Distribuir também registra a ciência.'
+        ),
+        request=ReceberServicosSerializer,
+        responses={200: ServicosRecebidosSerializer},
+        tags=['execução'],
+    )
+    def post(self, request):
+        dados = ReceberServicosSerializer(data=request.data)
+        dados.is_valid(raise_exception=True)
+        servicos = _todos_ou_404(servicos_visiveis(Servico.objects.all(), request.user),
+                                 dados.validated_data['servicos'])
+        try:
+            resultado = execucao.receber_servicos(servicos, por=request.user)
+        except execucao.RecebimentoInvalido as exc:
+            raise ValidationError({'servicos': f'Concluídos ou cancelados: {", ".join(map(str, exc.args[0]))}.'})
+        return Response(ServicosRecebidosSerializer(resultado).data)
+
+
+class ReceberTarefasView(APIView):
+    @extend_schema(
+        summary='Confirmar recebimento de tarefas',
+        description=(
+            'Ciência do responsável de que a tarefa é dele (ADR 0009): passa de nova para a iniciar. Aceita várias '
+            'de uma vez. Só o responsável confirma; se alguma não for dele, nada é gravado. Começar a tarefa também '
+            'registra a ciência; trocar o responsável a zera.'
+        ),
+        request=ReceberTarefasSerializer,
+        responses={200: TarefasRecebidasSerializer},
+        tags=['execução'],
+    )
+    def post(self, request):
+        dados = ReceberTarefasSerializer(data=request.data)
+        dados.is_valid(raise_exception=True)
+        tarefas = _todos_ou_404(tarefas_visiveis(Tarefa.objects.select_related('servico'), request.user),
+                                dados.validated_data['tarefas'])
+        try:
+            resultado = execucao.receber_tarefas(tarefas, por=request.user)
+        except execucao.RecebimentoInvalido as exc:
+            raise ValidationError({'tarefas': f'Concluídas ou canceladas: {", ".join(map(str, exc.args[0]))}.'})
+        return Response(TarefasRecebidasSerializer(resultado).data)
 
 
 class DetalheDoServicoView(APIView):
@@ -238,7 +332,8 @@ class DetalheDoServicoView(APIView):
         summary='Detalhe do serviço',
         description=(
             'O serviço com tarefas, prazo, alerta e ciência, o contexto da venda (sem valores) e os outros serviços '
-            'da mesma OS. `pode_distribuir` e `pode_dar_ciencia` dizem quais ações mostrar.'
+            'da mesma OS. `pode_distribuir`, `pode_dar_ciencia` e `pode_confirmar_recebimento` (no serviço e em '
+            'cada tarefa) dizem quais ações mostrar.'
         ),
         responses={200: DetalheDoServicoSerializer},
         tags=['execução'],

@@ -6,6 +6,8 @@ própria. Regras:
   da migração; no lugar, a OS antiga ganha um evento inicial dizendo que o histórico detalhado começa depois;
 - eventos repetidos pela propagação de status são omitidos (ex.: "em execução" do serviço, que repete o
   "iniciou" da tarefa);
+- a ciência de recebimento só vira evento quando é dada pela pessoa (ação `recebimento`); a automática, ao
+  distribuir ou ao começar a tarefa, repete o "distribuído" e o "iniciou" (ADR 0009);
 - condições de pagamento e a referência do lançamento só para quem tem `financeiro.ver_valores`.
 """
 from datetime import date
@@ -19,14 +21,23 @@ from apps.ordens_servico.models.servico import MotivoCiencia
 from apps.organizacoes.models import Setor
 from apps.organizacoes.permissoes import Permissao, tem_permissao
 
+# Os registros antigos podem ter campos que saíram em 13/10/2026 (recorrente e intervalo): continuam
+# contando como mudança de condição, mas não entram no texto.
 CAMPOS_CONDICAO = {
-    'valor', 'valor_mensal', 'tipo_condicao', 'forma_pagamento', 'quantidade_parcelas', 'data_acordada_cobranca',
-    'intervalo_parcelas_dias', 'dia_fechamento', 'dia_vencimento', 'liberar_em',
+    'valor', 'tipo_condicao', 'forma_pagamento', 'quantidade_parcelas', 'data_acordada_cobranca',
+    'vencimento_dias_apos_nota', 'dia_vencimento_demais', 'liberar_em',
+    'valor_mensal', 'intervalo_parcelas_dias', 'dia_fechamento', 'dia_vencimento',
 }
-CAMPOS_DE_PESSOA = ('responsavel_id', 'terminado_por_id', 'alerta_ciente_por_id', 'cobranca_realizada_por_id')
+CAMPOS_DO_RESUMO = {
+    'valor', 'tipo_condicao', 'quantidade_parcelas', 'data_acordada_cobranca', 'vencimento_dias_apos_nota',
+    'dia_vencimento_demais',
+}
+CAMPOS_DE_PESSOA = (
+    'responsavel_id', 'terminado_por_id', 'alerta_ciente_por_id', 'cobranca_realizada_por_id', 'recebido_por_id',
+)
 ROTULOS_OS = {
     'cliente_id': 'cliente', 'data_venda': 'data da venda', 'prioridade': 'prioridade', 'prazo': 'prazo',
-    'observacao': 'observação', 'nome_contato_envio_nf': 'contato da NF', 'contato_envio_nf': 'e-mail da NF',
+    'observacao': 'observação de pagamento', 'nome_contato_envio_nf': 'contato da NF', 'contato_envio_nf': 'e-mail da NF',
 }
 
 
@@ -94,7 +105,11 @@ def _eventos_da_os(registro, ctx):
         texto = 'Venda registrada'
         if ctx.ver_valores:
             texto += f' — {_condicao(snap)}'
-        return [_evento(registro, 'venda', texto)]
+        eventos = [_evento(registro, 'venda', texto)]
+        if snap.get('liberada_para_cobranca'):
+            # Liberação na venda: a OS já nasce liberada (faturamento/04, o financeiro precisa ver isso).
+            eventos.append(_evento(registro, 'liberacao', 'OS liberada para o financeiro (na venda)'))
+        return eventos
     eventos = []
     status = _mudou(registro, 'status')
     if status:
@@ -116,7 +131,8 @@ def _eventos_da_os(registro, ctx):
     campos = set(registro.alteracoes)
     if ctx.ver_valores and campos & CAMPOS_CONDICAO and registro.acao != AcaoAuditoria.PROPAGACAO_STATUS:
         eventos.append(_evento(registro, 'condicao_alterada', f'Condições de pagamento alteradas: {_condicao(snap)}'))
-    alterados = [rotulo for campo, rotulo in ROTULOS_OS.items() if campo in campos]
+    # A observação é de pagamento: só quem vê valores fica sabendo que ela mudou.
+    alterados = [rotulo for campo, rotulo in ROTULOS_OS.items() if campo in campos and (ctx.ver_valores or campo != 'observacao')]
     if alterados:
         eventos.append(_evento(registro, 'venda_alterada', 'Venda alterada: ' + ', '.join(alterados)))
     return eventos
@@ -124,11 +140,11 @@ def _eventos_da_os(registro, ctx):
 
 def _condicao(snap):
     """O `condicao_resumo` da OS como ela estava no registro."""
-    campos = {campo: snap.get(campo) for campo in CAMPOS_CONDICAO - {'valor', 'forma_pagamento', 'liberar_em'}}
+    campos = {campo: snap.get(campo) for campo in CAMPOS_DO_RESUMO}
     if campos.get('data_acordada_cobranca'):
         campos['data_acordada_cobranca'] = date.fromisoformat(str(campos['data_acordada_cobranca'])[:10])
-    if campos.get('valor_mensal') is not None:
-        campos['valor_mensal'] = Decimal(str(campos['valor_mensal']))
+    if campos.get('valor') is not None:
+        campos['valor'] = Decimal(str(campos['valor']))
     return OrdemServico(**{campo: valor for campo, valor in campos.items() if valor is not None}).condicao_resumo
 
 
@@ -142,12 +158,17 @@ def _eventos_do_servico(registro, ctx):
     if registro.acao == AcaoAuditoria.EXCLUSAO:
         return [_evento(registro, 'servico_excluido', f'{nome} excluído da venda')]
     if registro.acao == AcaoAuditoria.CIENCIA_ALERTA:
-        texto = f'{ctx.pessoa(snap.get("alerta_ciente_por_id"))} confirmou que está tudo bem com {nome}'
+        texto = f'{ctx.pessoa(snap.get("alerta_ciente_por_id"))} explicou a pausa em {nome}'
         if snap.get('alerta_ciente_motivo'):
             texto += f' ({MotivoCiencia(snap["alerta_ciente_motivo"]).label.lower()})'
         if snap.get('alerta_ciente_observacao'):
             texto += f': {snap["alerta_ciente_observacao"]}'
         return [_evento(registro, 'ciencia', texto)]
+    if registro.acao == AcaoAuditoria.RECEBIMENTO:
+        setor = ctx.setores.get(snap.get('setor_id'))
+        quem = ctx.pessoa(snap.get('recebido_por_id'))
+        texto = f'{nome} recebido por {setor} ({quem})' if setor else f'{nome} recebido por {quem}'
+        return [_evento(registro, 'recebimento', texto)]
     status = _mudou(registro, 'status')
     if not status:
         return []
@@ -172,6 +193,8 @@ def _eventos_da_tarefa(registro, ctx):
         return [_evento(registro, 'distribuicao', texto)]
     if registro.acao == AcaoAuditoria.EXCLUSAO:
         return [_evento(registro, 'tarefa_excluida', f'Tarefa de {responsavel} em {servico} excluída')]
+    if registro.acao == AcaoAuditoria.RECEBIMENTO:
+        return [_evento(registro, 'tarefa_recebida', f'{responsavel} confirmou o recebimento de {servico}')]
     eventos = []
     troca = _mudou(registro, 'responsavel_id')
     if troca:

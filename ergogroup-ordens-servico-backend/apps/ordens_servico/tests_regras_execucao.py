@@ -12,7 +12,7 @@ from apps.clientes.models import Cliente
 from apps.ordens_servico.models import OrdemServico, Servico, Tarefa
 from apps.ordens_servico.models.tarefa import StatusTarefa
 from apps.organizacoes.apoio_testes import Perfil, criar_usuario, setor_padrao
-from apps.organizacoes.models import Funcao, MembroSetor, Organizacao, Setor
+from apps.organizacoes.models import AtuacaoEmSetor, Funcao, MembroSetor, Organizacao, Setor
 from apps.organizacoes.permissoes import Permissao
 
 
@@ -44,7 +44,7 @@ class ResponsavelDoSetorTestCase(ExecucaoBase):
         response = self.distribuir(self.gestor_tecnico, self.comercial)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('não pertence ao setor "Segurança do Trabalho"', str(response.data['responsavel']))
+        self.assertIn('não recebe tarefas do setor "Segurança do Trabalho"', str(response.data['responsavel']))
 
     def test_diretoria_distribui_em_qualquer_setor_mas_so_para_membros(self):
         diretor = criar_usuario(Perfil.DIRETOR)
@@ -96,7 +96,7 @@ class ServicosNaCriacaoDaOSTestCase(ExecucaoBase):
     def vender(self, servicos, **extra):
         return self.client.post(reverse('ordens-servico-list'), {
             'cliente': self.cliente.id, 'data_venda': '2026-10-10', 'valor': '5000.00', 'prioridade': 'alta',
-            'servicos': servicos, **extra,
+            'data_acordada_cobranca': '2026-11-10', 'servicos': servicos, **extra,
         }, format='json')
 
     def test_cria_a_os_com_servicos_de_setores_diferentes(self):
@@ -204,14 +204,25 @@ class SetorSemOrganizadorTestCase(APITestCase):
         return self.client.get(reverse('setores-detail', args=[setor.id])).data
 
     def test_setor_novo_aparece_sem_organizador(self):
+        Catalogo.objects.create(nome='AET', setor=self.ergonomia)
+
         dados = self.setor(self.ergonomia)
 
         self.assertTrue(dados['sem_organizador'])
         self.assertEqual(dados['organizadores'], [])
 
+    def test_setor_que_nao_executa_nao_cobra_organizador(self):
+        # Revisão de permissões, P4: a diretoria não aparece como organizadora da própria Diretoria.
+        dados = self.setor(Setor.objects.get(nome='Diretoria'))
+
+        self.assertFalse(dados['executa_servicos'])
+        self.assertFalse(dados['sem_organizador'])
+        self.assertEqual(dados['organizadores'], [])
+
     def test_setor_com_gestor_lista_os_organizadores(self):
         gestor = criar_usuario(Perfil.GESTOR_TECNICO, nome_completo='Gestora Técnica')
         criar_usuario(Perfil.TECNICO)
+        Catalogo.objects.create(nome='PGR', setor=setor_padrao())
 
         dados = self.setor(setor_padrao())
 
@@ -220,6 +231,9 @@ class SetorSemOrganizadorTestCase(APITestCase):
         self.assertEqual(len(dados['organizadores']), 1)
 
     def test_catalogo_em_setor_sem_organizador_e_aceito_com_aviso(self):
+        # Quem recebe tarefas existe (também executa em Ergonomia), mas ninguém organiza: aceita e avisa.
+        AtuacaoEmSetor.objects.create(usuario=criar_usuario(Perfil.TECNICO), setor=self.ergonomia)
+
         response = self.client.post(reverse('catalogos-list'), {'nome': 'AET', 'setor': self.ergonomia.id})
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -250,7 +264,7 @@ class SetorNovoDePontaAPontaTestCase(APITestCase):
             'permissoes': [Permissao.SERVICOS_VER_SETOR, Permissao.TAREFAS_DISTRIBUIR, Permissao.TAREFAS_EDITAR_SETOR],
         }, format='json').data
         execucao = self.client.post(reverse('funcoes-list'), {
-            'organizacao': ergogroup.id, 'nome': 'Ergonomista', 'setores': [setor['id']], 'permissoes': [],
+            'organizacao': ergogroup.id, 'nome': 'Ergonomista', 'setores': [setor['id']], 'permissoes': [Permissao.TAREFAS_RECEBER],
         }, format='json').data
         coordenadora = criar_usuario(None)
         ergonomista = criar_usuario(None)
@@ -266,7 +280,8 @@ class SetorNovoDePontaAPontaTestCase(APITestCase):
         self.client.force_authenticate(user=criar_usuario(Perfil.COMERCIAL))
         venda = self.client.post(reverse('ordens-servico-list'), {
             'cliente': Cliente.objects.create(nome='Cliente Ergonomia').id, 'data_venda': '2026-10-10',
-            'valor': '3000.00', 'servicos': [{'catalogo': catalogo['id'], 'descricao': 'AET da fábrica'}],
+            'valor': '3000.00', 'vencimento_dias_apos_nota': 21,
+            'servicos': [{'catalogo': catalogo['id'], 'descricao': 'AET da fábrica'}],
         }, format='json').data
         servico_id = venda['servicos'][0]['id']
         self.assertEqual(venda['servicos'][0]['setor_nome'], 'Ergonomia')

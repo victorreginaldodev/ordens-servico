@@ -29,18 +29,21 @@ class ServicoDoResumoSerializer(serializers.Serializer):
 
 class CondicoesDaVendaSerializer(serializers.Serializer):
     valor = serializers.DecimalField(max_digits=10, decimal_places=2)
-    valor_mensal = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True)
     tipo_condicao = serializers.ChoiceField(choices=TipoCondicao.choices)
     condicao_resumo = serializers.CharField()
     forma_pagamento = serializers.ChoiceField(choices=FormaPagamento.choices)
     quantidade_parcelas = serializers.IntegerField(allow_null=True)
-    data_acordada_cobranca = serializers.DateField(allow_null=True)
-    intervalo_parcelas_dias = serializers.IntegerField(allow_null=True)
-    dia_fechamento = serializers.IntegerField(allow_null=True)
-    dia_vencimento = serializers.IntegerField(allow_null=True)
+    data_acordada_cobranca = serializers.DateField(allow_null=True, help_text='Vencimento (no parcelado, a 1ª parcela).')
+    vencimento_dias_apos_nota = serializers.IntegerField(
+        allow_null=True, help_text='Vencimento em dias após a emissão da nota, no lugar da data.',
+    )
+    dia_vencimento_demais = serializers.IntegerField(
+        allow_null=True, help_text='Parcelado: dia do mês das parcelas da 2ª em diante. Vazio = mesmo dia da 1ª.',
+    )
     liberar_em = serializers.ChoiceField(choices=LiberarEm.choices)
     nome_contato_envio_nf = serializers.CharField(allow_blank=True)
     contato_envio_nf = serializers.CharField(allow_blank=True)
+    observacao = serializers.CharField(allow_null=True, help_text='Observações de pagamento e faturamento.')
 
 
 class FinanceiroDaVendaSerializer(serializers.Serializer):
@@ -62,7 +65,6 @@ class ResumoDaVendaSerializer(serializers.Serializer):
     criada_em = serializers.DateTimeField()
     status = serializers.CharField()
     prioridade = serializers.ChoiceField(choices=Prioridade.choices)
-    observacao = serializers.CharField(allow_null=True)
     andamento = AndamentoSerializer()
     servicos = ServicoDoResumoSerializer(many=True)
     condicoes = CondicoesDaVendaSerializer(

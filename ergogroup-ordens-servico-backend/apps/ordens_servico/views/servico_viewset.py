@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
+from apps.catalogo.services import avisos_da_venda
 from apps.ordens_servico.models import Servico, Prioridade
 from apps.ordens_servico.serializers.linha_do_tempo_serializer import EventoDaLinhaDoTempoSerializer
 from apps.ordens_servico.services import linha_do_tempo
@@ -50,7 +51,8 @@ class PodeGerenciarServico(BasePermission):
             'Cria um novo serviço vinculado a uma OS. '
             'Campos calculados (`status`, `data_inicio`, `data_termino`, `data_conclusao`, '
             '`terminado_por`) são somente leitura e gerenciados automaticamente pelas tarefas. '
-            '`setor` é somente leitura e copiado do catálogo.'
+            '`setor` é somente leitura e copiado do catálogo. `catalogo` é obrigatório (ativo e de setor ativo). '
+            'A resposta traz `avisos` quando o setor não tem quem receba tarefas (o serviço é criado mesmo assim).'
         ),
     ),
     retrieve=extend_schema(
@@ -61,14 +63,16 @@ class PodeGerenciarServico(BasePermission):
         summary='Atualizar serviço',
         description=(
             'Substitui integralmente os dados de um serviço. '
-            'Campos calculados são somente leitura e ignorados no body.'
+            'Campos calculados são somente leitura e ignorados no body. Trocar o `catalogo` por um de outro setor só '
+            'vale para serviço em aberto e sem tarefas (400 nos demais casos); ele passa ao setor novo.'
         ),
     ),
     partial_update=extend_schema(
         summary='Atualizar serviço parcialmente',
         description=(
             'Atualiza um ou mais campos de um serviço. '
-            'Campos calculados são somente leitura e ignorados no body.'
+            'Campos calculados são somente leitura e ignorados no body. Mesmas regras de troca de `catalogo` da '
+            'atualização completa.'
         ),
     ),
     destroy=extend_schema(
@@ -96,6 +100,11 @@ class ServicoViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
         if self.action == 'list':
             return ServicoListSerializer
         return ServicoSerializer
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        response.data['avisos'] = avisos_da_venda(Servico.objects.filter(pk=response.data['id']).select_related('setor'))
+        return response
 
     def get_queryset(self):
         queryset = super().get_queryset()

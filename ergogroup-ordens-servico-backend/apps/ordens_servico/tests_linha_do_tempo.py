@@ -80,7 +80,7 @@ class LinhaDoTempoTestCase(APITestCase):
         self.assertEqual(textos['distribuicao']['quem'], 'Gestora Técnica')
         self.assertIn('Prazo de PGR (Técnico Um) alterado de', textos['prazo_alterado']['texto'])
         self.assertEqual(textos['ciencia']['texto'],
-                         'Técnico Um confirmou que está tudo bem com LTCAT (aguardando o cliente)')
+                         'Técnico Um explicou a pausa em LTCAT (aguardando o cliente)')
         self.assertEqual(textos['tarefa_concluida']['quem'], 'Técnico Um')
         self.assertEqual(textos['lancamento']['texto'], 'OS faturada por Analista Financeira (ref. NF 777)')
         self.assertEqual(textos['lancamento']['quem'], 'Analista Financeira')
