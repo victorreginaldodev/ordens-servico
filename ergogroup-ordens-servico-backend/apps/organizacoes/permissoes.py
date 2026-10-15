@@ -21,6 +21,7 @@ class Permissao(models.TextChoices):
     SERVICOS_GERENCIAR = 'servicos.gerenciar', 'Ajustar e excluir serviços do setor'
     TAREFAS_DISTRIBUIR = 'tarefas.distribuir', 'Criar, reatribuir e excluir tarefas'
     TAREFAS_EDITAR_SETOR = 'tarefas.editar_setor', 'Editar qualquer tarefa do setor'
+    TAREFAS_RECEBER = 'tarefas.receber', 'Pode ser responsável por tarefas do setor'
     USUARIOS_GERENCIAR = 'usuarios.gerenciar', 'Criar, editar, ativar e desativar usuários'
     USUARIOS_GERENCIAR_DIRETORIA = 'usuarios.gerenciar_diretoria', 'Gerenciar usuários da diretoria'
     USUARIOS_REDEFINIR_SENHA = 'usuarios.redefinir_senha', 'Alterar a senha de outros usuários'
@@ -33,7 +34,7 @@ class Permissao(models.TextChoices):
 # Permissões que valem só nos setores do vínculo que as concede; as demais valem para a organização toda.
 PERMISSOES_POR_SETOR = frozenset({
     Permissao.SERVICOS_VER_SETOR, Permissao.SERVICOS_GERENCIAR,
-    Permissao.TAREFAS_DISTRIBUIR, Permissao.TAREFAS_EDITAR_SETOR,
+    Permissao.TAREFAS_DISTRIBUIR, Permissao.TAREFAS_EDITAR_SETOR, Permissao.TAREFAS_RECEBER,
 })
 
 
@@ -145,7 +146,11 @@ def pode_conceder(usuario, permissoes, setor=None) -> bool:
     """Ninguém concede permissão que não tem: vale para montar funções e para vincular pessoas a elas.
     Com ``setor``, as permissões por setor precisam valer para o usuário naquele setor."""
     perfil = perfil_de_acesso(usuario)
-    return all(perfil.tem(permissao, setor) for permissao in permissoes)
+    # "Recebe tarefas" não é um poder, é ser elegível para receber: quem distribui no setor pode concedê-la.
+    return all(
+        perfil.tem(Permissao.TAREFAS_DISTRIBUIR if permissao == Permissao.TAREFAS_RECEBER else permissao, setor)
+        for permissao in permissoes
+    )
 
 
 class TemPermissao(BasePermission):

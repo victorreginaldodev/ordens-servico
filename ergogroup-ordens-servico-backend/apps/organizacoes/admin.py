@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from apps.organizacoes.models import Funcao, FuncaoPermissao, MembroSetor, Organizacao, Setor
 
@@ -9,8 +10,25 @@ class OrganizacaoAdmin(admin.ModelAdmin):
     readonly_fields = ['criado_em', 'atualizado_em']
 
 
+class SetorAdminForm(forms.ModelForm):
+    class Meta:
+        model = Setor
+        fields = '__all__'
+
+    def clean_ativo(self):
+        from apps.catalogo.services import motivo_para_nao_desativar_o_setor
+
+        ativo = self.cleaned_data.get('ativo')
+        if self.instance.pk and self.instance.ativo and not ativo:
+            motivo = motivo_para_nao_desativar_o_setor(self.instance)
+            if motivo:
+                raise forms.ValidationError(motivo)
+        return ativo
+
+
 @admin.register(Setor)
 class SetorAdmin(admin.ModelAdmin):
+    form = SetorAdminForm
     list_display = ['nome', 'organizacao', 'ativo', 'criado_em']
     list_filter = ['organizacao', 'ativo']
     search_fields = ['nome', 'descricao']

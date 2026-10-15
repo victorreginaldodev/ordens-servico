@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.organizacoes.models import MembroSetor
 from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin, pode_conceder
 from apps.organizacoes.serializers import MembroSetorSerializer
+from apps.organizacoes.views.avisos import AvisaSetorSemQuemRecebeMixin
 
 
 @extend_schema_view(
@@ -30,7 +31,7 @@ from apps.organizacoes.serializers import MembroSetorSerializer
     partial_update=extend_schema(summary='Atualizar vínculo parcialmente', description='Exige `usuarios.gerenciar`.'),
     destroy=extend_schema(summary='Remover vínculo', description='Exige `usuarios.gerenciar`.'),
 )
-class MembroSetorViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
+class MembroSetorViewSet(AvisaSetorSemQuemRecebeMixin, PermissoesPorAcaoMixin, viewsets.ModelViewSet):
     queryset = MembroSetor.objects.select_related('usuario', 'setor', 'funcao').all()
     serializer_class = MembroSetorSerializer
     permission_classes = [IsAuthenticated]

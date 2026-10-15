@@ -2,8 +2,8 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 
-from apps.organizacoes.models import MembroSetor
-from apps.organizacoes.permissoes import pode_conceder
+from apps.organizacoes.models import AtuacaoEmSetor, MembroSetor
+from apps.organizacoes.permissoes import Permissao, pode_conceder, tem_permissao
 
 
 def validar_vinculos(itens, por):
@@ -42,3 +42,26 @@ def definir_vinculos(usuario, itens, por):
         MembroSetor.objects.create(usuario=usuario, setor_id=setor_id, funcao=funcao)
 
     usuario.__dict__.pop('_perfil_de_acesso', None)
+
+
+@transaction.atomic
+def definir_atuacoes(usuario, setores, por):
+    """Substitui os setores em que o usuário "também executa" (revisão de permissões, P1). Cada setor que entra ou
+    sai exige que ``por`` distribua tarefas nele: ninguém concede o que não tem. O setor da lotação não entra (lá,
+    quem recebe é decidido pela função)."""
+    desejados = {setor.pk: setor for setor in setores}
+    lotacao = MembroSetor.objects.filter(usuario=usuario).values_list('setor_id', flat=True).first()
+    if lotacao in desejados:
+        raise ValidationError(f'"{desejados[lotacao]}" já é o setor de {usuario}: escolha outros setores.')
+    for setor in desejados.values():
+        if not setor.ativo:
+            raise ValidationError(f'O setor "{setor}" está inativo.')
+    atuais = {a.setor_id: a for a in AtuacaoEmSetor.objects.filter(usuario=usuario).select_related('setor')}
+    for setor_id in set(desejados) ^ set(atuais):
+        setor = desejados.get(setor_id) or atuais[setor_id].setor
+        if not tem_permissao(por, Permissao.TAREFAS_DISTRIBUIR, setor):
+            raise PermissionDenied(f'Você não distribui tarefas no setor "{setor}", então não pode mudar quem executa nele.')
+    for setor_id in set(atuais) - set(desejados):
+        atuais[setor_id].delete()
+    for setor_id in set(desejados) - set(atuais):
+        AtuacaoEmSetor.objects.create(usuario=usuario, setor_id=setor_id)

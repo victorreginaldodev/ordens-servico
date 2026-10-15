@@ -8,7 +8,7 @@ from rest_framework import exceptions, serializers
 
 from apps.organizacoes.models import Funcao, Setor
 from apps.organizacoes.permissoes import Permissao, perfil_de_acesso, tem_permissao
-from apps.organizacoes.services.vinculos import definir_vinculos
+from apps.organizacoes.services.vinculos import definir_atuacoes, definir_vinculos
 
 Usuario = get_user_model()
 
@@ -20,6 +20,12 @@ class VinculoSerializer(serializers.Serializer):
     setor_nome = serializers.CharField(source='setor.nome', read_only=True)
     funcao = serializers.PrimaryKeyRelatedField(queryset=Funcao.objects.all())
     funcao_nome = serializers.CharField(source='funcao.nome', read_only=True)
+
+
+class AtuacaoSerializer(serializers.Serializer):
+    """Setor em que a pessoa "também executa": recebe tarefas lá, sem permissões de gestão."""
+    setor = serializers.IntegerField(source='setor_id')
+    setor_nome = serializers.CharField(source='setor.nome')
 
 
 class PermissoesNoSetorSerializer(serializers.Serializer):
@@ -62,19 +68,35 @@ class VinculosEscritaMixin:
         except DjangoValidationError as exc:
             raise serializers.ValidationError({'vinculos': exc.messages})
 
+    def gravar_atuacoes(self, usuario, setores):
+        try:
+            definir_atuacoes(usuario, setores, por=self.context['request'].user)
+        except DjangoPermissionDenied as exc:
+            raise exceptions.PermissionDenied(str(exc))
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'tambem_executa_em': exc.messages})
+
 
 class UsuarioListSerializer(serializers.ModelSerializer):
     ativo = serializers.BooleanField(source='is_active', read_only=True)
     vinculos = VinculoSerializer(source='vinculos_setor', many=True, read_only=True)
+    tambem_executa_em = AtuacaoSerializer(
+        source='atuacoes', many=True, read_only=True,
+        help_text='Setores, fora o da lotação, em que a pessoa também recebe tarefas (sem permissões de gestão).',
+    )
 
     class Meta:
         model = Usuario
-        fields = ['id', 'email', 'nome_completo', 'ativo', 'vinculos', 'data_criacao']
+        fields = ['id', 'email', 'nome_completo', 'ativo', 'vinculos', 'tambem_executa_em', 'data_criacao']
 
 
 class UsuarioDetailSerializer(serializers.ModelSerializer):
     ativo = serializers.BooleanField(source='is_active', read_only=True)
     vinculos = VinculoSerializer(source='vinculos_setor', many=True, read_only=True)
+    tambem_executa_em = AtuacaoSerializer(
+        source='atuacoes', many=True, read_only=True,
+        help_text='Setores, fora o da lotação, em que a pessoa também recebe tarefas (sem permissões de gestão).',
+    )
     permissoes = serializers.SerializerMethodField()
 
     class Meta:
@@ -82,7 +104,7 @@ class UsuarioDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'username', 'nome_completo',
             'ativo', 'is_staff', 'is_superuser',
-            'vinculos', 'permissoes',
+            'vinculos', 'tambem_executa_em', 'permissoes',
             'data_criacao', 'last_login',
         ]
         read_only_fields = ['is_staff', 'is_superuser', 'data_criacao', 'last_login']
@@ -97,12 +119,19 @@ class UsuarioCreateSerializer(VinculosEscritaMixin, serializers.ModelSerializer)
     password_confirmacao = serializers.CharField(write_only=True)
     ativo = serializers.BooleanField(source='is_active', default=True)
     vinculos = VinculoSerializer(many=True, required=False, help_text='Setor e função do usuário: lista com no máximo um item.')
+    tambem_executa_em = serializers.PrimaryKeyRelatedField(
+        queryset=Setor.objects.all(), many=True, required=False,
+        help_text=(
+            'IDs dos setores, fora o da lotação, em que a pessoa também recebe tarefas. Se enviado, substitui a lista. '
+            'Cada setor que entra ou sai exige `tarefas.distribuir` nele.'
+        ),
+    )
 
     class Meta:
         model = Usuario
         fields = [
             'id', 'email', 'username', 'nome_completo',
-            'ativo', 'vinculos', 'password', 'password_confirmacao',
+            'ativo', 'vinculos', 'tambem_executa_em', 'password', 'password_confirmacao',
         ]
 
     def validate(self, attrs):
@@ -113,11 +142,13 @@ class UsuarioCreateSerializer(VinculosEscritaMixin, serializers.ModelSerializer)
     @transaction.atomic
     def create(self, validated_data):
         vinculos = validated_data.pop('vinculos', [])
+        atuacoes = validated_data.pop('tambem_executa_em', [])
         password = validated_data.pop('password')
         usuario = Usuario(**validated_data)
         usuario.set_password(password)
         usuario.save()
         self.gravar_vinculos(usuario, vinculos)
+        self.gravar_atuacoes(usuario, atuacoes)
         return usuario
 
     def to_representation(self, instance):
@@ -130,10 +161,17 @@ class UsuarioUpdateSerializer(VinculosEscritaMixin, serializers.ModelSerializer)
         many=True, required=False,
         help_text='Se enviado, substitui o vínculo do usuário (lista com no máximo um item; vazia remove o vínculo).',
     )
+    tambem_executa_em = serializers.PrimaryKeyRelatedField(
+        queryset=Setor.objects.all(), many=True, required=False,
+        help_text=(
+            'IDs dos setores, fora o da lotação, em que a pessoa também recebe tarefas. Se enviado, substitui a lista. '
+            'Cada setor que entra ou sai exige `tarefas.distribuir` nele.'
+        ),
+    )
 
     class Meta:
         model = Usuario
-        fields = ['id', 'email', 'username', 'nome_completo', 'ativo', 'vinculos']
+        fields = ['id', 'email', 'username', 'nome_completo', 'ativo', 'vinculos', 'tambem_executa_em']
         read_only_fields = ['id']
 
     def get_fields(self):
@@ -143,14 +181,18 @@ class UsuarioUpdateSerializer(VinculosEscritaMixin, serializers.ModelSerializer)
         if request is None or not tem_permissao(request.user, Permissao.USUARIOS_GERENCIAR):
             fields['ativo'].read_only = True
             fields['vinculos'].read_only = True
+            fields['tambem_executa_em'].read_only = True
         return fields
 
     @transaction.atomic
     def update(self, instance, validated_data):
         vinculos = validated_data.pop('vinculos', None)
+        atuacoes = validated_data.pop('tambem_executa_em', None)
         usuario = super().update(instance, validated_data)
         if vinculos is not None:
             self.gravar_vinculos(usuario, vinculos)
+        if atuacoes is not None:
+            self.gravar_atuacoes(usuario, atuacoes)
         return usuario
 
     def to_representation(self, instance):

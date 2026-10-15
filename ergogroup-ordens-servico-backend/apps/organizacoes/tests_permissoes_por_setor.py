@@ -22,9 +22,9 @@ class PermissoesPorSetorBase(APITestCase):
         self.medicina = Setor.objects.create(organizacao=self.ergogroup, nome='Medicina')
 
         self.gestor_execucao = self.funcao('Gestor de Execução', [
-            P.SERVICOS_VER_SETOR, P.SERVICOS_GERENCIAR, P.TAREFAS_DISTRIBUIR, P.TAREFAS_EDITAR_SETOR,
+            P.SERVICOS_VER_SETOR, P.SERVICOS_GERENCIAR, P.TAREFAS_DISTRIBUIR, P.TAREFAS_EDITAR_SETOR, P.TAREFAS_RECEBER,
         ])
-        self.tecnico = self.funcao('Executor', [])
+        self.tecnico = self.funcao('Executor', [P.TAREFAS_RECEBER])
 
         self.ana = criar_usuario(None)
         self.vincular(self.ana, self.ergonomia, self.gestor_execucao)

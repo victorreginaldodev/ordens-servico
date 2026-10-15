@@ -20,9 +20,12 @@ class CatalogoDePermissoesTestCase(APITestCase):
     def test_usuario_sem_vinculo_nao_tem_permissoes(self):
         self.assertEqual(permissoes_do_usuario(criar_usuario(None)), frozenset())
 
-    def test_diretor_e_gestor_comercial_tem_todas(self):
+    def test_diretor_e_gestor_comercial_tem_todas_menos_receber_tarefas(self):
+        # Receber tarefas é por lotação ou por "também executa em", nunca por `setores.todos` (revisão, P2).
         for tipo in (Perfil.DIRETOR, Perfil.GESTOR_COMERCIAL):
-            self.assertEqual(permissoes_do_usuario(criar_usuario(tipo)), frozenset(Permissao))
+            self.assertEqual(
+                permissoes_do_usuario(criar_usuario(tipo)), frozenset(Permissao) - {Permissao.TAREFAS_RECEBER},
+            )
 
     def test_superusuario_tem_todas(self):
         usuario = criar_usuario(Perfil.TECNICO, is_superuser=True)
@@ -230,8 +233,10 @@ class OcultacaoDeValoresTestCase(APITestCase):
 
         self.assertEqual(detalhe.data['valor'], '1500.00')
 
-    def test_edicao_sem_permissao_nao_zera_o_valor(self):
+    def test_edicao_sem_permissao_nao_zera_o_valor_nem_muda_a_observacao(self):
+        """A observação da OS é de pagamento e faturamento (13/10/2026): fica com os valores."""
         self.client.force_authenticate(user=criar_usuario(Perfil.ADMINISTRATIVO))
+        observacao = self.ordem.observacao
 
         # O formulário do frontend reenvia valor e forma de pagamento mesmo sem exibi-los.
         response = self.client.patch(self.detalhe, {
@@ -242,13 +247,14 @@ class OcultacaoDeValoresTestCase(APITestCase):
         self.ordem.refresh_from_db()
         self.assertEqual(self.ordem.valor, 1500)
         self.assertEqual(self.ordem.forma_pagamento, 'pix')
-        self.assertEqual(self.ordem.observacao, 'ajuste')
+        self.assertEqual(self.ordem.observacao, observacao)
 
     def test_criacao_sem_permissao_aceita_o_valor(self):
         self.client.force_authenticate(user=criar_usuario(Perfil.ADMINISTRATIVO))
 
         response = self.client.post(reverse('ordens-servico-list'), {
             'cliente': self.ordem.cliente_id, 'data_venda': str(timezone.localdate()), 'valor': '800.00',
+            'data_acordada_cobranca': str(timezone.localdate()),
         })
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

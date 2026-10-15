@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from apps.organizacoes.models import Funcao
 from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin, escopo_da_permissao, pode_conceder
 from apps.organizacoes.serializers import FuncaoSerializer, PermissaoCatalogoSerializer
+from apps.organizacoes.views.avisos import AvisaSetorSemQuemRecebeMixin
 
 
 @extend_schema_view(
@@ -36,14 +37,17 @@ from apps.organizacoes.serializers import FuncaoSerializer, PermissaoCatalogoSer
     ),
     partial_update=extend_schema(
         summary='Atualizar função parcialmente',
-        description='Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`.',
+        description=(
+            'Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`. A resposta traz '
+            '`avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.'
+        ),
     ),
     destroy=extend_schema(
         summary='Remover função',
         description='Remove a função. Retorna 409 se houver usuários vinculados a ela; nesse caso, desative-a.',
     ),
 )
-class FuncaoViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
+class FuncaoViewSet(AvisaSetorSemQuemRecebeMixin, PermissoesPorAcaoMixin, viewsets.ModelViewSet):
     queryset = Funcao.objects.prefetch_related('permissoes', 'setores').all()
     serializer_class = FuncaoSerializer
     permission_classes = [IsAuthenticated]

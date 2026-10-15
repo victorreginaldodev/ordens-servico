@@ -16,6 +16,7 @@ from apps.contas.serializers import (
     DetalheSerializer,
 )
 from apps.organizacoes.permissoes import Permissao, TemPermissao, eh_diretoria, tem_permissao
+from apps.organizacoes.views.avisos import AvisaSetorSemQuemRecebeMixin, com_avisos_de_quem_recebe
 
 Usuario = get_user_model()
 
@@ -72,7 +73,8 @@ class ProprioUsuarioOuGestor(BasePermission):
         summary='Atualizar usuário parcialmente',
         description=(
             'Atualiza um ou mais campos cadastrais de um usuário. '
-            'Cada usuário pode editar o próprio cadastro; gestores podem editar qualquer usuário.'
+            'Cada usuário pode editar o próprio cadastro; gestores podem editar qualquer usuário. '
+            'A resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.'
         ),
     ),
     destroy=extend_schema(
@@ -83,7 +85,7 @@ class ProprioUsuarioOuGestor(BasePermission):
         ),
     ),
 )
-class UsuarioViewSet(viewsets.ModelViewSet):
+class UsuarioViewSet(AvisaSetorSemQuemRecebeMixin, viewsets.ModelViewSet):
     queryset = Usuario.objects.prefetch_related('vinculos_setor__setor', 'vinculos_setor__funcao').order_by('nome_completo')
     dica_exclusao_bloqueada = 'Desative o usuário em vez de excluí-lo.'
 
@@ -195,7 +197,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         summary='Desativar usuário',
         description=(
             'Marca um usuário como inativo, bloqueando o acesso ao sistema. '
-            'Requer perfil Gestor ou superior. Não é possível desativar o próprio usuário.'
+            'Requer perfil Gestor ou superior. Não é possível desativar o próprio usuário. '
+            'A resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.'
         ),
         request=None,
         responses={
@@ -212,6 +215,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 {'detail': 'Não é possível desativar o próprio usuário.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        usuario.is_active = False
-        usuario.save(update_fields=['is_active'])
-        return Response({'detail': f'Usuário {usuario.nome_completo} desativado com sucesso.'})
+        def desativar_usuario():
+            usuario.is_active = False
+            usuario.save(update_fields=['is_active'])
+            return Response({'detail': f'Usuário {usuario.nome_completo} desativado com sucesso.'})
+
+        return com_avisos_de_quem_recebe(desativar_usuario)

@@ -35,6 +35,27 @@ class Setor(models.Model):
     def tem_membro(self, usuario):
         return self.membros_ativos().filter(usuario=usuario).exists()
 
+    def recebedores(self):
+        """Quem pode ser responsável por tarefas deste setor (revisão de permissões, P1 e P2): lotado aqui com
+        uma função ativa que tem `tarefas.receber`, ou com este setor em "também executa em". `setores.todos`
+        não estende `tarefas.receber`: a diretoria recebe onde estiver lotada com ela ou onde também executa."""
+        from django.contrib.auth import get_user_model
+        from django.db.models import Q
+
+        from apps.organizacoes.permissoes import Permissao
+
+        usuarios = get_user_model().objects.filter(is_active=True)
+        if not self.ativo:
+            return usuarios.none()
+        lotados = Q(
+            vinculos_setor__setor=self, vinculos_setor__funcao__ativo=True,
+            vinculos_setor__funcao__permissoes__permissao=Permissao.TAREFAS_RECEBER,
+        )
+        return usuarios.filter(lotados | Q(atuacoes__setor=self)).distinct()
+
+    def recebe_tarefas(self, usuario):
+        return self.recebedores().filter(pk=getattr(usuario, 'pk', usuario)).exists()
+
     def organizadores(self):
         """Membros do setor cuja função tem as permissões de organização (ADR 0008, 1). A diretoria, que
         atua em todos os setores por `setores.todos`, não conta: ela pode agir, mas não organiza o setor."""

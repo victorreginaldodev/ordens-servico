@@ -53,7 +53,17 @@ class FuncaoSerializer(serializers.ModelSerializer):
         novas = set(attrs.get('codigos_permissao', [])) - set(self.instance.codigos_permissao if self.instance else [])
         if not pode_conceder(usuario, novas):
             raise serializers.ValidationError({'permissoes': 'Você não pode conceder permissões que não tem.'})
+        if 'codigos_permissao' in attrs:
+            self._validar_combinacoes(set(attrs['codigos_permissao']))
         return attrs
+
+    @staticmethod
+    def _validar_combinacoes(codigos):
+        """Registrar cobrança mostra os valores das OS: só com "ver valores" (revisão de permissões, P7)."""
+        if Permissao.FINANCEIRO_REGISTRAR_COBRANCA in codigos and Permissao.FINANCEIRO_VER_VALORES not in codigos:
+            raise serializers.ValidationError({
+                'permissoes': 'Para registrar cobrança, a função também precisa ver valores e condições de pagamento.',
+            })
 
     def create(self, validated_data):
         codigos = validated_data.pop('codigos_permissao', [])
