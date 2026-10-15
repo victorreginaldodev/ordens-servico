@@ -7,7 +7,13 @@ class ClienteListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cliente
-        fields = ['id', 'nome', 'tipo_cliente', 'tipo_cliente_display', 'numero_inscricao', 'ativo']
+        # Traz tudo o que a listagem de clientes do frontend mostra, para a tela
+        # não precisar buscar o detalhe de cada cliente.
+        fields = [
+            'id', 'nome', 'tipo_cliente', 'tipo_cliente_display', 'tipo_inscricao', 'numero_inscricao',
+            'nome_representante', 'setor_representante', 'email_representante', 'contato_representante',
+            'cobranca_revisao_alteracao', 'ativo', 'data_criacao',
+        ]
 
 
 class ClienteSerializer(serializers.ModelSerializer):
