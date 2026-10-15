@@ -17,6 +17,7 @@ class CatalogoApiTestCase(APITestCase):
     def setUp(self):
         self.client.force_authenticate(user=criar_usuario(Perfil.COMERCIAL))
         self.seguranca = setor_padrao()
+        criar_usuario(Perfil.TECNICO)  # catálogo ativo só em setor com quem receba tarefas
 
     def test_cria_catalogo_com_setor_responsavel(self):
         response = self.client.post(reverse('catalogos-list'), {'nome': 'LTCAT', 'setor': self.seguranca.id})
