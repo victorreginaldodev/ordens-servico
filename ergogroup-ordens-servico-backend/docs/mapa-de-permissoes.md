@@ -80,7 +80,8 @@ Modelo proposto: **permissão** (lista fixa no código) → **função** (nome l
 |---|---|---|---|---|
 | Listar catálogos, subitens e catálogo operacional | `GET /api/catalogo/...` | Autenticado | Base | global |
 | Criar, editar e excluir catálogo e subitens | `/catalogos/`, `/subitens/` | Autenticado | `catalogo.gerenciar` | global |
-| Definir o setor de um catálogo | `PATCH /catalogos/<id>/` (`setor`) | Autenticado | `catalogo.gerenciar` | global |
+| Definir o setor de um catálogo | `PATCH /catalogos/<id>/` (`setor`, `mover_servicos_em_aberto`) | Autenticado | `catalogo.gerenciar` | global |
+| Mudar o setor de vários catálogos (14/10/2026) | `POST /catalogos/mudar-setor/` | — | `catalogo.gerenciar` | global |
 | Criar, editar e excluir catálogo operacional | `/catalogos-operacionais/` | Autenticado | `catalogo.gerenciar` | global |
 
 ### 2.6 Ordem de serviço (venda)
@@ -162,7 +163,7 @@ Hoje não tem setor. Até ser incorporada, sugiro manter regras próprias com as
 | `os.gerenciar` | Criar e editar OS (venda, contrato, condições) e seus serviços; criar e editar OS operacional |
 | `os.excluir` | Excluir OS e serviços (apaga o que está abaixo) |
 | `financeiro.ver_valores` | Ver valor e condições de pagamento das OS e os indicadores financeiros |
-| `financeiro.registrar_cobranca` | Registrar cobrança e NF de OS e OS operacional |
+| `financeiro.registrar_cobranca` | Registrar cobrança e NF de OS e OS operacional. **Desde 14/10/2026 exige `financeiro.ver_valores` na mesma função** (o backend recusa a função sem ela) e a tela de Cobranças (`/api/financeiro/cobrancas/`) exige as duas. |
 | `clientes.gerenciar` | Criar, editar e excluir clientes |
 | `catalogo.gerenciar` | Criar, editar e excluir catálogos, subitens e catálogo operacional, e definir o setor do catálogo |
 | `usuarios.gerenciar` | Criar, editar, ativar, desativar e excluir usuários, alterar senhas e definir setores e funções |
@@ -177,6 +178,7 @@ Hoje não tem setor. Até ser incorporada, sugiro manter regras próprias com as
 | `servicos.ver_setor` | Ver OS, serviços e tarefas do setor, a fila de triagem, o painel e a produtividade dos membros do setor |
 | `servicos.gerenciar` | Ajustar prazo, prioridade e estimativas dos serviços do setor e ressincronizar status |
 | `tarefas.distribuir` | Criar, reatribuir e excluir tarefas nos serviços do setor, escolhendo o responsável |
+| `tarefas.receber` | **Recebe tarefas** (14/10/2026): pode ser responsável por tarefas do setor da lotação. Por setor, mas `setores.todos` **não** a estende. Fora da lotação, a pessoa recebe pelos setores em "também executa em". Para concedê-la num setor basta distribuir nele (exceção ao "ninguém concede o que não tem"). Ver `revisao-permissoes-e-setores.md`. |
 | `tarefas.editar_setor` | Editar qualquer tarefa do setor, não só as próprias |
 
 **Base** (todo usuário ativo, sem permissão): ver e editar o próprio perfil e senha; ver e atualizar as próprias tarefas e OS operacionais; ver as OS e serviços em que tem tarefa; ver clientes, catálogos, setores e a lista de usuários.

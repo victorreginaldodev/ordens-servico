@@ -11,7 +11,7 @@ Aceito (10/10/2026), na discussão sobre as views. Cada item diz o que o usuári
 | 4 | Linha do tempo por OS e por serviço | **Decidido** (necessidade); modelagem proposta |
 | 5 | Serviços enviados junto na criação da OS e um aviso por setor | **Decidido** |
 | 6 | Resumo da condição e resumo completo da venda para o Comercial | **Decidido** |
-| 7 | Valor mensal no recorrente | **Decidido** |
+| 7 | Valor mensal no recorrente | **Decidido**; *revisto em 13/10/2026: o recorrente e o valor mensal saíram (ADR 0007, revisão)* |
 | 8 | Quem não vê valores (Administrativo) | **Decidido:** fica como está |
 | 9 | Controle total do financeiro | **Decidido** (requisito); blocos propostos |
 
@@ -66,6 +66,15 @@ Como isso fica garantido:
 - **Substitui** a marcação "aguardando" na tarefa e o "parado há N dias" automático do ADR 0006, seção 6.
 - **Histórico:** cada ciência fica na auditoria e aparece na linha do tempo.
 
+**Revisão de 14/10/2026 (decidida pelo usuário, proposta de UX aprovada):** na tela não ficava claro quando, onde e por que dar a ciência.
+- **Linguagem:** "Parado há N dias" passa a "**Sem andamento** há N dias", e "Estou ciente" passa a "**Explicar a pausa**". Volta ao espírito desta seção: o sistema não rotula o serviço como parado, avisa.
+- **Motivo obrigatório:** a ciência exige o motivo; com "outro", exige também a observação (`POST /api/execucao/servicos/{id}/ciencia/` responde 400 sem eles). Sem motivo, o setor não ficava sabendo nada.
+- **Até quando:** a API devolve `ciencia_ate` (a data em que o aviso volta, se nada mudar), e as linhas de tarefa (`andamento/` e `meus-servicos/`) trazem a pausa do serviço (`servico_ciencia_vigente`, `servico_ciencia_motivo`, `servico_ciencia_observacao`, `servico_ciencia_ate`).
+- **Duas saídas:** se o trabalho andou, o certo é atualizar a tarefa (o aviso some na hora); se está esperando algo, explicar a pausa.
+- **Onde:** também em Meus serviços (o técnico, que sabe o porquê), com um aviso no topo; no painel do setor; e no detalhe do serviço. Quem pode explicar não mudou.
+- **Linha do tempo:** "Fulano explicou a pausa em X (aguardando o cliente)".
+- Detalhes das telas: frontend, `docs/ui/fluxos-e-navegacao.md` §6.2.8.
+
 ### 4. Linha do tempo
 **Decidido (necessidade):** hoje a visão do Comercial é só a lista de OS. Comercial, diretoria, financeiro e setores técnicos precisam ver **o que aconteceu e o que está acontecendo** com uma venda e com cada serviço.
 
@@ -93,6 +102,7 @@ Como isso fica garantido:
 - a criação da OS aceita os serviços vendidos na mesma requisição, numa transação só;
 - ao final, **um e-mail por setor** vai para quem tem `tarefas.distribuir` naquele setor, listando os serviços que chegaram;
 - um serviço acrescentado depois a uma OS existente avisa só o setor dele;
+- desde 15/10/2026, quem registrou a venda não recebe o aviso, mesmo organizando o setor (ADR 0010);
 - o endpoint de serviços avulsos continua existindo para edição.
 
 ### 6. Resumo para o Comercial
@@ -111,7 +121,9 @@ Como isso fica garantido:
 - **Lista de vendas:** cada OS mostra o andamento ("2 de 4 concluídos") e a etapa.
 
 ### 7. Valor mensal no recorrente
-**Decidido:** novo campo `valor_mensal`.
+> **Revisto em 13/10/2026:** o recorrente saiu, e com ele o `valor_mensal` e a "receita recorrente mensal". Ver `docs/faturamento/03-revisao-a-vista-e-parcelado.md`.
+
+**Decidido (10/10/2026):** novo campo `valor_mensal`.
 - No recorrente, `valor_mensal` é obrigatório e `quantidade_parcelas` é o número de meses.
 - O `valor` continua sendo o valor total da venda.
 - O sistema **não calcula** um a partir do outro, porque o comercial pode ter negociado arredondamentos. *Proposta:* o resumo mostra os dois.
@@ -153,6 +165,23 @@ Blocos (implementados na fase 10; detalhes e definições da implementação no 
 - receita recorrente mensal: a soma do `valor_mensal` dos recorrentes ativos.
 
 **Ação de faturar:** é a que já existe (`PATCH /ordens/{id}/cobranca/`), com referência e data.
+
+**Revisão de 14/10/2026 (decidida pelo usuário, implementada):** o financeiro reclamava de três coisas: faltava um
+resumo completo da OS para faturar, a lista de Cobranças destoava das outras listagens e havia o medo de que algo
+concluído nunca chegasse à cobrança. Detalhes em `docs/faturamento/04-proposta-ux-financeiro.md`:
+- **Cobranças** no padrão de listagem (`DataTable`), com as abas **Para faturar** (padrão) · **Em execução** (a
+  previsão) · **Faturadas** (por mês). O motivo da liberação aparece pela regra (`liberar_em`), sem campo novo;
+- **Resumo para faturar** (`/cobrancas/:id`): por que a OS está liberada, o que lançar, os serviços com quem executou
+  e quem finalizou, as pendências e a linha do tempo. Faturar tem duas etapas: conferir e registrar;
+- **Conferência do faturamento** (`GET /api/financeiro/conferencia/`): garantias que devem dar 0 e atenções, com
+  "Corrigir agora". As atenções são:
+  - trabalho concluído com a OS parada;
+  - serviço sem distribuir;
+  - vencimento chegando;
+  - espera do lançamento;
+  - mudanças depois da liberação ou do lançamento;
+- a tarefa cancelada deixou de contar na conclusão do serviço (ADR 0006);
+- e-mails e avisos ao setor ficam para o sistema de notificações (ADR 0010: só e-mail, com resumo diário de pendências).
 
 ## Alternativas consideradas
 - **"Parado" automático:** rejeitado pelo usuário; marcaria como parado quem está esperando algo legítimo.

@@ -1,7 +1,7 @@
 # ADR 0007: Papel do sistema no faturamento
 
 ## Status
-Aceito (10/10/2026). As mudanças no modelo da OS foram aprovadas e **implementadas na camada de dados** (modelo, migrações `ordens_servico/0008` a `0024`, validações, liberação, endpoint de lançamento, auditoria e e-mails). Telas e o bloco de cobranças (ADR 0006, seção 10) ficam para a etapa de visões e endpoints. Detalhes, dados e levantamentos em aberto estão em `docs/faturamento/`.
+Aceito (10/10/2026). **Revisado em 13/10/2026** (proposta implementada, seção "Revisão de 13/10/2026" abaixo): o recorrente saiu e a observação da OS passou a ser a observação de pagamento e faturamento. As mudanças no modelo da OS foram aprovadas e **implementadas na camada de dados** (modelo, migrações `ordens_servico/0008` a `0024`, validações, liberação, endpoint de lançamento, auditoria e e-mails). Telas e o bloco de cobranças (ADR 0006, seção 10) ficam para a etapa de visões e endpoints. Detalhes, dados e levantamentos em aberto estão em `docs/faturamento/`.
 
 ## Contexto
 A demanda: "o faturamento está confuso para o pessoal". O levantamento de 10/10/2026 (`docs/faturamento/01-condicoes-de-pagamento-as-is.md`) mostrou:
@@ -19,7 +19,7 @@ Uma primeira proposta, de gerenciar parcelas e planos de cobrança dentro do sis
    2. **avisar** quando a OS pode ser lançada (liberação: uma vez, na venda ou quando todos os serviços terminarem, como hoje);
    3. **guardar o "check"** do financeiro de que a OS foi lançada no outro sistema, com a referência do lançamento.
 4. **Os nomes são provisórios.** O usuário levantou que talvez nem "faturamento" nem "cobrança" sejam o nome certo do domínio, já que o sistema não fatura nem cobra; ele registra, avisa e confere. Também não se sabe como o financeiro chama o passo "lançado". Os nomes podem mudar quando isso for levantado.
-5. **Contrato substituído pelo recorrente.** O recurso de contrato da OS não está de fato em uso. Os campos de contrato saem e o tipo de condição "recorrente" ocupa esse lugar. Os dados existentes são preservados: a migração copia as informações para a observação da OS antes de remover os campos.
+5. **Contrato substituído pelo recorrente.** *(Revisto em 13/10/2026: o recorrente também saiu; o contrato mensal é um parcelado.)* O recurso de contrato da OS não está de fato em uso. Os campos de contrato saem e o tipo de condição "recorrente" ocupa esse lugar. Os dados existentes são preservados: a migração copia as informações para a observação da OS antes de remover os campos.
 6. **Integração por API:** é desejável lançar automaticamente no outro sistema, **se não der muito trabalho**. O modelo deve ser preparado para isso sem implementar a integração agora.
 7. **A OS operacional está fora deste fluxo** e fora de escopo.
 
@@ -59,3 +59,13 @@ Detalhada na seção 4b de `docs/faturamento/02-proposta-condicoes-de-pagamento.
   - o e-mail de "novo contrato" deixou de existir.
 - Os nomes `cobranca_realizada`, `data_cobranca` e `cobranca_realizada_por` foram mantidos, porque o nome do passo "lançado" ainda é provisório.
 - O check manual de hoje e um lançamento automático no futuro usam o mesmo registro.
+
+## Revisão de 13/10/2026
+Detalhada em `docs/faturamento/03-revisao-a-vista-e-parcelado.md`.
+- **Decidido pelo usuário:** o tipo recorrente sai; ficam à vista e parcelado. A observação da OS é a observação da condição de pagamento e do faturamento (é o uso real dela); não se cria campo novo.
+- **Proposta implementada:**
+  - o vencimento (no parcelado, o da 1ª parcela) é uma data combinada **ou** dias após a emissão da nota (`vencimento_dias_apos_nota`), obrigatório nas vendas novas e nas edições da condição;
+  - as parcelas são sempre mensais (sai `intervalo_parcelas_dias`); saem também `valor_mensal`, `dia_fechamento` e `dia_vencimento`;
+  - a observação fica com os valores: só para quem tem `financeiro.ver_valores`, fora da tela do serviço;
+  - o formulário explica cada campo e avisa as combinações arriscadas de vencimento e liberação.
+- No dev não havia nenhuma OS recorrente nem esses campos preenchidos. A migração `0037` preserva qualquer valor que exista em produção na observação.

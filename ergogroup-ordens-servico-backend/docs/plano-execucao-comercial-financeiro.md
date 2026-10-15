@@ -24,6 +24,8 @@ Base: `docs/telas-blocos-e-endpoints.md` (blocos mapeados) e ADR 0008 (decisões
 | 10 | Blocos do financeiro (cobranças, situação financeira, alerta, indicadores) | ✅ concluída em 10/10/2026 |
 | 11 | Linha do tempo da OS e do serviço | ✅ concluída em 10/10/2026 |
 | 12 | Frontend (projeto `ergogroup-ordens-servico-frontend`) | a fazer, fase a fase |
+| 13 | Ciência de recebimento no serviço e na tarefa — backend (ADR 0009) | ✅ concluída em 14/10/2026 |
+| 14 | Ciência de recebimento — frontend (abas por etapa e melhorias de UI) | ✅ Painel do setor, Visão geral, Meus serviços e detalhe do serviço entregues em 14/10/2026 |
 
 Ordem sugerida: 7 → 8 → 9 → 10 → 11. A fase 11 pode andar em paralelo com a 9 e a 10. O frontend acompanha cada fase do backend.
 
@@ -36,7 +38,7 @@ Ordem sugerida: 7 → 8 → 9 → 10 → 11. A fase 11 pode andar em paralelo co
 | 6.1 | Saem `horas_estimadas` e `complexidade` de `Servico` e `Tarefa`, com as propriedades `*_efetiva(s)`, os campos dos serializers e do admin. Em `apps/analise`, saem `complexidade_media_concluidas` e `horas_estimadas_entregues` da produtividade. A migração registra quantos registros tinham valor. | ADR 0005 |
 | 6.2 | `Servico.prazo` passa a ser calculado: a maior data entre as tarefas não canceladas (vazio sem tarefas). Somente leitura na API. | ADR 0006, 5.1 |
 | 6.3 | `Servico.ultima_movimentacao_em`, atualizado pelo sistema, e ciência do alerta: `alerta_ciente_em`, `alerta_ciente_por`, `alerta_ciente_motivo`, `alerta_ciente_observacao`. Propriedades `dias_sem_movimentacao` e `em_alerta_sem_movimentacao`; método `registrar_ciencia()`. Configuração `DIAS_ALERTA_SEM_MOVIMENTACAO` (7). | ADR 0008, 3 |
-| 6.4 | `OrdemServico.valor_mensal`, obrigatório no recorrente e oculto para quem não tem `financeiro.ver_valores`. | ADR 0008, 7 |
+| 6.4 | `OrdemServico.valor_mensal`, obrigatório no recorrente e oculto para quem não tem `financeiro.ver_valores`. *Removido em 13/10/2026 com o recorrente (`faturamento/03`).* | ADR 0008, 7 |
 
 **Mudanças na API para o frontend:**
 - serviço e tarefa não têm mais `horas_estimadas`, `complexidade` nem os campos `*_efetiva(s)` e `complexidade_servico`;
@@ -172,6 +174,145 @@ Acompanha cada fase, no repositório do frontend:
 - **fase 6:** tirar horas e complexidade; prazo do serviço somente leitura; valor mensal no formulário do recorrente;
 - **fase 7:** formulário da OS envia os serviços junto; lista de responsáveis = equipe do setor;
 - **fases 8 a 11:** páginas montadas a partir dos blocos, com o menu pelas permissões (`docs/telas-blocos-e-endpoints.md`, seção 3).
+
+## Fase 13 — Ciência de recebimento no serviço e na tarefa (backend)
+
+Plano de 14/10/2026 para o ADR 0009. Uma fase só, entregue de uma vez. As regras marcadas como proposta no ADR seguem a recomendação dele.
+
+**Concluída em 14/10/2026 (318 testes passando; 28 novos em `apps/ordens_servico/tests_recebimento.py`).** As migrações ainda **não foram aplicadas no banco de dev compartilhado**.
+
+**Ajustes em relação ao plano abaixo:**
+- **Contadores de Meus serviços** ficaram num endpoint próprio, `GET /api/execucao/meus-servicos/contadores/`, para não mudar o formato da lista de `GET /api/execucao/meus-servicos/` (continua uma lista).
+- **Quem não vê o serviço ou a tarefa recebe 404** nos endpoints de recebimento, como nos outros blocos; o 403 fica para quem vê, mas não pode dar a ciência (ex.: a gestora numa tarefa do técnico). Em lote, um 404 ou 403 em qualquer item não grava nada.
+- **Ciência automática no serviço:** registrada no `Tarefa.save()` na criação da tarefa (cobre a distribuição e o `POST /tarefas/`), com a pessoa do contexto da auditoria. A checagem é feita no banco, para não depender de uma instância desatualizada do serviço.
+- **`?etapa=` inválido** na fila, no andamento e em Meus serviços responde 400.
+- **Swagger:** enums nomeados `EtapaEnum` (serviço), `EtapaTarefaEnum` e `EtapaDaFilaEnum` (`ENUM_NAME_OVERRIDES`).
+- **Teste de setor novo de ponta a ponta (7.5):** continua passando sem mudança; a distribuição registra a ciência automaticamente.
+
+### Antes de começar
+Pontos respondidos pelo usuário em 14/10/2026:
+1. **Serviços abertos sem tarefas hoje (`na_fila`):** ficam **Novo**, sem ciência (ADR 0009, 5).
+2. **Tarefas abertas hoje:** ficam **Nova**, sem ciência (ADR 0009, 5).
+3. **Mudança de prazo da tarefa:** mantém a ciência (ADR 0009, 4).
+4. **Nome no código:** "recebimento" (`recebido_em`, `recebida_em`, endpoints `.../recebimento/`).
+
+Antes da primeira migração: conferir `python manage.py showmigrations ordens_servico auditoria` (banco de dev compartilhado).
+
+### 13.1 Camada de dados
+Uma alteração de schema por migração; a migração de dados é separada (MySQL não desfaz DDL).
+
+| Migração | O que faz |
+|---|---|
+| `ordens_servico/0045_servico_recebido_em` | `Servico.recebido_em` (`DateTimeField`, nulo) |
+| `ordens_servico/0046_servico_recebido_por` | `Servico.recebido_por` (FK para usuário, nulo, `SET_NULL`, `related_name='servicos_recebidos'`) |
+| `ordens_servico/0047_tarefa_recebida_em` | `Tarefa.recebida_em` (`DateTimeField`, nulo) |
+| `ordens_servico/0048_preenche_recebimento` | dados que já existem (ADR 0009, 5): ciência retroativa só para serviços com tarefas e para tarefas em andamento ou concluídas. Sem auditoria de ciência. Registra no log quantos serviços e tarefas recebeu |
+| `auditoria/0005_acao_recebimento` | nova ação `AcaoAuditoria.RECEBIMENTO` ("Ciência de recebimento"), usada no serviço e na tarefa |
+
+Regras de preenchimento (proposta do ADR):
+- serviço com tarefas: `recebido_em` = `criada_em` da primeira tarefa; `recebido_por` vazio;
+- tarefa em andamento ou concluída: `recebida_em` = início da tarefa (meia-noite local de `data_inicio`), ou `criada_em` se não houver início;
+- serviços abertos sem tarefas e tarefas abertas: ficam sem ciência (Novo e Nova).
+
+### 13.2 Regras nos modelos
+**`Servico`** (`models/servico.py`):
+- `registrar_recebimento(por, automatico=False)`: só se o serviço estiver aberto e sem `recebido_em`; grava `recebido_em` e `recebido_por` e chama `registrar_movimentacao()`. A auditoria usa `AcaoAuditoria.RECEBIMENTO` na ciência dada pela pessoa e `AcaoAuditoria.ATUALIZACAO` (motivo "Ciência registrada na distribuição") na automática. Já recebido: não faz nada e devolve `False`.
+- propriedade `recebido` (bool).
+
+**`Tarefa`** (`models/tarefa.py`), no `save()`:
+- status passa a em andamento ou concluída sem `recebida_em` → `recebida_em = agora` (junto com o `data_inicio` que já é preenchido ali);
+- troca de responsável (`responsavel_id` diferente do anterior) → `recebida_em = None`;
+- mudança de prazo e volta para aberta: não mexem em `recebida_em`;
+- **criação de tarefa num serviço sem recebimento** → `servico.registrar_recebimento(por, automatico=True)`, com `por` = usuário do contexto da auditoria (`usuario_do_contexto(get_auditoria_context())`). Cobre a distribuição e a criação pelo `TarefaViewSet` num lugar só. Sem usuário no contexto (shell, script), `recebido_por` fica vazio.
+
+**`Tarefa.registrar_recebimento()`**: só se a tarefa estiver aberta e sem `recebida_em`; grava, registra a auditoria com `AcaoAuditoria.RECEBIMENTO` e chama `servico.registrar_movimentacao()`. Já recebida: não faz nada e devolve `False`.
+
+`recebida_em` não entra em `Tarefa.CAMPOS_DE_MOVIMENTACAO` (quem conta a movimentação é o próprio `registrar_recebimento`).
+
+### 13.3 Etapas
+Em `services/execucao.py`:
+- `Etapa`: sai `NA_FILA`; entram `NOVO = 'novo'` e `A_DISTRIBUIR = 'a_distribuir'`. `ETAPAS` na ordem: `novo`, `a_distribuir`, `distribuido`, `em_execucao`, `concluido`, `cancelado`.
+- `com_etapa()` e `etapa_do_servico()`: depois de "tem tarefas → distribuído", `recebido_em` preenchido → `a_distribuir`; senão `novo`.
+- Nova classe `EtapaTarefa` (`nova`, `a_iniciar`, `em_andamento`, `concluida`, `cancelada`) e `etapa_da_tarefa(tarefa)`: os três últimos vêm do status; aberta com `recebida_em` → `a_iniciar`; senão `nova`. Também como anotação (`com_etapa_da_tarefa(queryset)`) para filtrar no banco.
+
+Ajustar quem usa a etapa:
+- `services/comercial.py`: `filtrar_por_etapa()` com `novo` (`status='aberto'`, sem tarefas, `recebido_em__isnull=True`) e `a_distribuir` (idem, `recebido_em__isnull=False`); `andamento()` passa a contar `novo` e `a_distribuir`;
+- `serializers/execucao_serializer.py` e `serializers/ordem_servico_serializer.py`: a lista `ETAPAS` e o `andamento` (`na_fila` → `novo` + `a_distribuir`);
+- `views/ordem_servico_viewset.py`: o enum do filtro `?etapa=` no Swagger;
+- `services/financeiro.py`: nada muda no código (usa `etapa_do_servico`), só os valores.
+
+### 13.4 Endpoints
+Novos, em `urls_execucao.py`, com a lógica em `services/execucao.py`:
+
+| # | Ação | Endpoint | Permissão | Resposta |
+|---|---|---|---|---|
+| 13.4.1 | Ciência de recebimento dos serviços (um ou vários) | `POST /api/execucao/servicos/recebimento/` `{servicos: [ids]}` | `tarefas.distribuir` no setor de **cada** serviço; se faltar em algum, 403 e nada é gravado | `{recebidos: [ids], ja_recebidos: [ids]}`; serviço inexistente ou que a pessoa não vê → 404; serviço concluído ou cancelado → 400 |
+| 13.4.2 | Ciência de recebimento das tarefas (uma ou várias) | `POST /api/execucao/tarefas/recebimento/` `{tarefas: [ids]}` | ser o responsável de **cada** tarefa; se não for de alguma, 403 e nada é gravado | `{recebidas: [ids], ja_recebidas: [ids]}`; tarefa concluída ou cancelada → 400 |
+
+As duas rodam numa transação. Lista vazia → 400.
+
+Ajustes nos blocos da fase 8:
+
+| Bloco | Ajuste |
+|---|---|
+| 8.1 Setores que acompanho | `na_fila` sai; entram `novos` e `a_distribuir`; `em_andamento` continua (tudo que tem tarefa); entra `tarefas_sem_ciencia` (tarefas ativas do setor na etapa `nova`) |
+| 8.2 Fila | traz as duas etapas (`novo` e `a_distribuir`), com `etapa`, `recebido_em` e `recebido_por_nome` por linha; filtro `?etapa=novo\|a_distribuir`; ordem: novos primeiro, depois os mais antigos. `na_fila_ha_dias` continua (dias desde a chegada) |
+| 8.4 Em andamento e 8.9 Meus serviços | cada linha ganha `etapa` (da tarefa) e `recebida_em`; filtro `?etapa=nova\|a_iniciar\|em_andamento`. os contadores de Meus serviços por etapa (`nova`, `a_iniciar`, `em_andamento`) ficam em `GET /api/execucao/meus-servicos/contadores/` |
+| 8.8 Carga da equipe | por pessoa, `sem_ciencia` (tarefas ativas na etapa `nova`) e `sem_ciencia_mais_antiga_dias` (dias desde a atribuição da mais antiga) |
+| 8.10 Detalhe do serviço | `recebido_em`, `recebido_por_nome`, `pode_confirmar_recebimento`; em cada tarefa, `etapa`, `recebida_em` e `pode_confirmar_recebimento` (só para o responsável) |
+| 8.2 e 8.10, outros serviços da OS | a etapa já vem com os códigos novos |
+
+Ajustes nos serializers de modelo (`/api/ordens-servico/`):
+- `ServicoSerializer`: `recebido_em` e `recebido_por_nome`, somente leitura;
+- `TarefaSerializer` e `TarefaListSerializer`: `recebida_em` e `etapa`, somente leitura. O responsável continua alterando só o `status` da tarefa (`PodeModificarTarefa`); a ciência é pelo endpoint 13.4.2.
+
+**Idade na etapa `nova` da tarefa:** sem data de atribuição (`atribuida_em` continua proposta), a idade da tarefa sem ciência é contada da criação. Uma tarefa reatribuída volta para `nova` com a idade antiga; fica registrado como limitação conhecida.
+
+### 13.5 Linha do tempo
+Em `services/linha_do_tempo.py`:
+- serviço, ação `RECEBIMENTO` → evento `recebimento`: "PGR recebido por Segurança do Trabalho (Fulano)";
+- tarefa, ação `RECEBIMENTO` → evento `tarefa_recebida`: "Beltrano confirmou o recebimento de PGR";
+- a ciência automática (na criação da tarefa e ao começar) **não** gera evento: no serviço ela é registrada como `ATUALIZACAO` sem mudança de status, que o tradutor já ignora; na tarefa ela é só a mudança do campo `recebida_em` dentro do registro da própria tarefa, que o tradutor ignora;
+- `recebido_por_id` entra em `CAMPOS_DE_PESSOA`;
+- os tipos novos entram na documentação do Swagger.
+
+### 13.6 Testes
+Em `tests_blocos_execucao.py`, `tests_regras_execucao.py`, `tests_comercial.py`, `tests_financeiro.py` e no teste de setor novo de ponta a ponta (7.5):
+- etapas do serviço: novo → a distribuir (ciência) → distribuído → em andamento → concluído; excluir todas as tarefas volta para a distribuir;
+- distribuir um serviço novo registra a ciência em nome de quem distribuiu;
+- ciência em lote: tudo ou nada quando falta permissão em um setor; repetir não muda nada; concluído ou cancelado → 400;
+- quem não tem `tarefas.distribuir` no setor recebe 403; diretoria (`setores.todos`) consegue;
+- etapas da tarefa: nova → a iniciar (ciência) → em andamento → concluída; voltar para aberta fica em a iniciar;
+- começar sem ciência registra a ciência; trocar o responsável zera; mudar o prazo mantém;
+- só o responsável dá ciência da tarefa; gestor recebe 403;
+- ciência conta como movimentação (tira o serviço do alerta);
+- contadores do setor, fila com `?etapa=`, carga com `sem_ciencia`, meus serviços com contadores;
+- lista de vendas: `andamento` e `?etapa=novo|a_distribuir`;
+- linha do tempo: os dois eventos novos aparecem; a ciência automática não aparece;
+- migração de dados: serviço com tarefas recebe a ciência retroativa; tarefa em andamento também.
+
+`python manage.py test` inteiro antes do commit.
+
+### 13.7 Documentação ao final
+- ADR 0009: marcar o que foi implementado e as definições tomadas na implementação;
+- `docs/conceitos-de-dominio.md` e `docs/telas-blocos-e-endpoints.md` (e a cópia no frontend): etapas novas e endpoints;
+- este plano: fase 13 concluída, com o número de testes.
+
+**Mudanças na API para o frontend (fase 14):**
+- a etapa `na_fila` não existe mais: `novo` e `a_distribuir` em todo lugar que mostra etapa do serviço (lista de vendas, `?etapa=`, resumo da venda, cobranças, fila, detalhe, outros serviços da OS);
+- contadores do setor: `novos`, `a_distribuir` e `tarefas_sem_ciencia` no lugar de `na_fila`;
+- tarefas com `etapa` e `recebida_em`; meus serviços com `?etapa=` e o endpoint de contadores;
+- dois endpoints novos de ciência, ambos em lote;
+- dois tipos novos na linha do tempo.
+
+## Fase 14 — Ciência de recebimento no frontend
+A planejar depois da fase 13, junto com as melhorias de UI que o usuário quer nessas páginas (abas por etapa no painel do setor e em Meus serviços, filtros do kanban e outras). Segue a regra do frontend: wireframe primeiro, para validar, antes de aplicar no código.
+
+**Painel do setor e Visão geral: entregues em 14/10/2026** (wireframe aprovado pelo usuário). Abas por etapa, filtro "Precisa de atenção", quadro com as mesmas etapas, ciência de recebimento (na linha, em lote e arrastando) e concluídos por mês. Detalhes no frontend, `docs/ui/fluxos-e-navegacao.md` §6.2.6, com os ajustes de uso em §6.2.7 (sem a aba Em aberto, Novos como padrão, quadro sem abas, "Confirmar e distribuir" num clique e barra de filtros sem quebra). O contrato (`docs/api/api-schema.yaml`) e os tipos gerados foram atualizados, e `na_fila` saiu de todo o frontend (vendas, resumo da venda, cobranças e linha do tempo).
+
+**Falta:** Meus serviços com as etapas da tarefa (Novas · A iniciar · Em andamento · Concluídas) e a ciência do técnico; o detalhe do serviço com "Confirmar recebimento" (`pode_confirmar_recebimento`).
+
+**Meus serviços por etapa: aprovado e implementado em 14/10/2026** (`ergogroup-ordens-servico-frontend/docs/ui/plano-meus-servicos-por-etapa.md`). Traz os mesmos princípios do painel para Meus serviços e dois itens pequenos de backend: a data da atribuição da tarefa (`Tarefa.atribuida_em`) e a prioridade da tarefa nas linhas.
 
 ## Pontos ainda abertos (não bloqueiam as fases 7 a 9)
 - Nome do domínio e do passo "lançado" (ADR 0007).

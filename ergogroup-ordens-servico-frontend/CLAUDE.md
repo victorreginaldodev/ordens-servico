@@ -35,7 +35,7 @@ Leia antes de qualquer ação. O projeto tem dois projetos, reunidos num monorep
 3. `conceitos-de-dominio.md`: glossário. Use estes termos.
 4. `mapa-de-permissoes.md`: o que cada permissão libera.
 5. `plano-setores-e-permissoes.md`: fases, fora de escopo e situação dos problemas originais.
-6. `faturamento/01-condicoes-de-pagamento-as-is.md` (estado anterior) e `faturamento/02-proposta-condicoes-de-pagamento.md` (implementada).
+6. `faturamento/01-condicoes-de-pagamento-as-is.md` (estado anterior) e `faturamento/02-proposta-condicoes-de-pagamento.md` (implementada). Revisão de 13/10/2026 (só à vista e parcelado; a observação da OS é de pagamento): `faturamento/03-revisao-a-vista-e-parcelado.md`.
 7. `plano-execucao-comercial-financeiro.md`: fases 6 a 12 do backend (6 a 11 concluídas; a 12 é este frontend).
 
 No frontend:
@@ -58,7 +58,7 @@ No frontend:
   - a cobrança é por OS;
   - o sistema NÃO gerencia parcelas;
   - ele registra as condições, avisa a liberação e guarda o check de lançamento no outro sistema (Asaas, Conta Azul ou SOC, a confirmar);
-  - condição por tipo (`tipo_condicao`: à vista, parcelado, recorrente com `valor_mensal`), `liberar_em` e `referencia_lancamento`; o contrato saiu e virou o recorrente (ADR 0007).
+  - condição por tipo (`tipo_condicao`: à vista ou parcelado, desde 13/10/2026; o recorrente saiu), vencimento por data ou dias após a nota, `liberar_em` e `referencia_lancamento`; a observação da OS é a observação de pagamento (ADR 0007 e `faturamento/03`, com o dicionário dos campos na seção 8).
 - **Execução (backend pronto):** blocos em `/api/execucao/`, `/api/comercial/` e `/api/financeiro/`, e linha do tempo da OS e do serviço. Horas e complexidade saíram; o prazo do serviço é calculado (ADRs 0005, 0006 e 0008).
 
 ### Situação do frontend
@@ -67,7 +67,7 @@ No frontend:
 - As telas antigas de OS e de faturamento foram removidas na R7. Em `features/ordens` ficou só a OS operacional (fora de escopo), que ainda usa `useUserRole`; o resto do app usa `usePermissoes().pode()`.
 - R1 (fluxos e navegação, `docs/ui/fluxos-e-navegacao.md`) e R2 (wireframes em `docs/ui/wireframes/lote*.html`) validadas em 11/10/2026: lista como padrão (quadro opcional), Visão geral para quem tem `setores.todos`, Vendas com indicadores clicáveis e filtros em dropdown.
 - R3 concluída em 11/10/2026: menu novo (`components/layout/navigation.ts`), tela inicial por permissão (`lib/telaInicial.ts`, rota `/inicio`), guarda de rota (`components/common/RequerPermissao.tsx`) e redirecionamento de `/ordens` para `/vendas`. O visual do header, da sidebar e do main NÃO muda (pedido do usuário): só o conteúdo. Meus serviços, Visão geral, Painel do setor e `/servicos/:id` estão como "em construção" até a R4.
-- R4 entregue em 11/10/2026 (falta o teste contra o backend local): `features/execucao/pages/` (Meus serviços, Painel do setor e Visão geral na mesma página, Detalhe do serviço), modais de distribuir, ciência e tarefa, e no kit `Indicadores`, `BarraDeFiltros` e `Chip`. Novas telas de lista seguem esse padrão (indicadores clicáveis + filtros em dropdown).
+- R4 entregue em 11/10/2026 (falta o teste contra o backend local): `features/execucao/pages/` (Meus serviços, Painel do setor e Visão geral na mesma página, Detalhe do serviço), modais de distribuir, ciência e tarefa, e no kit `Indicadores`, `BarraDeFiltros` e `Chip`. Em 14/10/2026 essas três telas passaram ao padrão de listagem (`DataTable`, como Vendas, com visões no lugar dos indicadores e o quadro como alternativa via `renderBoard`); novas telas de lista seguem o `DataTable` (`docs/ui/fluxos-e-navegacao.md` §6.2.4). Cobranças passou ao `DataTable` em 14/10/2026, com o Resumo para faturar e a Conferência do faturamento (backend, `docs/faturamento/04-proposta-ux-financeiro.md`).
 - R5 entregue em 11/10/2026 (falta o teste contra o backend local): `features/vendas/pages/` (Vendas, Nova venda/edição em etapas, Resumo da venda com PDF, acrescentar serviço e exclusão). As telas antigas de OS saíram das rotas e são removidas na R7.
 - R6 entregue em 11/10/2026 (falta o teste contra o backend local): `features/financeiro/pages/` (Cobranças com as três situações, aviso de alerta, filtros e registrar lançamento; situação financeira da OS em `/cobrancas/:id`) e os indicadores novos na Análise financeira. A tela antiga de faturamento saiu das rotas e é removida na R7.
 - R7 concluída em 11/10/2026: setores com "sem quem organize" e organizadores, avisos do catálogo ao salvar, remoção do legado (telas antigas de OS e faturamento, código morto), Análise operacional sem horas e complexidade, tipos gerados na organização e no time.

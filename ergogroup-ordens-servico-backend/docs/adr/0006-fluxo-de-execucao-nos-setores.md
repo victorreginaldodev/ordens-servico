@@ -32,7 +32,7 @@ O modelo de dados pode não estar no nível ideal para isso, e esse trabalho vir
 1. **O que ela faz quando chega uma OS:** provavelmente a triagem, isto é, distribuir entre os técnicos o que cada um vai fazer dentro do serviço. Pode haver agendamento e contato com o cliente; se houver algo além da triagem, fica como ideia de funcionalidade futura, a ser confirmada com ela.
 2. **Distribuição:** na maioria das vezes um serviço pertence a um técnico, mas há serviços distribuídos para mais de um. É preciso avaliar se a forma atual de gerenciar isso é a mais eficiente para o controle do setor.
 3. **Bloqueios ("aguardando"):** provavelmente útil. A prioridade é **agilidade**: quem executa ou faz qualquer ação no sistema não pode perder tempo. Registrar "aguardando" deve ser no mínimo **opcional**, e a equipe escolhe se usa. O usuário pediu avaliação crítica.
-4. **Conclusão:** hoje o sistema não acompanha a entrega do laudo ao cliente. O serviço está concluído quando todas as tarefas estão concluídas. A entrega ao cliente pode virar funcionalidade futura.
+4. **Conclusão:** hoje o sistema não acompanha a entrega do laudo ao cliente. O serviço está concluído quando todas as tarefas estão concluídas (as canceladas não contam, decidido em 14/10/2026, `faturamento/04`). A entrega ao cliente pode virar funcionalidade futura.
 5. **Prazos:** ao distribuir as tarefas, ela gosta de definir o prazo final de cada uma. O sistema deve oferecer controle de prazo de nível profissional, **sem colocar nada disso no catálogo** e **sem estimativa automática**. A duração depende do tipo de serviço, do cliente e da tarefa, com fatores externos que fazem um serviço levar X ou 2X dias (ADR 0005).
 6. **Carga por pessoa:** sem definição; o usuário pediu uma sugestão baseada no domínio.
 7. **Frequência:** provavelmente todo dia de manhã, ou à tarde. É o período em que ela distribui as tarefas do setor.
@@ -77,7 +77,8 @@ Chegou  →  Distribuído  →  Em execução  →  Concluído
 ```
 - As perguntas da gestão são perguntas sobre esse fluxo: o que chegou, o que está em andamento e com quem, o que está atrasado e o que foi concluído.
 - Hoje o status "aberto" do serviço mistura "chegou e ninguém olhou" com "distribuído, mas ninguém começou". As visões de trabalho precisam separar as duas situações. Hoje a separação pode ser derivada: o serviço tem ou não tem tarefas.
-- **Concluído** = todas as tarefas concluídas. A entrega ao cliente não faz parte do fluxo por enquanto.
+- **Concluído** = todas as tarefas concluídas (as canceladas não contam; 14/10/2026). A entrega ao cliente não faz parte do fluxo por enquanto.
+- **Completado pelo ADR 0009 (14/10/2026):** "Chegou" passa a ter duas etapas, separadas pela ciência do setor: **Novo** (ninguém do setor deu ciência) e **A distribuir** (o setor deu ciência e falta distribuir). A tarefa ganha a ciência do responsável: **Nova** e **A iniciar**.
 
 ### 2. O que cada setor executa
 - Um setor executa os serviços cujo catálogo tem ele como responsável (ADR 0004).

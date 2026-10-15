@@ -100,13 +100,15 @@ Em cada bloco, a permissão exigida e o endpoint candidato são **propostas**. O
 ### Setor de execução
 | Bloco | O que mostra / faz | Permissão (proposta) | Endpoint (proposta) |
 |---|---|---|---|
-| Fila de triagem | O que chegou ao setor e ainda não foi distribuído (serviços sem tarefa), com cliente, OS e data da venda; opção de agrupar por cliente/OS | `servicos.ver_setor` + `tarefas.distribuir` no setor | novo: `GET /api/execucao/fila/?setor=` |
+| Fila de triagem | O que chegou ao setor e ainda não foi distribuído (serviços sem tarefa), com cliente, OS e data da venda; opção de agrupar por cliente/OS. Separa **novos** (sem ciência do setor) e **a distribuir** (ADR 0009) | `servicos.ver_setor` + `tarefas.distribuir` no setor | novo: `GET /api/execucao/fila/?setor=&etapa=novo\|a_distribuir` |
+| Confirmar recebimento (setor) | Ciência do setor de que os serviços chegaram, um ou vários de uma vez (ADR 0009) | `tarefas.distribuir` no setor de cada serviço | novo: `POST /api/execucao/servicos/recebimento/` |
+| Confirmar recebimento (responsável) | Ciência do técnico de que a tarefa é dele, uma ou várias de uma vez (ADR 0009) | ser o responsável | novo: `POST /api/execucao/tarefas/recebimento/` |
 | Ação de distribuir | Responsável + prazo em um passo (cria a tarefa); "dividir entre técnicos" acrescenta tarefas | `tarefas.distribuir` no setor | novo: `POST /servicos/{id}/distribuir/`; dividir: existe `POST /tarefas/` |
 | Em andamento por responsável | O que está em execução, agrupado por pessoa | `servicos.ver_setor` | novo: `GET /api/execucao/andamento/?setor=` |
 | Atrasados e sem movimentação | Prazo vencido; alerta de serviço sem movimentação há 7 dias, com "estou ciente" e motivo (ADR 0008, substitui "aguardando" e "parado") | `servicos.ver_setor` | novo: `GET /api/execucao/alertas/?setor=`; ciência: `POST /api/execucao/servicos/{id}/ciencia/` |
 | Concluídos no período | O que o setor concluiu entre duas datas | `servicos.ver_setor` | novo: `GET /api/execucao/concluidos/?setor=&de=&ate=` |
 | Carga da equipe | Por pessoa: itens ativos por faixa de prazo e idade do que está com ela (sem horas) | `servicos.ver_setor` | novo: `GET /api/execucao/carga/?setor=` |
-| Meus serviços | Para quem executa: o que está comigo, o que vence primeiro e o que está atrasado | nenhuma (só o próprio) | novo: `GET /api/execucao/meus-servicos/` |
+| Meus serviços | Para quem executa: o que está comigo, o que vence primeiro e o que está atrasado; por etapa da tarefa (nova, a iniciar, em andamento) | nenhuma (só o próprio) | novo: `GET /api/execucao/meus-servicos/?etapa=` e `GET /api/execucao/meus-servicos/contadores/` |
 | Detalhe do serviço | Tarefas, responsáveis, prazo, aguardando, histórico e **os outros serviços da mesma OS** com o status de cada um | quem vê o serviço (regra de visibilidade atual) | existe em parte: `GET /servicos/{id}/`; **falta** a lista dos outros serviços da OS; histórico: existe a auditoria |
 
 ### Financeiro

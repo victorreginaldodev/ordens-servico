@@ -25,15 +25,18 @@ Leia antes de qualquer ação. O projeto tem dois projetos, reunidos num monorep
    - 0005: prazo como único parâmetro de planejamento;
    - 0006: fluxo de execução nos setores;
    - 0007: papel do sistema no faturamento;
-   - 0008: acompanhamento da execução, linha do tempo, visão comercial e controle financeiro.
+   - 0008: acompanhamento da execução, linha do tempo, visão comercial e controle financeiro;
+   - 0009: ciência de recebimento no serviço e na tarefa (plano na fase 13);
+   - 0010: notificações por e-mail (quatro e-mails de ação e o resumo diário de pendências).
 
    Cada ADR diz o que está aceito e o que é proposta.
-2. `telas-blocos-e-endpoints.md`: telas, blocos de informação, quem vê o quê (permissões) e endpoints candidatos. Também há uma cópia no frontend.
-3. `conceitos-de-dominio.md`: glossário. Use estes termos.
-4. `mapa-de-permissoes.md`: o que cada permissão libera.
-5. `plano-setores-e-permissoes.md`: fases, fora de escopo e situação dos problemas originais.
-6. `faturamento/01-condicoes-de-pagamento-as-is.md` (estado anterior) e `faturamento/02-proposta-condicoes-de-pagamento.md` (implementada na camada de dados).
-7. `docs/adr/0008-acompanhamento-linha-do-tempo-comercial-e-financeiro.md` e `docs/plano-execucao-comercial-financeiro.md` — decisões e plano das próximas fases.
+2. `modulos/`: documentação funcional de cada módulo (regras de negócio, fluxo básico, telas e endpoints), escrita a partir do código atual. Completa desde 15/10/2026: 10 módulos (organização, vendas, execução, financeiro, catálogo, clientes, indicadores, linha do tempo e auditoria, notificações, acesso e navegação), com os pontos em aberto no README. Ao mudar uma regra, atualize o módulo.
+3. `telas-blocos-e-endpoints.md`: telas, blocos de informação, quem vê o quê (permissões) e endpoints candidatos. Também há uma cópia no frontend.
+4. `conceitos-de-dominio.md`: glossário. Use estes termos.
+5. `mapa-de-permissoes.md`: o que cada permissão libera.
+6. `plano-setores-e-permissoes.md`: fases, fora de escopo e situação dos problemas originais.
+7. `faturamento/01-condicoes-de-pagamento-as-is.md` (estado anterior) e `faturamento/02-proposta-condicoes-de-pagamento.md` (implementada na camada de dados). Revisão de 13/10/2026 (só à vista e parcelado; a observação da OS é de pagamento): `faturamento/03-revisao-a-vista-e-parcelado.md`.
+8. `docs/adr/0008-acompanhamento-linha-do-tempo-comercial-e-financeiro.md` e `docs/plano-execucao-comercial-financeiro.md` — decisões e plano das próximas fases.
 
 No frontend: `docs/ui/` (design system, UI kit, plano de setores e time, wireframes).
 

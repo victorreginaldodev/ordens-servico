@@ -103,6 +103,15 @@ Os 43 usuários do dev foram vinculados, e o acesso foi conferido usuário a usu
 - A `Organizacao` guarda dados cadastrais básicos: nome, razão social, CNPJ, inscrições, contato e endereço. É a base da futura tela de configurações; a Ergogroup foi criada por migração.
 - No pedido do usuário apareceu "nome, dar o grupo, razão social". **Um campo de grupo econômico não foi criado**; falta confirmar se é necessário.
 
+### Revisão de permissões e setores (14/10/2026, aprovada pelo usuário; detalhes em `docs/revisao-permissoes-e-setores.md`)
+- **Lotação e atuação separadas:** o vínculo continua único (a lotação). "Também executa em" (`AtuacaoEmSetor`, na pessoa) lista os setores em que ela também recebe tarefas, sem nenhuma permissão de gestão lá. Quem marca um setor precisa gerenciar usuários e distribuir nele.
+- **`tarefas.receber` ("Recebe tarefas"):** permissão por setor; `setores.todos` não a estende. Recebe tarefas no setor S quem está lotado em S com uma função que a tem, ou tem S em "também executa em". Concedê-la num setor exige só distribuir nele (exceção ao "ninguém concede o que não tem"; vale no backend e no frontend, `podeConceder`).
+- **Registrar cobrança exige ver valores:** uma função com `financeiro.registrar_cobranca` precisa ter `financeiro.ver_valores` (400 ao salvar a função), e a tela de Cobranças exige as duas.
+- **Gestor Técnico sem ver valores por padrão** (migração `organizacoes/0022`); a diretoria pode reativar na função.
+- **Organizador só em setor que executa:** `organizadores` e `sem_organizador` só valem para setor com catálogo ativo; a diretoria não aparece como organizadora da Diretoria.
+- **Tela de funções** (frontend): permissões agrupadas (Vendas, Execução, Financeiro, Cadastros, Pessoas e organização, Indicadores e auditoria), nome em linguagem de tela, escopo visível ("No setor da pessoa" ou "Empresa toda") e a prévia "Quem tem esta função vê no menu".
+- **Pendente (decisão do usuário, P3):** revisar as funções existentes (Gestor Comercial igual ao Diretor, Técnico com `clientes.gerenciar`, nomes iguais aos dos setores etc.). É configuração na tela de Funções, sem código.
+
 ## Alternativas consideradas
 - **Função por setor (cada função pertence a um único setor):** rejeitada, porque impede reaproveitar uma função genérica (ex.: "Gestor de Área") em vários setores.
 - **Permissões marcadas direto em cada usuário:** rejeitada; com dezenas de usuários vira configuração repetida e sujeita a erro. A função funciona como molde, e exceções por usuário podem ser acrescentadas no futuro.

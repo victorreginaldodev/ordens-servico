@@ -19,6 +19,12 @@ Na mesma época, a gestora da área técnica decidiu que horas estimadas e compl
 6. **API do catálogo:** os campos são listados explicitamente (sem `fields = '__all__'`) e a resposta inclui `setor_nome`.
 7. **Horas estimadas e complexidade saíram do catálogo** (migrações `catalogo/0004` e `0005`). Antes de remover as colunas, os valores foram copiados para os serviços que ainda os herdavam. O catálogo operacional manteve esses campos porque a OS operacional está fora desta sprint. Para serviço e tarefa, ver ADR 0005.
 
+### Revisão de 14/10/2026 (aprovada pelo usuário; P5 e P6 de `docs/revisao-permissoes-e-setores.md`)
+- **Catálogo ativo só em setor com quem receba tarefas:** criar, mudar de setor ou reativar um catálogo ativo num setor sem ninguém que receba tarefas é recusado (400). O aviso de "setor sem quem organize" continua só como aviso.
+- **Mudar o setor pode levar os serviços em aberto:** ao mudar o setor de um catálogo (um a um ou em lote, `POST /api/catalogo/catalogos/mudar-setor/`), quem muda escolhe se os serviços **abertos e ainda sem tarefas** (novo ou a distribuir; `servicos_em_aberto` no catálogo) vão junto. Eles voltam a "novo" no setor de destino (o recebimento é zerado), a mudança fica na auditoria e o setor recebe o aviso de chegada. Os serviços com tarefas, em andamento ou concluídos ficam no setor antigo.
+- **Papel do setor** (derivado, sem campo novo): `catalogos_ativos`, `executa_servicos`, `recebem_tarefas` e `sem_quem_receba` na API de setores; a tela de Setores mostra "Executa N catálogos" ou "Não executa serviços" e os avisos.
+- **Pendente:** mover os 9 catálogos "ERGONOMIA - …" para Ergonomia depende de Ergonomia ter quem receba tarefas (hoje não tem ninguém); depois disso, é feito na tela do catálogo ("Mudar setor em lote").
+
 ## Alternativas consideradas
 - **Setor definido na venda:** rejeitado, porque quem vende não precisaria conhecer a estrutura técnica e haveria divergência entre vendedores.
 - **Setor do serviço sempre lido do catálogo, sem cópia:** rejeitado, porque mudar o catálogo de setor reescreveria o histórico.
