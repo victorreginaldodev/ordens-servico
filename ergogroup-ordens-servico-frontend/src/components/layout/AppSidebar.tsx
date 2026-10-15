@@ -4,6 +4,7 @@ import { ChevronDown, PanelLeftClose, PanelLeftOpen, Sparkles, X } from 'lucide-
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { cn } from '@/lib/utils';
+import { Marca, MarcaSimbolo } from './Marca';
 import { findActiveNav, visibleNavGroups, type NavItem } from './navigation';
 import { UserMenu } from './UserMenu';
 
@@ -56,7 +57,7 @@ function NavLinkItem({ item, active, collapsed, onNavigate }: { item: NavItem; a
 }
 
 /** Sidebar do layout "painel inset" (docs/ui/wireframes/navegacao.html, direção A). */
-export function AppSidebar({ collapsed: collapsedProp, onToggle, variant = 'rail', onNavigate, onOpenNews }: AppSidebarProps) {
+export function AppSidebar({ collapsed: collapsedProp, onToggle, variant = 'rail', onNavigate, onOpenNews}: AppSidebarProps) {
   const { pathname } = useLocation();
   const { podeAlguma } = usePermissoes();
   const [closedGroups, setClosedGroups] = useState<string[]>(readClosedGroups);
@@ -85,38 +86,49 @@ export function AppSidebar({ collapsed: collapsedProp, onToggle, variant = 'rail
         variant === 'drawer' ? 'w-full' : collapsed ? 'w-16' : 'w-60',
       )}
     >
-      {/* Marca */}
-      <div className={cn('flex h-14 shrink-0 items-center gap-2', collapsed ? 'justify-center' : 'pl-4 pr-2')}>
-        {!collapsed ? (
-          <Link to="/inicio" onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md">
-            <img src="/images/logos/logo-ergo.png" alt="" className="size-8 shrink-0 object-contain" />
-            <span className="min-w-0">
-              <span className="block truncate text-base font-bold leading-5 tracking-tight">
-                ERGO<span className="text-primary">GROUP</span>
-              </span>
-              <span className="block truncate text-xs text-muted-foreground">Gestão de OS</span>
-            </span>
-          </Link>
-        ) : null}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={onToggle}
-              aria-label={toggleLabel}
-              className={cn(
-                'grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-[opacity,colors] hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                variant === 'rail' && !collapsed && 'opacity-0 group-hover/sidebar:opacity-100',
-              )}
-            >
-              <ToggleIcon className="size-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {toggleLabel}
-            {variant === 'rail' ? <kbd className="ml-2 rounded border px-1 text-2xs">[</kbd> : null}
-          </TooltipContent>
-        </Tooltip>
+      {/* Marca e recolher. Recolhida: o símbolo vira o botão de expandir ao passar o mouse. */}
+      <div className={cn('flex h-14 shrink-0 items-center gap-2', collapsed ? 'justify-center' : 'pl-3.5 pr-2.5')}>
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onToggle}
+                aria-label={toggleLabel}
+                className="group/marca grid size-9 place-items-center rounded-lg transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <MarcaSimbolo className="size-7 group-hover/marca:hidden group-focus-visible/marca:hidden" />
+                <ToggleIcon className="hidden size-4 text-muted-foreground group-hover/marca:block group-focus-visible/marca:block" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {toggleLabel}
+              <kbd className="ml-2 rounded border px-1 text-2xs">[</kbd>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <>
+            <Link to="/inicio" onClick={onNavigate} aria-label="Tela inicial" className="min-w-0 flex-1 rounded-md">
+              <Marca />
+            </Link>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onToggle}
+                  aria-label={toggleLabel}
+                  className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ToggleIcon className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {toggleLabel}
+                {variant === 'rail' ? <kbd className="ml-2 rounded border px-1 text-2xs">[</kbd> : null}
+              </TooltipContent>
+            </Tooltip>
+          </>
+        )}
       </div>
 
       {/* Navegação */}

@@ -1,4 +1,5 @@
-import { CirclePlus } from 'lucide-react';
+import { useState } from 'react';
+import { CirclePlus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,15 +11,27 @@ export interface DataTableFacetedFilterProps {
   options: Array<FacetOption & { count: number }>;
   selected: string[];
   onChange: (values: string[]) => void;
+  /** Campo de busca no topo da lista (listas longas, como clientes). */
+  searchable?: boolean;
 }
 
+const normalize = (v: string) =>
+  v
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+
 /** Botão "+ Status" → lista de opções com checkbox e contagem. */
-export function DataTableFacetedFilter({ label, options, selected, onChange }: DataTableFacetedFilterProps) {
+export function DataTableFacetedFilter({ label, options, selected, onChange, searchable }: DataTableFacetedFilterProps) {
+  const [busca, setBusca] = useState('');
+  const termo = normalize(busca.trim());
+  const visiveis = termo ? options.filter((o) => normalize(o.label).includes(termo)) : options;
+
   const toggle = (value: string, checked: boolean) =>
     onChange(checked ? [...selected, value] : selected.filter((v) => v !== value));
 
   return (
-    <Popover>
+    <Popover onOpenChange={(open) => !open && setBusca('')}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -32,18 +45,35 @@ export function DataTableFacetedFilter({ label, options, selected, onChange }: D
           ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-60 p-1">
+      <PopoverContent align="start" className={cn('p-1', searchable ? 'w-80' : 'w-60')}>
         <p className="px-2 pb-1 pt-1.5 text-xs font-semibold text-muted-foreground">{label}</p>
-        {options.map((o) => {
-          const checked = selected.includes(o.value);
-          return (
-            <label key={o.value} className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent">
-              <Checkbox checked={checked} onCheckedChange={(c) => toggle(o.value, c === true)} />
-              <span className="flex-1 truncate">{o.label}</span>
-              <span className="text-xs tabular-nums text-muted-foreground">{o.count}</span>
-            </label>
-          );
-        })}
+        {searchable ? (
+          <label className="mx-1 mb-1 flex h-8 items-center gap-2 rounded-md border bg-background px-2 focus-within:border-primary">
+            <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder={`Buscar ${label.toLowerCase()}`}
+              aria-label={`Buscar ${label.toLowerCase()}`}
+              className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </label>
+        ) : null}
+        <div className={cn(searchable && 'max-h-72 overflow-y-auto')}>
+          {visiveis.map((o) => {
+            const checked = selected.includes(o.value);
+            return (
+              <label key={o.value} className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent">
+                <Checkbox checked={checked} onCheckedChange={(c) => toggle(o.value, c === true)} />
+                <span className="flex-1 truncate" title={o.label}>
+                  {o.label}
+                </span>
+                <span className="text-xs tabular-nums text-muted-foreground">{o.count}</span>
+              </label>
+            );
+          })}
+          {searchable && !visiveis.length ? <p className="px-2 py-3 text-center text-xs text-muted-foreground">Nada encontrado.</p> : null}
+        </div>
         {selected.length ? (
           <button
             type="button"

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   flexRender,
@@ -14,6 +14,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Columns3,
   Ellipsis,
   LayoutGrid,
   List,
@@ -37,10 +38,12 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/kit';
 import { usePermissoes } from '@/hooks/usePermissoes';
+import { dentroDoPeriodo, intervaloDoPeriodo, periodoDosValores, rotuloDoPeriodo, valoresDoPeriodo } from '@/lib/periodo';
 import { cn } from '@/lib/utils';
 import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { DataTableFacetedFilter } from './DataTableFacetedFilter';
 import { DataTablePagination } from './DataTablePagination';
+import { DataTablePeriodFilter } from './DataTablePeriodFilter';
 import { DataTableViews } from './DataTableViews';
 import { useDataTableUrlState, type FacetFilters } from './useDataTableUrlState';
 import { useTablePreferences } from './useTablePreferences';
@@ -48,6 +51,7 @@ import type {
   DataTableColumn,
   DataTableEmptyStates,
   DataTableFacet,
+  DataTablePeriodFilter as PeriodFilter,
   DataTableRowAction,
   DataTableSearch,
   DataTableView,
@@ -69,11 +73,18 @@ export interface DataTableProps<T> {
   defaultView?: string;
   search?: DataTableSearch<T>;
   facets?: DataTableFacet<T>[];
+  /** Filtro(s) por período de uma data (ex.: data da venda), ao lado dos filtros facetados. */
+  periodFilter?: PeriodFilter<T> | PeriodFilter<T>[];
   defaultSort?: { id: string; desc?: boolean };
   /** Ações secundárias no menu ⋯ da linha. */
   rowActions?: (row: T) => DataTableRowAction<T>[];
   /** Ação principal visível na linha (ex.: "Registrar cobrança"). Tem prioridade sobre o menu. */
   renderRowAction?: (row: T) => React.ReactNode;
+  /**
+   * Coluna de ações com cabeçalho visível (ex.: "Ações") e largura própria, para telas em que a ação principal
+   * é um botão com texto. Sem ela, a coluna é estreita e sem título (só o menu ⋯).
+   */
+  actionsColumn?: { header: string; width: string };
   /** Botões extras à direita da toolbar. */
   toolbarActions?: React.ReactNode;
   /** Conteúdo extra no rodapé, recebe as linhas da página atual (ex.: total em R$). */
@@ -101,6 +112,19 @@ export interface DataTableProps<T> {
   renderCard?: (row: T) => React.ReactNode;
   /** Na visão em cards, agrupa os registros da página por este rótulo (ex.: setor). */
   cardGroupBy?: (row: T) => string;
+  /**
+   * Quadro em colunas desenhado pela tela (ex.: kanban por etapa). Recebe todos os registros filtrados e
+   * ordenados, sem paginação. Com ele, a alternância da toolbar ganha a opção Quadro.
+   */
+  renderBoard?: (rows: T[]) => React.ReactNode;
+  /**
+   * No quadro, as colunas fazem o papel das visões: as abas somem e o quadro recebe todos os registros da
+   * busca e dos filtros. `facets` e `periodFilter` daqui substituem os da tabela no quadro (sem eles, valem
+   * os da tabela).
+   */
+  boardReplacesViews?: boolean | { facets?: DataTableFacet<T>[]; periodFilter?: PeriodFilter<T>[] };
+  /** Ações à direita da linha das visões (ex.: uma ação em lote da visão escolhida). */
+  viewsActions?: React.ReactNode;
   /** Visão inicial, antes de a pessoa escolher uma (a escolha fica salva por tabela). */
   defaultLayout?: Layout;
 }
@@ -128,9 +152,11 @@ export function DataTable<T>({
   defaultView,
   search,
   facets = [],
+  periodFilter,
   defaultSort,
   rowActions,
   renderRowAction,
+  actionsColumn,
   toolbarActions,
   footerSummary,
   isLoading,
@@ -146,10 +172,28 @@ export function DataTable<T>({
   gridLines = true,
   renderCard,
   cardGroupBy,
+  renderBoard,
+  boardReplacesViews,
+  viewsActions,
   defaultLayout = 'tabela',
 }: DataTableProps<T>) {
   const navigate = useNavigate();
+  const isPeriod = (k: string) => periodFilters.some((p) => p.id === k);
   const searchRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // A tabela não coube na largura? Então rola na horizontal em vez de ser cortada pela moldura.
+  const [overflows, setOverflows] = useState(false);
+  useEffect(() => {
+    const wrap = scrollRef.current;
+    const tableEl = wrap?.querySelector('table');
+    if (!wrap || !tableEl || typeof ResizeObserver === 'undefined') return;
+    const check = () => setOverflows(tableEl.scrollWidth > wrap.clientWidth + 1);
+    const ro = new ResizeObserver(check);
+    ro.observe(wrap);
+    ro.observe(tableEl);
+    check();
+    return () => ro.disconnect();
+  }, []);
   const veValores = usePermissoes().pode('financeiro.ver_valores');
   const showFinancial = canViewFinancial ?? veValores;
 
@@ -159,9 +203,21 @@ export function DataTable<T>({
     [columns, showFinancial],
   );
   const columnById = useMemo(() => new Map(visibleColumns.map((c) => [c.id as string, c])), [visibleColumns]);
+
+  // ── Preferências (a visão em quadro pode trocar as abas e os filtros) ────────
+  const prefs = useTablePreferences(id, {
+    layout: defaultLayout,
+    pageSize: defaultPageSize,
+    hiddenColumns: visibleColumns.filter((c) => c.meta?.priority === 3).map((c) => c.id as string),
+  });
+  const boardOwnsViews = !!renderBoard && prefs.layout === 'quadro' && !!boardReplacesViews;
+  const boardConfig = typeof boardReplacesViews === 'object' ? boardReplacesViews : {};
+  const effectiveFacets = (boardOwnsViews && boardConfig.facets) || facets;
+  const effectivePeriod = boardOwnsViews && boardConfig.periodFilter ? boardConfig.periodFilter : periodFilter;
+  const periodFilters = useMemo(() => (Array.isArray(effectivePeriod) ? effectivePeriod : effectivePeriod ? [effectivePeriod] : []), [effectivePeriod]);
   const activeFacets = useMemo(
-    () => facets.filter((f) => f.getValue || columnById.get(f.columnId)?.meta?.facetValue),
-    [facets, columnById],
+    () => effectiveFacets.filter((f) => f.getValue || columnById.get(f.columnId)?.meta?.facetValue),
+    [effectiveFacets, columnById],
   );
   /** Valores do registro para um filtro, sempre como lista. */
   const facetValuesOf = useMemo(() => {
@@ -175,17 +231,23 @@ export function DataTable<T>({
   }, [activeFacets, columnById]);
   const hideableColumns = useMemo(() => visibleColumns.filter((c) => (c.meta?.priority ?? 1) >= 2), [visibleColumns]);
 
-  // ── Preferências e estado na URL ────────────────────────────────────────────
-  const prefs = useTablePreferences(id, {
-    layout: defaultLayout,
-    pageSize: defaultPageSize,
-    hiddenColumns: visibleColumns.filter((c) => c.meta?.priority === 3).map((c) => c.id as string),
-  });
+  // ── Estado na URL ───────────────────────────────────────────────────────────
   const firstView = defaultView ?? views?.[0]?.id;
   const { state, update } = useDataTableUrlState({ enabled: syncWithUrl, defaultView: firstView, defaultSort });
   const filters: FacetFilters = useMemo(
-    () => Object.fromEntries(Object.entries(state.filters).filter(([k]) => activeFacets.some((f) => f.columnId === k))),
-    [state.filters, activeFacets],
+    () =>
+      Object.fromEntries(
+        Object.entries(state.filters).filter(([k]) => periodFilters.some((p) => p.id === k) || activeFacets.some((f) => f.columnId === k)),
+      ),
+    [state.filters, activeFacets, periodFilters],
+  );
+  const periodos = useMemo(
+    () =>
+      periodFilters.map((pf) => {
+        const periodo = periodoDosValores(filters[pf.id]);
+        return { pf, periodo, intervalo: periodo ? intervaloDoPeriodo(periodo) : null };
+      }),
+    [periodFilters, filters],
   );
   const hasFilters = !!state.q.trim() || Object.values(filters).some((v) => v.length);
 
@@ -196,19 +258,22 @@ export function DataTable<T>({
     const q = normalize(state.q.trim());
     return (row: T, skipFacet?: string) => {
       if (q && search && !search.fields(row).some((f) => normalize(f).includes(q))) return false;
+      for (const { pf, intervalo } of periodos) {
+        if (intervalo && !dentroDoPeriodo(pf.getDate(row), intervalo)) return false;
+      }
       for (const [colId, values] of Object.entries(filters)) {
-        if (colId === skipFacet || !values.length) continue;
+        if (colId === skipFacet || periodFilters.some((p) => p.id === colId) || !values.length) continue;
         if (!facetValuesOf(colId, row).some((v) => values.includes(v))) return false;
       }
       return true;
     };
-  }, [state.q, search, filters, facetValuesOf]);
+  }, [state.q, search, filters, facetValuesOf, periodos, periodFilters]);
 
   const view = views?.find((v) => v.id === state.view) ?? views?.find((v) => v.id === firstView);
   const inView = (row: T) => !view?.filter || view.filter(row);
 
   const searched = useMemo(() => rowsAll.filter((r) => matches(r)), [rowsAll, matches]);
-  const rows = useMemo(() => searched.filter(inView), [searched, view]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = useMemo(() => (boardOwnsViews ? searched : searched.filter(inView)), [searched, view, boardOwnsViews]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const viewCounts = useMemo(
     () => views?.map((v) => ({ id: v.id, label: v.label, tone: v.tone, count: v.filter ? searched.filter(v.filter).length : searched.length })),
@@ -303,6 +368,8 @@ export function DataTable<T>({
   const grid = gridLines ? 'border-l border-border/70 first:border-l-0' : undefined;
 
   const chips = Object.entries(filters).flatMap(([colId, values]) => {
+    const pe = periodos.find((p) => p.pf.id === colId);
+    if (pe) return pe.periodo ? [{ colId, value: '', text: `${pe.pf.label}: ${rotuloDoPeriodo(pe.periodo)}` }] : [];
     const fo = facetOptions.find((f) => f.facet.columnId === colId);
     return values.map((v) => ({ colId, value: v, text: `${fo?.label}: ${fo?.options.find((o) => o.value === v)?.label ?? v}` }));
   });
@@ -313,6 +380,15 @@ export function DataTable<T>({
 
   // ── Corpo: carregando / erro / vazio / linhas ──────────────────────────────
   const cards = !!renderCard && prefs.layout === 'cards';
+  const board = !!renderBoard && prefs.layout === 'quadro';
+  const tableLayout = !cards && !board;
+  const layouts = (
+    [
+      ['tabela', 'Tabela', Table2, true],
+      ['cards', 'Cards', LayoutGrid, !!renderCard],
+      ['quadro', 'Quadro', Columns3, !!renderBoard],
+    ] as const
+  ).filter(([, , , ok]) => ok);
 
   /** Erro ou nenhum registro para mostrar (sem dados, sem resultado nos filtros ou visão vazia). */
   const renderEmpty = () => {
@@ -344,9 +420,8 @@ export function DataTable<T>({
   const renderActions = (original: T, className?: string) => {
     const actions = rowActions?.(original) ?? [];
     const primary = renderRowAction?.(original);
-    if (primary) return primary;
-    if (!actions.length) return null;
-    return (
+    if (!actions.length) return primary ?? null;
+    const menu = (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -372,6 +447,8 @@ export function DataTable<T>({
         </DropdownMenuContent>
       </DropdownMenu>
     );
+    // Ação principal e menu juntos: o botão primeiro, o ⋯ sempre no mesmo lugar.
+    return primary ? <div className="flex items-center justify-end gap-1">{primary}{menu}</div> : menu;
   };
 
   const renderCards = () => {
@@ -430,7 +507,13 @@ export function DataTable<T>({
     );
   };
 
-  /** Ordenação na visão em cards, que não tem cabeçalho de coluna para clicar. */
+  const renderBoardBody = () => {
+    if (isLoading) return <Skeleton className="m-3 h-64 rounded-lg" />;
+    if (isError || rows.length === 0) return renderEmpty();
+    return <div className="p-3">{renderBoard!(table.getPrePaginationRowModel().rows.map((r) => r.original))}</div>;
+  };
+
+  /** Ordenação nas visões em cards e quadro, que não têm cabeçalho de coluna para clicar. */
   const sortableColumns = leafColumns.filter((c) => c.getCanSort());
   const currentSort = state.sorting[0];
 
@@ -494,7 +577,7 @@ export function DataTable<T>({
             );
           })}
           {hasActionColumn ? (
-            <td className={cn('w-12 whitespace-nowrap px-2 text-right', dense ? 'py-1' : 'py-2')}>
+            <td style={actionsColumn ? { width: actionsColumn.width } : undefined} className={cn('whitespace-nowrap px-2 text-right', grid, !actionsColumn && 'w-12', dense ? 'py-1' : 'py-2')}>
               {renderActions(original)}
             </td>
           ) : null}
@@ -505,14 +588,18 @@ export function DataTable<T>({
 
   return (
     <div>
-      {viewCounts?.length ? (
-        <DataTableViews views={viewCounts} value={view?.id} onChange={(v) => update({ view: v })} />
+      {viewCounts?.length && !boardOwnsViews ? (
+        <div className="flex flex-wrap items-start justify-between gap-x-3">
+          <DataTableViews views={viewCounts} value={view?.id} onChange={(v) => update({ view: v })} />
+          {viewsActions ? <div className="mb-3 flex items-center gap-2">{viewsActions}</div> : null}
+        </div>
       ) : null}
 
       {/* overflow-clip (e não hidden) mantém as bordas arredondadas sem quebrar o cabeçalho fixo */}
       <div className="overflow-clip rounded-lg border bg-card">
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+        <div className="flex flex-wrap items-start gap-2 border-b px-3 py-2.5 lg:flex-nowrap">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           {search ? (
             <label className="flex h-8 w-full max-w-xs items-center gap-2 rounded-md border bg-background px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 sm:w-80">
               <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -535,11 +622,22 @@ export function DataTable<T>({
               options={options}
               selected={filters[facet.columnId] ?? []}
               onChange={(values) => update({ filters: { ...filters, [facet.columnId]: values } })}
+              searchable={facet.searchable}
             />
           ))}
-          <div className="ml-auto flex items-center gap-2">
+          {periodos.map(({ pf, periodo }) => (
+            <DataTablePeriodFilter
+              key={pf.id}
+              label={pf.label}
+              value={periodo}
+              presets={pf.presets ?? ['semana', 'mes', 'mes_passado', 'personalizado']}
+              onChange={(p) => update({ filters: { ...filters, [pf.id]: valoresDoPeriodo(p) } })}
+            />
+          ))}
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             {toolbarActions}
-            {cards && sortableColumns.length ? (
+            {!tableLayout && sortableColumns.length ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5">
@@ -562,12 +660,11 @@ export function DataTable<T>({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
-            {!cards && hideableColumns.length ? (
+            {tableLayout && hideableColumns.length ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5">
+                  <Button variant="outline" size="icon" className="size-8" title="Colunas visíveis" aria-label="Colunas visíveis">
                     <Settings2 className="size-3.5" />
-                    Colunas
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
@@ -589,34 +686,31 @@ export function DataTable<T>({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
-            {!cards && (
+            {tableLayout && (
               <Button
                 variant="outline"
-                size="sm"
-                className="h-8 gap-1.5 px-2.5"
+                size="icon"
+                className="size-8"
                 onClick={() => prefs.setDensity(dense ? 'comfortable' : 'compact')}
-                title="Alternar densidade das linhas"
+                title={dense ? 'Linhas compactas (clique para confortáveis)' : 'Linhas confortáveis (clique para compactas)'}
+                aria-label={dense ? 'Linhas compactas' : 'Linhas confortáveis'}
               >
                 {dense ? <List className="size-3.5" /> : <AlignJustify className="size-3.5" />}
-                {dense ? 'Compacta' : 'Confortável'}
               </Button>
             )}
-            {renderCard ? (
+            {layouts.length > 1 ? (
               <div className="flex rounded-md border p-0.5" role="radiogroup" aria-label="Visão">
-                {([
-                  ['tabela', 'Tabela', Table2],
-                  ['cards', 'Cards', LayoutGrid],
-                ] as const).map(([valor, rotulo, Icone]) => (
+                {layouts.map(([valor, rotulo, Icone]) => (
                   <button
                     key={valor}
                     type="button"
                     role="radio"
-                    aria-checked={prefs.layout === valor}
+                    aria-checked={(tableLayout ? 'tabela' : prefs.layout) === valor}
                     title={`Ver em ${rotulo.toLowerCase()}`}
                     onClick={() => prefs.setLayout(valor)}
                     className={cn(
                       'flex h-7 items-center gap-1.5 rounded px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground',
-                      prefs.layout === valor && 'bg-secondary text-foreground shadow-sm',
+                      (tableLayout ? 'tabela' : prefs.layout) === valor && 'bg-secondary text-foreground shadow-sm',
                     )}
                   >
                     <Icone className="size-3.5" />
@@ -638,7 +732,11 @@ export function DataTable<T>({
                 <button
                   type="button"
                   aria-label={`Remover filtro ${c.text}`}
-                  onClick={() => update({ filters: { ...filters, [c.colId]: filters[c.colId].filter((v) => v !== c.value) } })}
+                  onClick={() =>
+                    update({
+                      filters: { ...filters, [c.colId]: isPeriod(c.colId) ? [] : filters[c.colId].filter((v) => v !== c.value) },
+                    })
+                  }
                   className="grid size-4 place-items-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
                 >
                   <X className="size-3" />
@@ -657,9 +755,10 @@ export function DataTable<T>({
         </div>
 
         {cards ? renderCards() : null}
+        {board ? renderBoardBody() : null}
 
-        {/* Abaixo de 1280px a tabela pode rolar na horizontal (e o cabeçalho deixa de ser fixo). */}
-        <div className={cn('overflow-x-auto xl:overflow-x-visible', cards && 'hidden')}>
+        {/* Abaixo de 1280px, ou quando as colunas não cabem, a tabela rola na horizontal (e o cabeçalho deixa de ser fixo). */}
+        <div ref={scrollRef} className={cn('overflow-x-auto', !overflows && 'xl:overflow-x-visible', !tableLayout && 'hidden')}>
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
@@ -691,10 +790,16 @@ export function DataTable<T>({
                 })}
                 {hasActionColumn ? (
                   <th
-                    style={{ top: stickyOffset }}
-                    className="sticky z-10 h-10 w-12 bg-secondary shadow-[inset_0_-1px_0_hsl(var(--border))]"
-                    aria-label="Ações"
-                  />
+                    style={{ top: stickyOffset, width: actionsColumn?.width }}
+                    className={cn(
+                      'sticky z-10 h-10 bg-secondary px-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[inset_0_-1px_0_hsl(var(--border))]',
+                      grid,
+                      !actionsColumn && 'w-12',
+                    )}
+                    aria-label={actionsColumn ? undefined : 'Ações'}
+                  >
+                    {actionsColumn?.header}
+                  </th>
                 ) : null}
               </tr>
             </thead>
@@ -702,7 +807,7 @@ export function DataTable<T>({
           </table>
         </div>
 
-        {!isLoading && !isError && rowsAll.length > 0 ? (
+        {!isLoading && !isError && rowsAll.length > 0 && !board ? (
           <DataTablePagination
             page={page}
             pageSize={prefs.pageSize}

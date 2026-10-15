@@ -11,7 +11,7 @@ export interface ChipProps {
   className?: string;
 }
 
-/** Situação curta em palavras ("Atrasado 5 dias", "Parado há 9 dias"): cor + ícone + texto. */
+/** Situação curta em palavras ("Atrasado 5 dias", "Sem andamento há 9 dias"): cor + ícone + texto. */
 export function Chip({ tom, icone: Icone, children, dica, className }: ChipProps) {
   return (
     <span

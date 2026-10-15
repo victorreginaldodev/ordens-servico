@@ -8,8 +8,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import UnderDevelopmentOverlay from '@/components/UnderDevelopmentOverlay';
 import { cn } from '@/lib/utils';
 import { authService } from '@/services/auth';
-import { AppHeader } from './AppHeader';
+import { AppHeader, PageBreadcrumb } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
+import { CommandMenu } from './CommandMenu';
 
 const SIDEBAR_KEY = 'sidebar:collapsed';
 
@@ -23,7 +24,8 @@ interface DashboardLayoutProps {
 /**
  * Layout "painel inset" (docs/ui/wireframes/navegacao.html, direção A):
  * sidebar sobre o fundo `canvas` e o conteúdo num painel arredondado.
- * O header fica fora da área de rolagem; só o conteúdo rola.
+ * Sem header no computador: a busca abre pelo Ctrl+K e o breadcrumb fica acima do título
+ * das páginas internas. No celular, uma barra fina abre o menu e a busca. Só o conteúdo rola.
  */
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { pathname } = useLocation();
@@ -32,6 +34,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   // ao abrir o sistema e, no máximo, a cada 5 minutos.
   useQuery({ queryKey: ['auth-me'], queryFn: authService.refreshCurrentUser, staleTime: 5 * 60_000, retry: false });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
@@ -101,16 +104,18 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             'lg:ml-0',
           )}
         >
-          <AppHeader onOpenMenu={() => setMobileOpen(true)} />
+          <AppHeader onOpenMenu={() => setMobileOpen(true)} onOpenSearch={() => setSearchOpen(true)} />
           <div ref={scrollRef} className="relative flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
             <main className="px-4 py-5 sm:px-6">
               {!isReady ? <UnderDevelopmentOverlay /> : null}
+              <PageBreadcrumb />
               {children}
             </main>
           </div>
         </div>
       </div>
 
+      <CommandMenu open={searchOpen} onOpenChange={setSearchOpen} />
       <EV2UpdatesModal open={ev2Open} onDismiss={dismissEV2} />
     </TooltipProvider>
   );

@@ -9,6 +9,7 @@ export type {
   DataTableColumn,
   DataTableEmptyStates,
   DataTableFacet,
+  DataTablePeriodFilter,
   DataTableRowAction,
   DataTableSearch,
   DataTableView,

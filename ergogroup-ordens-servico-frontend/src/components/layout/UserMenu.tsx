@@ -17,11 +17,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { usePermissoes } from '@/hooks/usePermissoes';
 import { useTelaInicial } from '@/hooks/useTelaInicial';
 import { authService } from '@/services/auth';
 import { cn } from '@/lib/utils';
+import { NAV_ORGANIZACAO, podeVerItem } from './navigation';
 
-/** Único lugar do usuário no app: rodapé da sidebar. Perfil, tema e sair. */
+/** Único lugar do usuário no app: rodapé da sidebar. Perfil, tema, organização (para quem administra) e sair. */
 export function UserMenu({ collapsed }: { collapsed: boolean }) {
   const { displayName, email, initials, roleLabel, photo } = useCurrentUser();
   const { resolvedTheme, setTheme } = useTheme();
@@ -29,6 +31,8 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const telaInicial = useTelaInicial();
+  const { podeAlguma } = usePermissoes();
+  const itensOrganizacao = NAV_ORGANIZACAO.items.filter((item) => podeVerItem(item, podeAlguma));
 
   useEffect(() => setMounted(true), []);
 
@@ -140,6 +144,20 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
             </div>
           ) : null}
         </div>
+        {itensOrganizacao.length ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">{NAV_ORGANIZACAO.title}</DropdownMenuLabel>
+            {itensOrganizacao.map((item) => (
+              <DropdownMenuItem key={item.url} asChild>
+                <Link to={item.url}>
+                  <item.icon className="mr-2 size-4" />
+                  {item.title}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={logout} className="text-danger-strong focus:text-danger-strong">
           <LogOut className="mr-2 size-4" />

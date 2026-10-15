@@ -23,6 +23,7 @@ export { AlertaMovimentacao, type AlertaMovimentacaoProps } from './AlertaMovime
 export { Indicadores, type Indicador, type IndicadoresProps } from './Indicadores';
 export {
   BarraDeFiltros,
+  SeletorDePeriodo,
   SeparadorDeFiltros,
   EspacoDeFiltros,
   AlternarVisualizacao,

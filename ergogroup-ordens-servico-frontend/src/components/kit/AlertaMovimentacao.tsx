@@ -1,7 +1,7 @@
-import { BellOff, Hourglass } from 'lucide-react';
+import { CirclePause, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDateShort } from '@/lib/format';
-import { MOTIVO_CIENCIA_LABEL, TONE_CLASSES } from './tones';
+import { TONE_CLASSES, rotuloDaPausa } from './tones';
 
 export interface AlertaMovimentacaoProps {
   diasSemMovimentacao: number;
@@ -11,12 +11,14 @@ export interface AlertaMovimentacaoProps {
   cienteEm?: string | null;
   cientePorNome?: string | null;
   motivo?: string | null;
+  /** Até quando a pausa explicada silencia o aviso. */
+  ate?: string | null;
   className?: string;
 }
 
 /**
- * Alerta de serviço sem movimentação (ADR 0008, 3). O sistema não marca o serviço como parado: avisa.
- * Com ciência vigente, mostra quem está ciente e o motivo ("aguardando o cliente").
+ * Aviso de serviço sem andamento (ADR 0008, 3). O sistema não marca o serviço como parado: avisa.
+ * Com a pausa explicada, mostra o motivo, até quando o aviso fica em silêncio e quem explicou.
  */
 export function AlertaMovimentacao({
   diasSemMovimentacao,
@@ -25,17 +27,24 @@ export function AlertaMovimentacao({
   cienteEm,
   cientePorNome,
   motivo,
+  ate,
   className,
 }: AlertaMovimentacaoProps) {
   const dias = `${diasSemMovimentacao} dia${diasSemMovimentacao === 1 ? '' : 's'}`;
   if (cienciaVigente) {
-    const rotulo = motivo ? MOTIVO_CIENCIA_LABEL[motivo as keyof typeof MOTIVO_CIENCIA_LABEL] ?? motivo : 'Ciente';
     return (
-      <span className={cn('inline-flex items-center gap-1.5 text-xs', TONE_CLASSES.neutral.text, className)}>
-        <BellOff className="size-3.5" aria-hidden />
-        {rotulo}
-        {cientePorNome ? ` · ${cientePorNome}` : ''}
-        {cienteEm ? ` em ${formatDateShort(cienteEm)}` : ''}
+      <span className={cn('inline-flex flex-col gap-0.5 text-xs', className)}>
+        <span className={cn('inline-flex items-center gap-1.5 font-medium', TONE_CLASSES.info.text)}>
+          <CirclePause className="size-3.5" aria-hidden />
+          {rotuloDaPausa(motivo)}
+          {ate ? ` · até ${formatDateShort(ate)}` : ''}
+        </span>
+        {cientePorNome || cienteEm ? (
+          <span className="text-muted-foreground">
+            Explicado{cientePorNome ? ` por ${cientePorNome}` : ''}
+            {cienteEm ? ` em ${formatDateShort(cienteEm)}` : ''}
+          </span>
+        ) : null}
       </span>
     );
   }
@@ -43,7 +52,7 @@ export function AlertaMovimentacao({
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', TONE_CLASSES.warning.text, className)}>
       <Hourglass className="size-3.5" aria-hidden />
-      Sem movimentação há {dias}
+      Sem andamento há {dias}
     </span>
   );
 }

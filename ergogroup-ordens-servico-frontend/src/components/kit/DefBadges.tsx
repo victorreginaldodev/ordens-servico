@@ -17,7 +17,7 @@ const badgeDe = (defs: Record<string, ToneDef>) =>
     return <ToneBadge def={def} {...rest} />;
   };
 
-/** Etapa do serviço: Na fila · Distribuído · Em execução · Concluído · Cancelado. */
+/** Etapa do serviço: Novo · A distribuir · Distribuído · Em andamento · Concluído · Cancelado. */
 export const EtapaBadge = badgeDe(ETAPA_DEFS);
 /** Situação de prazo calculada pelo backend: Atrasado · Vence em 7 dias · No prazo · Sem prazo. */
 export const SituacaoPrazoBadge = badgeDe(SITUACAO_PRAZO_DEFS);

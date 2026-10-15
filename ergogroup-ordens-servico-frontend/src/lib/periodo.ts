@@ -60,3 +60,13 @@ export const rotuloDoPeriodo = (p: Periodo) => {
   const curta = (v?: string) => (v ? v.split('-').reverse().slice(0, 2).join('/') : '…');
   return `${curta(p.de)} a ${curta(p.ate)}`;
 };
+
+/** Período na URL: `f.<id>=mes` ou `f.<id>=personalizado,2026-01-01,2026-01-31`. */
+export const periodoDosValores = (values: string[] | undefined): Periodo | null => {
+  const [preset, de, ate] = values ?? [];
+  if (!preset || !(preset in ROTULO_PERIODO)) return null;
+  return { preset: preset as PresetDePeriodo, de: de || undefined, ate: ate || undefined };
+};
+
+export const valoresDoPeriodo = (p: Periodo | null): string[] =>
+  !p ? [] : p.preset === 'personalizado' ? [p.preset, p.de ?? '', p.ate ?? ''] : [p.preset];

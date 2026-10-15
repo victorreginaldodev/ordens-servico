@@ -11,8 +11,8 @@ import {
   Clock,
   Inbox,
   Layers,
+  MailOpen,
   Minus,
-  Repeat,
   TriangleAlert,
   UserCheck,
   type LucideIcon,
@@ -94,13 +94,14 @@ export const COBRANCA_DEFS = {
 export type CobrancaSituacao = keyof typeof COBRANCA_DEFS;
 
 /**
- * Etapa do serviço no fluxo de execução (ADR 0006, 1), calculada pelo backend:
- * aberto sem tarefa = na fila; aberto com tarefa = distribuído.
+ * Etapa do serviço no fluxo de execução (ADRs 0006 e 0009), calculada pelo backend:
+ * sem tarefa e sem ciência do setor = novo; sem tarefa, com ciência = a distribuir; com tarefa = distribuído.
  */
 export const ETAPA_DEFS = {
-  na_fila: { tone: 'warning', icon: Inbox, label: 'Na fila' },
+  novo: { tone: 'warning', icon: Inbox, label: 'Novo' },
+  a_distribuir: { tone: 'warning', icon: MailOpen, label: 'A distribuir' },
   distribuido: { tone: 'neutral', icon: UserCheck, label: 'Distribuído' },
-  em_execucao: { tone: 'info', icon: CircleDot, label: 'Em execução' },
+  em_execucao: { tone: 'info', icon: CircleDot, label: 'Em andamento' },
   concluido: { tone: 'success', icon: CircleCheck, label: 'Concluído' },
   cancelado: { tone: 'neutral', icon: CircleSlash, label: 'Cancelado' },
 } satisfies Record<string, ToneDef>;
@@ -117,8 +118,9 @@ export const SITUACAO_PRAZO_DEFS = {
 
 /** Situação da OS no financeiro (`/api/financeiro/cobrancas/`). Nomes provisórios (ADR 0007). */
 export const SITUACAO_FINANCEIRA_DEFS = {
-  previsao: { tone: 'neutral', icon: CircleDashed, label: 'Previsão' },
-  a_faturar: { tone: 'warning', icon: Clock, label: 'A faturar' },
+  // Nomes decididos em 14/10/2026 (faturamento/04): Em execução (a previsão) · Para faturar · Faturada.
+  previsao: { tone: 'neutral', icon: CircleDashed, label: 'Em execução' },
+  a_faturar: { tone: 'warning', icon: Clock, label: 'Para faturar' },
   faturadas: { tone: 'success', icon: CircleCheck, label: 'Faturada' },
 } satisfies Record<string, ToneDef>;
 
@@ -126,7 +128,6 @@ export const SITUACAO_FINANCEIRA_DEFS = {
 export const TIPO_CONDICAO_DEFS = {
   a_vista: { tone: 'neutral', icon: Banknote, label: 'À vista' },
   parcelado: { tone: 'info', icon: Layers, label: 'Parcelado' },
-  recorrente: { tone: 'info', icon: Repeat, label: 'Recorrente' },
 } satisfies Record<string, ToneDef>;
 
 /** Motivos da ciência do alerta sem movimentação (`MotivoCiencia` no backend). */
@@ -137,6 +138,10 @@ export const MOTIVO_CIENCIA_LABEL = {
   terceiro: 'Aguardando terceiro',
   outro: 'Outro',
 } as const;
+
+/** Como a pausa explicada aparece nas listas: o motivo, e "Aguardando algo" quando é "outro". */
+export const rotuloDaPausa = (motivo: string | null | undefined) =>
+  !motivo || motivo === 'outro' ? 'Aguardando algo' : MOTIVO_CIENCIA_LABEL[motivo as keyof typeof MOTIVO_CIENCIA_LABEL] ?? motivo;
 
 /** Status de cadastro (setor, função, pessoa). */
 export const ATIVO_DEFS = {

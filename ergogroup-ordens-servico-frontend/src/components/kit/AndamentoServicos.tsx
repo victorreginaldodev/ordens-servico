@@ -4,7 +4,8 @@ import { TONE_CLASSES } from './tones';
 export interface AndamentoServicosProps {
   andamento: {
     total: number;
-    na_fila: number;
+    novo: number;
+    a_distribuir: number;
     distribuido: number;
     em_execucao: number;
     concluido: number;
@@ -17,9 +18,10 @@ export interface AndamentoServicosProps {
 
 const SEGMENTOS = [
   { chave: 'concluido', classe: TONE_CLASSES.success.dot, label: 'concluídos' },
-  { chave: 'em_execucao', classe: TONE_CLASSES.info.dot, label: 'em execução' },
+  { chave: 'em_execucao', classe: TONE_CLASSES.info.dot, label: 'em andamento' },
   { chave: 'distribuido', classe: TONE_CLASSES.neutral.dot, label: 'distribuídos' },
-  { chave: 'na_fila', classe: TONE_CLASSES.warning.dot, label: 'na fila' },
+  { chave: 'a_distribuir', classe: TONE_CLASSES.warning.dot, label: 'a distribuir' },
+  { chave: 'novo', classe: TONE_CLASSES.warning.dot, label: 'novos' },
 ] as const;
 
 /**

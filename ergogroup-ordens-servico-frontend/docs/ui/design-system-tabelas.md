@@ -34,7 +34,7 @@ A listagem de OS atual tenta responder as duas coisas e por isso ficou pesada:
 |---|---|---|
 | **10 linhas por página** (`PAGE_SIZE = 10` / `itemsPerPage = 10`), sem opção de mudar | 8 das 9 listagens | "Não consigo listar muita coisa." Com 143 OS são 15 páginas |
 | Os dados **já estão todos em memória**: o backend não pagina (sem `pagination_class`) e o front fatia no cliente | OS, OS operacionais, catálogos, usuários, contatos | Mostrar 50 ou 100 linhas custa **zero** requisições extras. O limite de 10 é só uma escolha de UI |
-| Exceção: Clientes faz **1 requisição de detalhe por linha** (`getClient` para cada item, em `clientes/services.ts`) | Clientes | Aqui, aumentar a página multiplica requisições. Precisa corrigir o serializer de listagem antes (§12) |
+| ~~Exceção: Clientes faz **1 requisição de detalhe por linha**~~ (resolvido em 14/10/2026, §12) | Clientes | — |
 | Sem ordenação por coluna | Todas | Não dá para pedir "prazo mais próximo primeiro" ou "maior valor" |
 | Filtros e página não ficam na URL | Todas | Voltar do detalhe da OS perde filtro e página. Não dá para mandar um link "OS atrasadas" para alguém |
 | Linha clicável via `onClick`, sem `<a>` | Todas | Sem Ctrl+clique / abrir em nova aba, sem navegação por teclado |
@@ -185,7 +185,7 @@ Por que 50: com densidade confortável, 50 linhas equivalem a umas 3 telas de ro
 ### 7.1 Busca
 - Um campo, à esquerda da toolbar, com placeholder que diz **o que** é buscado (`Buscar por cliente, nº da OS ou CNPJ`).
 - Debounce de 250ms. Busca ignora acentos e caixa.
-- Atalho `/` foca a busca da tabela. O `Ctrl K` continua sendo a busca global do header.
+- Atalho `/` foca a busca da tabela. O `Ctrl K` continua sendo a busca global.
 
 ### 7.2 Filtros
 - **Filtros facetados** (botão `+ Status` → popover com checkboxes e a **contagem** de cada opção). Padrão shadcn "faceted filter".
@@ -266,6 +266,51 @@ Legenda: **P1** sempre visível · **P2** oculta < 1280px · **P3** oculta por p
 - **Técnico:** mesmas colunas sem 💲. A visão padrão dele é "Em aberto".
 - **Removido:** "Minhas tarefas" e "Serviços relacionados" (§0).
 
+### Vendas (`/vendas`) — **Vigente** (13/10/2026)
+| Coluna | Tipo | Prioridade |
+|---|---|---|
+| OS | Número (identificador, ordenável) | P1 |
+| Cliente | Texto | P1 |
+| Venda | Data | P1 |
+| Vendedor (nome completo) | Pessoa | P1 |
+| Andamento (`AndamentoServicos`) | próprio da tela | P1 |
+| Status | Status | P1 |
+| Condição | Status (família `TIPO_CONDICAO_DEFS`) | P1 💲 |
+| Valor | Moeda | P1 💲 |
+| Valor mensal | Moeda | P3 💲 |
+| Financeiro (Previsão / A faturar / Faturada) | Status (família `SITUACAO_FINANCEIRA_DEFS`) | P1 💲 |
+
+- **Visões:** Todas · Para distribuir · Em execução · Concluídas.
+- **Filtros:** Vendedor ("Minhas vendas" no topo), Cliente (com busca), Status, Condição 💲, Financeiro 💲 e Data da venda (período).
+- **Ordenação padrão:** OS decrescente (mais recente primeiro).
+- O `DataTable` ganhou, opcionais: `periodFilter` (filtro por período de uma data, na URL como `f.<id>`) e `searchable` nos filtros facetados (busca dentro da lista de opções).
+- **Coluna de ações com título (14/10/2026):** `actionsColumn={{ header: 'Ações', width }}` dá cabeçalho visível e largura fixa à coluna de ações. Com `renderRowAction` e `rowActions` juntos, a linha mostra a ação principal (botão discreto, contorno e ícone) **e** o menu ⋯ ao lado, sempre no mesmo lugar. Usado na execução (fluxos-e-navegacao.md §6.2.5).
+- **Filtro de período reutilizável:** `SeletorDePeriodo` (kit, `BarraDeFiltros.tsx`) é o conteúdo único de qualquer filtro de data: períodos prontos em lista e, no "Personalizado", um calendário de intervalo (clica o início e o fim) com o resumo De/Até. Usado pelo `periodFilter` do `DataTable` e pelo `FiltroDePeriodo` dos painéis. Substitui os dois campos de data nativos, que não cabiam no popover.
+
+### Visão geral (`/visao-geral`) e Painel do setor (`/setor/:id`) — **Vigente** (14/10/2026)
+Uma linha por serviço. As colunas mudam com a visão (detalhe em `fluxos-e-navegacao.md` §6.2.4).
+
+| Coluna | Tipo | Prioridade |
+|---|---|---|
+| Serviço (só o nome; a descrição fica no detalhe do serviço) | Texto, até 240px | P1 |
+| Cliente | Texto, até 224px | P1 |
+| OS (link para o resumo da venda) | Número | P1 |
+| Setor (só na Visão geral) | Texto, até 160px | P1 |
+| Etapa | Status (família `ETAPA_DEFS`) | P1 |
+| Responsável (nomes completos) | Texto, até 192px | P1 |
+| Situação (prazo e alerta, `Situacoes`) | próprio da tela | P1 |
+| Na fila há · Prioridade | Número · Prioridade | P1 (só Para distribuir) |
+| Outros serviços da OS | próprio da tela | P2 (só Para distribuir) |
+| Concluído por · Término · Prazo | Pessoa · Data · Status | P1 (só Concluídos) |
+
+- **Visões:** Todos · Para distribuir (padrão) · Em andamento · Atrasados · Parados · Concluídos no mês.
+- **Filtros:** Setor (Visão geral), Pessoa, Cliente, Prioridade, Etapa e Data (Chegada, Prazo ou Conclusão, conforme a visão).
+- **Ação na linha:** Distribuir (fila) ou Estou ciente (parado).
+- **Visões de layout:** Tabela | Quadro (`renderBoard`).
+
+### Meus serviços (`/meus-servicos`) — **Vigente** (14/10/2026)
+Uma linha por tarefa: Serviço (só o nome) · Cliente · OS · Situação · Status (nos concluídos, Concluída em). Visões: Todos · Com você (padrão) · Atrasados · Vencem em 7 dias · Concluídos no mês. Filtros: Cliente, Status e Data (Prazo ou Conclusão). Ações Iniciar e Concluir. Tabela | Quadro.
+
 ### OS operacionais (`/ordens/operacionais`)
 | Coluna | Tipo | Prioridade |
 |---|---|---|
@@ -302,18 +347,24 @@ Duas abas (`Tabs`) com a mesma estrutura: **OS** | **OS operacionais**.
 - **Ordenação padrão:** liberada em ascendente (o que espera há mais tempo primeiro).
 - **Rodapé com total:** `Total da página: R$ 48.900,00`, porque o financeiro precisa da soma.
 
-### Clientes (`/clientes`)
+### Clientes (`/clientes`) — **Vigente** (14/10/2026)
 | Coluna | Tipo | Prioridade |
 |---|---|---|
-| Cliente (nome; documento formatado com o tipo: `CNPJ 12.345.678/0001-90`) | Registro | P1 |
+| Cliente (nome como foi cadastrado) | Registro | P1 |
+| Documento (`CNPJ 12.345.678/0001-90`) | Texto, `tabular-nums` | P1 |
 | Tipo (Gestão / Avulso / Fornecedor) | Texto | P1 |
-| Representante | Texto | P2 |
+| Representante (nome completo) | Texto | P1 |
+| E-mail do representante | Contato | P2 |
+| Contato do representante | Contato (telefone) | P3 |
+| Setor do representante | Texto | P3 |
 | Cliente desde | Data | P2 |
-| Cobra revisão | Booleano | P3 |
+| Cobra revisão | Booleano | P2 |
 | Situação | Situação cadastral | P1 |
 
 - **Visões:** Ativos · Inativos · Todos. Padrão: Ativos.
+- **Filtros:** Tipo, Documento (tipo de inscrição), Cobra revisão, Representante (com ou sem) e Cliente desde (período).
 - **Ordenação padrão:** nome A–Z.
+- **Linha:** abre a edição para quem tem `clientes.gerenciar`. Menu `⋯`: Editar, Ver vendas do cliente, Desativar/Reativar e Excluir (com confirmação; 409 oferece desativar). Detalhe em `fluxos-e-navegacao.md` §6.9; wireframe em [`wireframes/clientes.html`](./wireframes/clientes.html).
 
 ### Contatos (`/clientes/contacts`)
 Contato (Registro: nome; cargo/setor) P1 · E-mail (Contato) P1 · Telefone (Contato) P1 · Cliente (Texto) P1. Ordenação: nome A–Z.
@@ -365,6 +416,24 @@ O `DataTable` aceita `renderCard` (conteúdo do card) e, opcionalmente, `cardGro
 - O card é clicável como a linha (mesma navegação e teclado) e tem o menu `⋯` no canto.
 - Quando usar cards como padrão: listas curtas de cadastro, com poucos campos e texto livre (catálogo). Quando usar tabela: listas longas, com números, datas e comparação entre colunas (OS, cobranças, time).
 
+## 14. Visão em quadro — **Vigente** (14/10/2026)
+
+O `DataTable` aceita `renderBoard(rows)`: a tela desenha um quadro em colunas (ex.: kanban por etapa) com todos os registros filtrados e ordenados, sem paginação. A toolbar ganha a opção **Quadro** na alternância de visão, e a escolha fica salva por tabela (`table:<id>:layout`). Usado no Painel do setor, na Visão geral e em Meus serviços.
+
+O `periodFilter` também aceita uma lista, para mais de um filtro de data na mesma tela.
+
+**Texto longo não empurra colunas (14/10/2026):** a célula usa `whitespace-nowrap`, então todo texto livre numa coluna precisa de largura máxima e corte com reticências (`CellTexto` com `max-w-*`; o texto inteiro fica no `title`). Descrições longas não entram na tabela. E, quando a soma das colunas passa da largura disponível, o `DataTable` passa a rolar na horizontal em vez de cortar as colunas na moldura (antes, acima de 1280px, as colunas que não cabiam sumiam).
+
+**Cartão do quadro** (`features/execucao/components/Quadro.tsx`, `Cartao`; redesenho de 14/10/2026, wireframe validado pelo usuário em 14/10/2026). Descrições sem conteúdo (".", "-"), comuns nos dados migrados, não aparecem (`temTexto` em `lib/format.ts`). Ordem de leitura, de cima para baixo:
+1. **Cabeçalho:** `OS 1042` (etiqueta neutra), setor (só na Visão geral) e prioridade Alta ou Média à direita (Baixa não aparece);
+2. **Serviço:** nome em negrito (até 2 linhas) e a descrição ou a parte da tarefa abaixo (até 2 linhas);
+3. **Cliente:** com ícone, nome completo (truncado, nome inteiro no `title`);
+4. **Situação:** chips de prazo e alerta (`Situacoes`) ou o resultado do prazo nos concluídos, e o tempo ("Na fila há 6 dias", em destaque a partir de 5; "Concluído em 08/10/2026"; "Iniciada em…" nas tarefas);
+5. **Extra:** na fila, os outros serviços da venda (um ponto com a cor da etapa de cada um e a lista no `title`);
+6. **Rodapé** (fundo levemente destacado): avatares e o nome completo do primeiro responsável ("e mais N"), ou "Sem responsável" na fila, e a ação à direita (Distribuir, Estou ciente, Iniciar, Concluir). Em Meus serviços o rodapé não repete a própria pessoa.
+
+Faixa lateral à esquerda: vermelha para atrasado, amarela para parado. Hover eleva o cartão. Exemplo na vitrine `/ui` (desenvolvimento).
+
 ## 11. Componentes — Proposto
 
 Base: **`@tanstack/react-table`** (headless, mesma família do TanStack Query que o projeto já usa). Resolve ordenação, visibilidade de colunas e paginação sem escrever isso à mão em cada tela. A camada visual continua sendo o `Table` do shadcn.
@@ -386,7 +455,7 @@ Uma tela nova passa a ser basicamente: definição de colunas + visões + filtro
 
 ## 12. Dependências de backend (fora do escopo de UI, registrar)
 
-1. **Clientes:** o serializer de listagem não traz todos os campos exibidos, e o front busca o detalhe de cada linha (N+1). Antes de subir o tamanho de página dessa tela, incluir os campos no `ClienteList` (ou criar um serializer de listagem completo).
+1. ~~**Clientes:** o serializer de listagem não traz todos os campos exibidos, e o front busca o detalhe de cada linha (N+1).~~ **Resolvido em 14/10/2026:** o `ClienteList` traz os campos da tabela, e a tela faz uma requisição só.
 2. **Paginação no servidor:** hoje todas as listagens carregam tudo e paginam no cliente. Funciona com o volume atual e torna a paginação deste documento barata. Quando o volume crescer, ativar `PageNumberPagination` com `page_size_query_param` e `OrderingFilter` no DRF. Os componentes do §11 devem aceitar os dois modos (`manualPagination`).
 3. **Contagens das visões:** calculadas no cliente sobre os dados carregados. Com paginação no servidor, precisarão de um endpoint de contagem ou de `count` por filtro.
 

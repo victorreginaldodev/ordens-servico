@@ -95,7 +95,7 @@ Frequência: a cada venda, e para responder ao cliente "como está meu serviço?
 1. Entra em **Vendas**: as próprias ("minhas") ou todas, com o andamento ("2 de 4 concluídos") e a condição de cada uma.
 2. **Nova venda**, em etapas:
    - cliente;
-   - condição de pagamento (à vista, parcelado ou recorrente; quando libera para o financeiro);
+   - condição de pagamento (à vista ou parcelado; quando libera para o financeiro);
    - serviços (catálogo; o setor que vai executar aparece na hora);
    - revisão.
 
@@ -134,20 +134,35 @@ Frequência: diária, na fila do que pode ser faturado.
 
 ## 4. Menu
 
+**Revisão de 13/10/2026 (decidida pelo usuário):** o menu lateral passou a ser dividido por área, na ordem do fluxo (vende, executa, cobra), seguido de Análise BI e Cadastros. A Organização saiu do menu lateral e foi para o menu do usuário.
+
 | Grupo | Item | Rota | Aparece para |
 |---|---|---|---|
-| **Meu trabalho** | Meus serviços | `/meus-servicos` | todos |
-| | Visão geral | `/visao-geral` | `setores.todos` (substitui o Painel do setor no menu dessa pessoa) |
+| **Vendas** | Vendas | `/vendas` | `os.gerenciar` ou `os.ver_todas` |
+| | Nova venda | `/vendas/nova` | `os.gerenciar` |
+| **Execução** | Visão geral | `/visao-geral` | `setores.todos` (substitui o Painel do setor no menu dessa pessoa) |
 | | Painel do setor | `/setor` | `servicos.ver_setor` (em algum setor), **sem** `setores.todos` |
-| **Comercial** | Vendas | `/vendas` | `os.gerenciar` ou `os.ver_todas` |
-| | Nova venda (botão em Vendas; atalho no menu) | `/vendas/nova` | `os.gerenciar` |
+| | Meus serviços | `/meus-servicos` | todos |
+| | OS operacionais *(fora de escopo, sem mudança na tela)* | `/ordens/operacionais` | como hoje |
 | **Financeiro** | Cobranças | `/cobrancas` | `financeiro.registrar_cobranca` |
-| **Análise** | Operacional | `/analise/operacional` | todos (como hoje) |
-| | Financeiro | `/analise/financeiro` | `financeiro.ver_valores` |
+| **Análise BI** | Painel operacional | `/analise/operacional` | todos (como hoje) |
+| | Painel financeiro | `/analise/financeiro` | `financeiro.ver_valores` |
 | **Cadastros** | Clientes | `/clientes` | como hoje |
 | | Catálogo | `/catalogo` | como hoje |
-| **Organização** | Time, Setores, Funções e permissões, Dados da empresa | como hoje | como hoje |
-| *(fora de escopo, sem mudança)* | OS operacionais, Catálogo operacional | como hoje | como hoje |
+| | Catálogo operacional *(fora de escopo, sem mudança na tela)* | `/catalogo/operacional` | como hoje |
+
+**Menu do usuário (rodapé da sidebar):** Meu perfil, Abrir sempre em…, Tema, a seção **Organização** e Sair. A seção Organização (Time, Setores, Funções e permissões) só aparece para quem administra (`organizacao.configurar` ou `usuarios.gerenciar`). A rota `/time` passou a exigir uma dessas permissões.
+
+**Ordem na Execução (14/10/2026, pedido do usuário):** Visão geral (ou Painel do setor) primeiro, depois Meus serviços e OS operacionais.
+
+**Nova venda** aparece no menu e também como botão principal da página de Vendas e ação da busca global (Ctrl+K).
+
+**Header e marca (13/10/2026, decididos pelo usuário):**
+- **Sem header no computador.** O breadcrumb fica numa linha pequena acima do título, só nas páginas internas (ex.: `Vendas › OS 682 › Editar`, `Execução › Serviço › #12`). Nas páginas do menu não aparece, porque a sidebar já marca onde a pessoa está. O grupo sai do breadcrumb quando tem o mesmo nome do item (nada de "Vendas › Vendas").
+- **Busca global** abre pelo Ctrl+K (⌘K no Mac). Não há campo de busca na sidebar.
+- **Celular e tablet:** barra fina no topo com o botão do menu, o símbolo (leva à tela inicial) e a lupa da busca.
+- **Marca:** símbolo + "ERGOGROUP" numa cor só (a do texto), sem o subtítulo "Gestão de OS". No tema escuro, o símbolo usa `logo-ergo-escuro.png`, com a figura cinza-escura clareada.
+- **Sidebar recolhida:** mostra o símbolo; ao passar o mouse, ele vira o botão de expandir. Aberta, o botão de recolher fica sempre visível.
 
 **Mudanças em relação ao menu atual:**
 - **Entram:** Meus serviços, Painel do setor e o grupo Comercial.
@@ -205,6 +220,15 @@ Em cada página: rota, permissão, blocos (endpoint), ações e estados. "Bloco"
   - mudar o status da própria tarefa;
   - abrir o detalhe do serviço.
 - **Vazio:** "Nada com você agora."
+
+### 6.1.1 Meus serviços por etapa (14/10/2026, plano aprovado)
+
+Os mesmos princípios do Painel do setor (§6.2.6 a §6.2.8), aplicados a quem executa. Plano, decisões e o que foi implementado: [`plano-meus-servicos-por-etapa.md`](./plano-meus-servicos-por-etapa.md). Em resumo:
+- abas = etapas da tarefa: **Novas** (padrão) · A iniciar · Em andamento · Concluídas · mês, sem sobreposição; substituem Todos · Com você · Atrasados · Vencem em 7 dias · Concluídos;
+- **Precisa de atenção**: Atrasadas · Vencem em 7 dias · Sem andamento · Aguardando algo · Novas há 3 dias ou mais;
+- quadro sem abas, com 4 colunas (Novas → A iniciar → Em andamento → Concluídas), concluídas por mês;
+- ações só com ícone; Iniciar já confirma o recebimento; "Confirmar todas (N)" na linha das abas;
+- "Recebida há N dias" conta da atribuição atual (`atribuida_em`), e não da criação da tarefa.
 
 ### 6.2 Painel do setor — `/setor/:setorId`
 - **Permissão:** `servicos.ver_setor` no setor. Em `/setor` sem id, abre o último setor usado ou o primeiro da lista.
@@ -326,8 +350,171 @@ Respostas do usuário e o que mudou nos wireframes:
    - barra de filtros em dropdown: **Vendedor** (com "Minhas vendas" no topo), **Cliente**, **Setor** (vendas com serviço no setor), **Financeiro** (só com `financeiro.ver_valores`) e **Data** (da venda ou da conclusão), com busca por cliente ou número;
    - a data da venda e o vendedor passam a ter colunas separadas (uma informação por coluna);
    - as antigas visões rápidas (Minhas vendas, Com serviço na fila, Em execução, Concluídas) viraram os indicadores e o filtro Vendedor.
+   > **Revisto em 13/10/2026 (decidido pelo usuário), só na tela de Vendas:** os indicadores clicáveis saíram e Vendas passou ao padrão de listagem (`DataTable`). Ver §6.4. Painel do setor, Visão geral e Meus serviços continuam com os indicadores.
+   >
+   > **Revisto em 14/10/2026:** Painel do setor, Visão geral e Meus serviços também passaram ao padrão de listagem. Ver §6.2.4.
 5. **Cobranças fica como está** (o usuário não pediu a mudança).
 6. **Sem validação com a gestora técnica.** A pergunta 9 da seção 9 sai.
+
+### 6.2.4 Painel do setor, Visão geral e Meus serviços no padrão de listagem (14/10/2026)
+
+**Decidido pelo usuário (14/10/2026):** migrar as três telas para o padrão de listagem (`DataTable`, `design-system-tabelas.md`), como Vendas. Motivo: a Visão geral, tela inicial de quem tem `setores.todos` (ex.: Gestor Comercial), destoava das demais listagens. Substitui, nessas telas, os indicadores clicáveis, a barra de filtros em dropdown e a tabela agrupada da R4.
+
+**Como ficou (implementado):**
+- **Painel do setor e Visão geral** (`features/execucao/pages/PainelDoSetorPage.tsx`): uma linha por serviço, vinda da fila, do andamento (as tarefas do serviço viram uma linha), dos alertas ou dos concluídos.
+  - **Visões com contagem:** Todos · **Para distribuir** (padrão) · Em andamento · Atrasados · Parados · Concluídos no mês (ou "no período", com o filtro Conclusão). *Substituídas em 14/10/2026 pelas abas por etapa (§6.2.6).*
+  - **Colunas por visão** (uma informação por coluna): Serviço (só o nome; a descrição saiu da tabela em 14/10/2026, a pedido do usuário, e fica no detalhe do serviço), Cliente, OS, Setor (só na Visão geral), e mais:
+    - Para distribuir: Na fila há, Prioridade, Outros serviços da OS; ação **Distribuir** (quando o setor tem quem organize);
+    - Em andamento, Atrasados e Parados: Responsável, Etapa, Situação; ação **Estou ciente** nos parados;
+    - Concluídos: Concluído por, Término, Prazo (no prazo ou dias depois);
+    - Todos: Etapa, Responsável, Situação.
+  - **Filtros facetados:** Setor (só na Visão geral), Pessoa, Cliente, Prioridade (em Para distribuir) e Etapa (em Todos). **Data:** Chegada ao setor (Para distribuir), Prazo (Todos, Em andamento, Atrasados, Parados) ou Conclusão (Concluídos; também define o período buscado no backend).
+  - **Ordenação padrão:** Para distribuir pela mais antiga na fila; Concluídos pelo término mais recente; as demais pelo prazo (atrasados e próximos primeiro, sem prazo no fim).
+- **Meus serviços** (`features/execucao/pages/MeusServicosPage.tsx`): uma linha por tarefa.
+  - **Visões:** Todos · **Com você** (padrão) · Atrasados · Vencem em 7 dias · Concluídos no mês (ou "no período").
+  - **Colunas:** Serviço (só o nome; a parte fica no detalhe do serviço), Cliente, OS, Situação, Status; nos concluídos, Concluída em no lugar de Situação e Status. Ações **Iniciar** e **Concluir** na linha.
+  - **Filtros:** Cliente, Status (em Todos) e Data (Prazo ou Conclusão).
+- **Quadro:** continua como alternativa à tabela, agora na alternância **Tabela | Quadro** da toolbar do `DataTable` (nova opção `renderBoard`). Busca, visões e filtros valem nos dois; o quadro mostra todos os registros filtrados, sem paginação. Arrastar continua distribuindo (painel) e mudando o status (Meus serviços).
+- Busca, visão, filtros, ordem e página ficam na URL (`?view=`, `f.<filtro>=`), como nas outras listagens. O antigo `?foco=` deixou de existir.
+- O `DataTable` passou a aceitar mais de um filtro de data (`periodFilter` como lista).
+
+**Proposta (escolhas minhas na migração, a validar pelo usuário):**
+1. **Agrupar por pessoa/OS/cliente/setor saiu.** O padrão de listagem não agrupa; o filtro Pessoa e a ordenação pelas colunas Responsável e Cliente cobrem o uso. Se fizer falta, o `DataTable` pode ganhar agrupamento.
+2. **A tabela "Resumo por setor" da Visão geral saiu.** O filtro Setor mostra a contagem de cada setor na visão escolhida.
+3. **Em andamento é por serviço, não por tarefa.** O Status de cada tarefa e o "Com a pessoa há" saíram do painel; a Etapa (Distribuído ou Em execução) e o Responsável (todos os da tarefa) ficam na linha. O detalhe por tarefa continua em `/servicos/:id`.
+4. Visão **Todos** acrescentada nas três telas, para ver tudo junto (principalmente no quadro).
+
+### 6.2.5 Revisão do conteúdo das tabelas da execução (14/10/2026, decidida pelo usuário)
+
+**Pedido:** as abas estavam certas, mas o conteúdo das células não ajudava no dia a dia: coluna Setor redundante, faltava o que será feito, "Situação" misturava prazo e movimentação, "Outros serviços da OS" esticava a linha e as ações (Distribuir, Estou ciente, Iniciar, Concluir) ficavam soltas, com o "Distribuir" em verde cheio em toda linha.
+
+**Decidido (as três perguntas: sim):**
+1. **Serviço:** o nome em **caixa alta** e, embaixo, o **"o que será feito"** do serviço, em uma linha (texto completo no title). Exceção consciente à regra "uma informação por coluna": é a mesma informação, mais completa.
+2. **Outros serviços da OS:** uma etiqueta curta de largura fixa (**"+2 na OS"**); ao clicar, lista cada serviço com setor, etapa e responsáveis.
+3. **Caixa alta** no nome do serviço também nas tabelas, como na nova venda.
+
+**E também:**
+- **Sem a coluna Setor** (o serviço já diz o setor). Na Visão geral, o setor continua no filtro.
+- **"Situação" dividida** em **Prazo** (data + "vence em 3 dias" / "4 dias atrasada") e **Última movimentação** ("Há 12 dias", em amarelo quando parado, e "Ciente: motivo" quando há ciência). Cada uma ordena sozinha.
+- **Coluna "Ações"** com cabeçalho e largura fixa em todas as abas: a ação principal como botão discreto com ícone (contorno) e o menu **⋯** com "Abrir o serviço" e "Abrir a venda".
+  - Painel do setor e Visão geral: **Distribuir** (na fila, para quem organiza) e **Estou ciente** (parados).
+  - Meus serviços: **Iniciar** e **Concluir**.
+- **Responsável, Vendido por e Concluído por** com o nome completo; vários responsáveis: o primeiro e "+N".
+
+**Colunas por aba (Painel do setor e Visão geral):**
+
+| Aba | Colunas |
+|---|---|
+| Para distribuir | Serviço · Cliente · OS · Chegou há (amarelo a partir de 5 dias) · Prioridade · Vendido por · Outros na OS · Ações |
+| Em andamento | Serviço · Cliente · OS · Responsável · Etapa · Prazo · Última movimentação · Ações |
+| Atrasados | Serviço · Cliente · OS · Responsável · Prazo · Etapa · Ações (mais atrasados primeiro) |
+| Parados | Serviço · Cliente · OS · Responsável · Sem movimentação há · Prazo · Ações (mais tempo parado primeiro) |
+| Concluídos | Serviço · Cliente · OS · Concluído por · Término · No prazo? · Ações |
+| Todos | Serviço · Cliente · OS · Etapa · Responsável · Prazo · Ações |
+
+Vendido por e Outros na OS são P2 (somem abaixo de 1280px; voltam pelo menu Colunas).
+
+**Meus serviços:** Serviço (com o que será feito) · Cliente · OS · Status · Prazo · Última movimentação · Ações (Iniciar/Concluir + ⋯); concluídos: Serviço · Cliente · OS · Concluída em.
+
+**Backend:** as linhas de tarefa (`/api/execucao/andamento/` e `/api/execucao/meus-servicos/`) ganharam `servico_descricao` (o "o que será feito" do serviço; a `descricao` da linha é a da tarefa).
+
+### 6.2.6 Abas por etapa, "Precisa de atenção" e concluídos por mês (14/10/2026, wireframe aprovado)
+
+**Problema relatado pelos responsáveis do setor de execução:** falta de controle sobre os serviços do setor. A gestora precisa ver, de forma clara, o que acabou de chegar, o que está distribuído, o que não foi iniciado, o que está iniciado e o que foi concluído.
+
+**Diagnóstico das abas anteriores** (Todos · Para distribuir · Em andamento · Atrasados · Parados · Concluídos no mês):
+- "Para distribuir" juntava **novo** e **a distribuir**, e "Em andamento" juntava **distribuído** (ninguém começou) e **em andamento** (ADR 0009);
+- Atrasados e Parados não são etapas, e sim situações dentro de uma etapa: o mesmo serviço aparecia em duas abas e as contagens não somavam;
+- o quadro tinha colunas diferentes das abas;
+- ver outro mês de concluídos dependia de um filtro de data pouco visível.
+
+**Decidido (wireframe aprovado pelo usuário em 14/10/2026), implementado em `features/execucao/pages/PainelDoSetorPage.tsx`:**
+1. **Abas = etapas do serviço, sem sobreposição:** **Em aberto** (padrão; tudo que não foi concluído) · Novos · A distribuir · Distribuídos · Em andamento · Concluídos. *(Em aberto saiu e Novos virou a padrão: §6.2.7.)* Cada serviço está numa aba só (fora "Em aberto"), e as contagens são o resumo do setor.
+2. **"Precisa de atenção"** é um filtro (dropdown), que cruza com qualquer aba e com o quadro: **Atrasados**, **Parados** (sem movimentação, sem ciência vigente), **Sem ciência do técnico** (alguma tarefa na etapa `nova`) e **Novos há 3 dias ou mais**.
+3. **Colunas por aba** (uma informação por coluna):
+
+   | Aba | Colunas |
+   |---|---|
+   | Em aberto | Serviço · Cliente · OS · Etapa · Responsável · Prazo · Ações |
+   | Novos | Serviço · Cliente · OS · Chegou há (amarelo a partir de 3 dias) · Prioridade · Vendido por · Outros na OS · Ações |
+   | A distribuir | Serviço · Cliente · OS · Chegou há · Recebido por · Prioridade · Outros na OS · Ações |
+   | Distribuídos | Serviço · Cliente · OS · Responsável · Ciência do técnico ("Aguardando há N dias" ou "Ciente") · Prazo · Ações |
+   | Em andamento | Serviço · Cliente · OS · Responsável · Prazo · Última movimentação · Ações |
+   | Concluídos | Serviço · Cliente · OS · Concluído por · Término · No prazo? · Ações |
+4. **Ações:**
+   - Novos: **Confirmar** (ciência de recebimento do setor) na linha e, na barra, **Confirmar recebimento dos N** quando há mais de um; "Distribuir direto" no menu ⋯ (distribuir também registra a ciência);
+   - A distribuir: **Distribuir**;
+   - parados: **Estou ciente**;
+   - só para quem organiza o setor.
+5. **Quadro com as mesmas etapas, na mesma ordem:** Novos → A distribuir → Distribuídos → Em andamento → Concluídos.
+   - Cada aba mostra as colunas da sua etapa; nas abas Novos e A distribuir aparecem também as colunas de destino do arraste.
+   - **Arrastar** de Novos para A distribuir confirma o recebimento; de Novos ou A distribuir para Distribuídos abre o modal de distribuição. Depois disso, quem move é o técnico (iniciar e concluir a tarefa).
+   - Em "Em aberto", a coluna Concluídos mostra a navegação do mês e o botão **Ver os N concluídos**, que abre a aba (os concluídos não entram nos filtros dos abertos).
+6. **Concluídos por mês:** a barra da aba (e o cabeçalho da coluna no quadro) tem **‹ Outubro de 2026 ›** e **Ver todo o período**. O mês fica na URL (`?mes=2026-10` ou `?mes=todo`); sem ele, o mês atual. O filtro de data de conclusão saiu (a navegação por mês faz esse papel).
+7. **Seletor de setor** mostra quantos novos cada setor tem.
+
+**Definições tomadas na implementação (proposta):**
+- "Novo há 3 dias ou mais" usa o limite fixo de 3 dias (`DIAS_NOVO_ANTIGO`), o mesmo do wireframe.
+- "Ver todo o período" busca os concluídos desde 01/01/2000 (o backend exige um intervalo).
+- "Aguardando ciência há N dias" conta da criação da tarefa (o backend não tem a data de atribuição; ADR 0009, fase 13).
+
+> **Revisto em 14/10/2026 (§6.2.7):** a aba "Em aberto" saiu, a aba padrão passou a ser Novos e, no quadro, as abas somem.
+
+### 6.2.7 Ajustes pedidos pelo usuário depois de usar o painel (14/10/2026, decididos)
+
+**Pedido:**
+1. No quadro, as abas de cima tiram o sentido do quadro (ao clicar em Distribuídos, sobrava uma coluna só). **No quadro, as colunas são as próprias abas.**
+2. A primeira aba (e a padrão) é **Novos**, os recém-chegados. A aba "Em aberto" confundia com "Em andamento" e repetia o que o quadro mostra: **saiu**.
+3. Uma ação de **um clique só** para confirmar a ciência e distribuir.
+4. A barra de filtros quebrava a linha e deixava um bloco grande com espaço vazio.
+
+**Como ficou (implementado):**
+- **Abas da tabela:** Novos (padrão) · A distribuir · Distribuídos · Em andamento · Concluídos · mês. Saíram a coluna e o filtro Etapa, que só existiam em "Em aberto". Endereços antigos com `?view=em_aberto` abrem em Novos.
+- **Quadro:** as abas somem e o quadro mostra sempre as 5 colunas (Novos → A distribuir → Distribuídos → Em andamento → Concluídos), com a busca e os filtros que valem em todas as colunas: Setor (Visão geral), Precisa de atenção, Pessoa e Cliente. Prioridade e os filtros de data ficam só na tabela. A coluna Concluídos traz a navegação do mês.
+  - No `DataTable`, a nova opção `boardReplacesViews` faz isso: no quadro, esconde as visões, entrega ao quadro todos os registros da busca e dos filtros e pode trocar os filtros (`facets`, `periodFilter`).
+- **Ações num serviço novo:**
+  - tabela: **Confirmar** (só a ciência, botão discreto) e **Confirmar e distribuir** (abre o modal de distribuição; distribuir registra a ciência junto, ADR 0009). O modal se chama "Confirmar e distribuir" e avisa que o recebimento fica confirmado;
+  - quadro: **Confirmar e distribuir** no cartão; só confirmar é arrastar para A distribuir;
+  - barra da aba Novos: **Confirmar todos (N)**.
+- **Barra de filtros em duas zonas:** à esquerda, busca e filtros (quebram linha só entre eles); à direita, as ações (mês, Colunas, densidade, Tabela | Quadro), sempre na primeira linha.
+
+**Segunda rodada (14/10/2026, pedido do usuário: "UI básico"):**
+- A busca cortava o texto ("…cliente ou O"): voltou a 20rem.
+- "Chegada ao setor" caía para uma segunda linha: para caber numa linha, **Colunas** e **densidade** viraram botões só com ícone (o nome fica no `title` e no `aria-label`), e **Confirmar todos (N)** saiu da barra e foi para a **linha das abas**, à direita (nova opção `viewsActions` do `DataTable`). Vale para todas as listagens.
+- **Modais maiores:** o `Dialog` base passou de `max-w-lg` para `max-w-2xl`, com altura máxima de 90% da tela e rolagem interna. O de distribuir foi para `max-w-4xl`, com a lista de membros em duas colunas e as linhas de "dividir" mais largas. Ciência do alerta, tarefa, registrar lançamento e acrescentar serviço foram para `max-w-2xl`. Modais com tamanho próprio (ex.: o menu de comandos) continuam como estão.
+- No serviço novo, o modal se chama **Confirmar e distribuir** (ou **Confirmar e dividir**), e o botão final diz o mesmo.
+
+**Terceira rodada (14/10/2026, pedido do usuário: tabela mais fina e compacta):**
+- **Serviço só com o nome** (caixa alta). O "o que será feito" saiu da linha e fica no detalhe do serviço (e no texto ao passar o mouse). Revoga, no Painel do setor e na Visão geral, o item 1 do §6.2.5.
+- **Ações só com ícone**, com tooltip e `aria-label`: Confirmar o recebimento (envelope, discreto) e Confirmar e distribuir (pessoa com +, contornado) nos novos; Distribuir nos a distribuir; Estou ciente nos parados; e o menu ⋯. A coluna Ações tem largura fixa de 116px em todas as abas. No cartão do quadro, os botões continuam com texto.
+- **Divisor na coluna Ações:** no `DataTable`, a coluna de ações ganhou a mesma linha de grade das outras (vale para todas as listagens).
+- **Ajuste seguinte (mesmo dia):** a coluna Serviço ficou mais estreita (até 18rem; primeiro 15rem, que ficou curto demais) e a Cliente mais larga (até 28rem), com o nome do cliente em destaque (peso médio, cor do texto principal). Todas as ações da tabela ficaram iguais: só o ícone, **sem borda**, no padrão de "Confirmar o recebimento".
+
+### 6.2.8 Aviso de sem andamento e "Explicar a pausa" (14/10/2026, proposta aprovada)
+
+**Problema relatado pelo usuário:** não ficava claro quando, onde e por que dar o "Estou ciente" no "Parado há N dias".
+
+**Diagnóstico:**
+- a tela não dizia que o aviso aparece depois de 7 dias sem mudança nas tarefas, nem para que serve (separar "esperando algo" de "esquecido");
+- "Parado" soava como acusação e contrariava o ADR 0008, seção 3 (o sistema não rotula o serviço como parado);
+- "Estou ciente" não dizia com o que se estava concordando, e o motivo era opcional: o gestor muitas vezes não ficava sabendo nada;
+- a ação só existia no painel e no detalhe; o técnico, que sabe o porquê, via o aviso amarelo em Meus serviços sem ter o que fazer;
+- não aparecia até quando o aviso ficava em silêncio.
+
+**Decidido e implementado:**
+1. **Linguagem:** "Sem andamento há N dias" (no lugar de "Parado") e "**Explicar a pausa**" (no lugar de "Estou ciente"). No filtro "Precisa de atenção" do painel, "Parados" virou **Sem andamento**, e entrou **Aguardando algo** (pausa explicada).
+2. **Coluna "Andamento"** (painel: Distribuídos e Em andamento; Meus serviços), em três estados, cada um com tooltip explicando:
+   - normal: "Última mudança há 3 dias", discreto;
+   - aviso: "Sem andamento há 9 dias", amarelo;
+   - pausa explicada: "Aguardando o cliente · até 21/10" (o motivo e quando o aviso volta).
+3. **Modal "Explicar a pausa"** (`components/CienciaModal.tsx`): título "X está sem andamento há N dias", com cliente, OS, responsáveis e prazo; a regra em uma frase; e **duas saídas lado a lado**:
+   - **O trabalho andou** → "Atualizar a tarefa" (o aviso some na hora). No detalhe do serviço, rola até as tarefas; nas outras telas, abre o detalhe em `#tarefas`;
+   - **Está esperando algo** → o motivo (Cliente, Documentação, Agendamento, Terceiro ou Outro) é **obrigatório**, e a observação é obrigatória em "Outro". Rodapé: "Volta a avisar em dd/mm se nada mudar. O prazo continua contando." Botão "Registrar motivo".
+4. **Meus serviços:** aviso no topo ("N serviços seus estão sem andamento há 7 dias ou mais", com o que fazer) e o botão **Revisar**, que aplica o filtro novo **Andamento: Sem andamento**. Na linha, o ícone de ampulheta (Explicar a pausa) ao lado de Iniciar/Concluir.
+5. **Painel do setor:** a ação da linha é o ícone de ampulheta, "Explicar a pausa"; no quadro, os cartões mostram a pausa com a data.
+6. **Detalhe do serviço:** o aviso no topo, com "Atualizar a tarefa" e "Explicar a pausa" (o antigo botão "Estou ciente" do cabeçalho saiu); o campo "Movimentação" virou "Andamento" e mostra o motivo, até quando e quem explicou.
+
+**Backend (ADR 0008, revisão de 14/10/2026):** motivo obrigatório (e observação em "outro"), `ciencia_ate` no detalhe e nos alertas, e a pausa do serviço nas linhas de tarefa (`servico_ciencia_*`).
 
 ### 6.3 Detalhe do serviço — `/servicos/:id`
 - **Permissão:** quem vê o serviço (404 para quem não vê).
@@ -365,20 +552,30 @@ Respostas do usuário e o que mudou nos wireframes:
 - **Ações:**
   - **Nova venda**;
   - abrir o resumo da venda.
-- **Indicadores e filtros (decidido em 11/10/2026):** os da seção 6.2.3, item 4. Eles substituem as visões rápidas da proposta original:
+- **Padrão de listagem (decidido em 13/10/2026, substitui os indicadores clicáveis de 11/10):**
+  - **Por quê:** o filtro do indicador ficava fora da barra de filtros e dos chips (a tabela parecia mostrar tudo), o filtro ficava em dois lugares, os indicadores se sobrepunham sem um "Todas", e número de acompanhamento é papel dos painéis, não da listagem.
+  - **Visões** (faixa com contagem acima da tabela, na URL `?view=`): Todas · Para distribuir · Em execução · Concluídas.
+  - **Toolbar do `DataTable`:** busca por cliente ou nº da OS; filtros facetados com contagem: **Vendedor** ("Minhas vendas" no topo para quem tem `os.gerenciar`), **Cliente** (com busca na lista), **Status**, **Condição** e **Financeiro** (os dois últimos só com `financeiro.ver_valores`; "A faturar" é uma opção do Financeiro); **Data da venda** (esta semana, este mês, mês passado ou de/até). Menu Colunas e densidade.
+  - **Colunas:** OS · Cliente · Venda · Vendedor (nome completo) · Andamento · Status · Condição 💲 · Valor 💲 · Valor mensal 💲 (oculta por padrão) · Financeiro 💲. Ordenação padrão: OS mais recente primeiro; todas as colunas ordenáveis.
+  - Paginação de 50 linhas (25/50/100); busca, visão, filtros, ordem e página na URL; linha abre o resumo da venda (Ctrl+clique em nova aba).
+  - **Pendentes, dependem do backend (proposta):** a visão **Com atraso** e o filtro **Setor** precisam que a lista de vendas (`OrdemServicoListSerializer`) traga os setores dos serviços e se algum serviço está atrasado.
+  - **Dados a corrigir no cadastro (não é código):** alguns vendedores aparecem pelo login (ex.: "Samantha.ergo") porque o `nome_completo` deles está preenchido assim; e os nomes de clientes estão gravados em caixa alta.
+- **Histórico, indicadores e filtros (decidido em 11/10/2026, substituído acima):** os da seção 6.2.3, item 4. Eles substituíam as visões rápidas da proposta original:
   - Minhas vendas → filtro Vendedor (`?minhas=true`);
   - Com serviço na fila → indicador Para distribuir (`?etapa=na_fila`);
   - Em execução e Concluídas → indicadores.
 
 ### 6.5 Nova venda — `/vendas/nova` (e edição em `/vendas/:id/editar`)
 - **Permissão:** `os.gerenciar`.
-- **Formato:** página em etapas. Uma página (e não um modal) porque a venda tem muitos campos e uma lista de serviços. A revisão do fim evita o vai e volta.
-- **Etapas:**
+- **Formato (até 13/10/2026, substituído pelo redesenho abaixo):** página em etapas. Uma página (e não um modal) porque a venda tem muitos campos e uma lista de serviços. A revisão do fim evita o vai e volta.
+- **Etapas (substituídas):**
   1. **Cliente e venda:** cliente, data da venda, prioridade e observação.
   2. **Condição:**
-     - tipo (à vista, parcelado ou recorrente), com os campos de cada tipo;
+     - tipo (à vista ou parcelado), com os campos de cada tipo (revisão de 13/10/2026, `backend/docs/faturamento/03-revisao-a-vista-e-parcelado.md`);
      - valor total;
-     - valor mensal (recorrente);
+     - vencimento: data combinada ou dias após a nota (no parcelado, a 1ª parcela; as outras mensais);
+     - observações de pagamento e faturamento (a observação da OS, que saiu da etapa 1);
+     - cada campo com o que significa, e avisos para vencimento em data fixa com liberação na conclusão;
      - forma de pagamento;
      - quando libera para o financeiro (na venda ou na conclusão);
      - contato para envio da NF.
@@ -388,6 +585,12 @@ Respostas do usuário e o que mudou nos wireframes:
 - **Edição:** etapas 1 e 2. Os serviços são acrescentados ou ajustados a partir do resumo da venda.
 - **Sem `financeiro.ver_valores`:** cria com a condição normalmente. Na edição, a etapa 2 não aparece, porque o backend ignora esses campos.
 
+**Redesenho decidido e implementado em 13/10/2026** (validado pelo usuário no wireframe `wireframes/lote4-nova-venda.html`; código em `features/vendas/pages/NovaVendaPage.tsx` e `features/vendas/components/AdicionarServicosModal.tsx`). Substitui as etapas acima:
+- **Página única com três seções numeradas**, sempre visíveis, na ordem da conversa de venda: **1. Cliente e venda** (cliente com CNPJ e representante para conferir, data, prioridade) → **2. Serviços vendidos** → **3. Pagamento** (a condição revisada, com a explicação de cada campo e os avisos). O número da seção vira ✓ quando ela está completa.
+- **Resumo fixo à direita** no lugar da etapa "Revisão": cliente, serviços por setor, valor e condição em texto, e a lista do que falta (cada item leva ao campo). O botão "Registrar venda" fica no resumo e só libera quando não falta nada. Abaixo de 1024px, vira uma barra fixa no rodapé com o valor, a primeira pendência e o botão.
+- **Serviços (revisto em 14/10/2026, a pedido do usuário):** cada serviço da venda é um **card** comprido (nome em caixa alta, etiqueta do setor que executa, a prioridade quando difere da venda, "o que será feito" e os botões Editar e Remover), no lugar da tabela. O botão **"Adicionar serviços"** abre um **modal** em que se adiciona **um serviço por vez** e o modal continua aberto para o próximo: Serviço e Prioridade na mesma linha (alinhados), **"O que será feito"** (obrigatório, sem valores) e **"Adicionar à OS"**; o modal confirma o que entrou e lista os serviços já na venda; **"Concluir"** fecha (se houver algo preenchido e não adicionado, pergunta: adicionar e fechar, ou descartar). **Editar** abre o mesmo modal com um serviço só (Salvar/Cancelar). A lista de serviços é **o catálogo inteiro numa lista só**, em ordem alfabética, **com o setor na frente** e **em caixa alta** (só a exibição), sem separar por setor. Repetir um serviço é permitido, com aviso. Código: `features/vendas/components/ServicosDaVendaModal.tsx`; o formulário fixo e o modal em duas etapas anteriores foram removidos.
+- **Edição:** mesma página, só com Cliente e venda e Pagamento; botão "Salvar alterações".
+
 ### 6.6 Resumo da venda — `/vendas/:id`
 - **Permissão:** quem vê a OS.
 - **Blocos:**
@@ -396,7 +599,7 @@ Respostas do usuário e o que mudou nos wireframes:
 - **Conteúdo:**
   - cabeçalho com cliente, OS, data, quem vendeu, status e andamento;
   - **serviços**: por serviço, setor, etapa, responsáveis com início e término, prazo e quem concluiu, com link para o detalhe do serviço;
-  - **condições** (só com `financeiro.ver_valores`): resumo, valor, valor mensal, vencimentos e contato da NF;
+  - **condições** (só com `financeiro.ver_valores`): resumo, valor, vencimento, contato da NF e observações de pagamento;
   - **financeiro** (só com `financeiro.ver_valores`): liberação e lançamento;
   - **linha do tempo da venda**.
 - **Ações:**
@@ -406,6 +609,14 @@ Respostas do usuário e o que mudou nos wireframes:
   - Excluir (`os.excluir`).
 
 ### 6.7 Cobranças — `/cobrancas`
+
+> **Revisto em 14/10/2026 (decidido pelo usuário, implementado):** Cobranças passou ao padrão de listagem
+> (`DataTable`). As abas são **Para faturar** (padrão) · **Em execução** · **Faturadas** (por mês). Entraram o
+> **Resumo para faturar** (`/cobrancas/:id`), o **Faturar** em duas etapas e a **Conferência do faturamento**
+> (`/cobrancas/conferencia`). A descrição abaixo é a da R6 e fica como registro. O que vale está no backend, em
+> `docs/faturamento/04-proposta-ux-financeiro.md` (seções 6 e 8), e no wireframe `wireframes/lote5-financeiro.html`
+> (aprovado; a tabela segue o `DataTable`).
+
 - **Permissão:** `financeiro.registrar_cobranca`.
 - **Bloco:** `useCobrancas(filtros)`.
 - **Abas:** A faturar, Previsão e Faturadas. Cada aba mostra o contador (quantidade e valor). A aba e os filtros ficam na URL.
@@ -415,7 +626,7 @@ Respostas do usuário e o que mudou nos wireframes:
   - cliente;
   - data da venda;
   - quem vendeu;
-  - valor (e o valor mensal, se houver);
+  - valor;
   - condição;
   - primeiro vencimento;
   - liberação (quando e por quê);
@@ -428,10 +639,33 @@ Respostas do usuário e o que mudou nos wireframes:
 
 ### 6.8 Telas que ficam como estão (ajustes na R7)
 - Análise operacional e financeira.
-- Clientes e contatos.
+- Contatos. (Clientes passou ao padrão de listagem em 14/10/2026, §6.9.)
 - Catálogo: mostrar os `avisos` ao salvar.
 - Time e Setores: mostrar "sem organizador".
 - Funções e permissões, Dados da empresa.
+
+### 6.9 Clientes — `/clientes` no padrão de listagem (14/10/2026, wireframe aprovado)
+
+**Decidido pelo usuário (14/10/2026):** a listagem de clientes passa ao `DataTable`, como Vendas, Painel do setor, Meus serviços e Catálogo, com a mudança no serializer de listagem do backend. Wireframe aprovado: [`wireframes/clientes.html`](./wireframes/clientes.html). O formulário (`/clientes/new` e `/clientes/:id/edit`) não mudou.
+
+**Como ficou (implementado, `features/clientes/pages/ClientListPage.tsx`):**
+- **Colunas** (uma informação por coluna, todas ordenáveis):
+  - P1: Cliente (nome como foi cadastrado, sem caixa alta), Documento (`CNPJ 12.345.678/0001-90`, com `formatDocumento`), Tipo, Representante (nome completo), Situação.
+  - P2: E-mail do representante (`mailto:`, não abre a linha), Cliente desde, Cobra revisão.
+  - P3 (menu Colunas): Contato do representante (telefone), Setor do representante.
+- **Visões:** Ativos (padrão) · Inativos · Todos, com contagem. A contagem do título é a de ativos.
+- **Filtros:** Tipo, Documento (tipo de inscrição), Cobra revisão, Representante (com ou sem) e período de Cliente desde.
+- **Busca:** nome, número do documento (com ou sem pontuação), nome e e-mail do representante.
+- **Ordenação padrão:** nome A–Z. 50 linhas por página. Busca, visão, filtros, ordem e página ficam na URL.
+- **Clique na linha:** com `clientes.gerenciar`, abre a edição (`/clientes/:id/edit`, Ctrl+clique em nova aba). Sem a permissão, a linha não abre nada (não há tela de detalhe do cliente).
+- **Menu ⋯:**
+  - Editar (`clientes.gerenciar`);
+  - Ver vendas do cliente (quem acessa Vendas: `os.gerenciar` ou `os.ver_todas`): `/vendas?view=todas&f.cliente=<nome>`; nome com vírgula vai pela busca (`q`), porque o filtro da URL separa valores por vírgula;
+  - Desativar / Reativar (`clientes.gerenciar`), direto, com aviso;
+  - Excluir (`clientes.gerenciar`), com confirmação em modal (`components/ClienteExclusaoModal.tsx`). Se o cliente tem vendas, o backend responde 409 (a OS protege o cliente) e o mesmo modal passa à etapa "tem vendas", que oferece desativar.
+- **Novo cliente** só aparece com `clientes.gerenciar`. Antes, a página mostrava Novo, Editar e Excluir para todos (o backend recusava sem a permissão).
+
+**Backend:** o `ClienteListSerializer` (`GET /api/clientes/clientes/`) passou a trazer `tipo_inscricao`, `nome_representante`, `setor_representante`, `email_representante`, `contato_representante`, `cobranca_revisao_alteracao` e `data_criacao` (teste em `apps/clientes/tests.py`). A tela faz uma requisição só, em vez de buscar o detalhe de cada cliente da página. O contrato (`docs/api/api-schema.yaml`, `ClienteList`) e os tipos gerados foram atualizados; o serviço novo é `getClientesDaLista` / `useClientesDaLista` (tipo `ClienteDaLista`), e o antigo `getClientsPage` / `useClientsPage` saiu.
 
 ---
 

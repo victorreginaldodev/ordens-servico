@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarCheck, Clock, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Cartao, Quadro, type CartaoProps } from '@/features/execucao/components/Quadro';
+import { OutrosServicosResumo, ResultadoDoPrazo, Situacoes } from '@/features/execucao/components/Situacoes';
 import { Button } from '@/components/ui/button';
 import {
   CobrancaBadge,
@@ -215,6 +217,85 @@ export default function UiKitPage() {
             <EmptyState title="EmptyState avulso" description="Usado fora de tabelas também." action={<Button variant="outline">Ação</Button>} />
           </div>
         </div>
+      </Section>
+
+      <Section title="Cartões do quadro (serviços e tarefas)">
+        <Quadro<CartaoProps>
+          rotulo="Exemplo de quadro"
+          chave={(c: CartaoProps) => c.titulo + c.os}
+          cartao={(c: CartaoProps) => <Cartao {...c} />}
+          colunas={[
+            {
+              id: 'novo',
+              titulo: 'Para distribuir',
+              tom: 'warning',
+              itens: [
+                {
+                  titulo: 'Laudo ergonômico (AET)',
+                  descricao: 'Avaliação dos postos da linha de montagem e do almoxarifado.',
+                  os: 1042,
+                  cliente: 'Metalúrgica Santa Rita Indústria e Comércio Ltda.',
+                  setor: 'Ergonomia',
+                  prioridade: 'alta',
+                  tempo: <span className="inline-flex items-center gap-1 font-medium text-warning-strong"><Clock className="size-3.5" /> Na fila há 6 dias</span>,
+                  extra: <OutrosServicosResumo itens={[
+                    { id: 1, catalogo_nome: 'PGR', descricao: '', setor_nome: 'Segurança do Trabalho', etapa: 'em_execucao', responsaveis: [] },
+                    { id: 2, catalogo_nome: 'LTCAT', descricao: '', setor_nome: 'Higiene Ocupacional', etapa: 'novo', responsaveis: [] },
+                  ] as never} />,
+                  semPessoas: 'Sem responsável',
+                  acao: <Button size="sm">Distribuir</Button>,
+                  onAbrir: () => toast('Abrir serviço'),
+                },
+              ],
+            },
+            {
+              id: 'em_execucao',
+              titulo: 'Em execução',
+              tom: 'info',
+              itens: [
+                {
+                  titulo: 'PGR — Programa de Gerenciamento de Riscos',
+                  descricao: 'Parte: inventário de riscos da unidade 2',
+                  os: 1038,
+                  cliente: 'Transportadora Rápido Sul S.A.',
+                  setor: 'Segurança do Trabalho',
+                  tom: 'danger',
+                  situacao: <Situacoes prazo="2026-10-09" situacao="atrasado" />,
+                  pessoas: ['Mariana Souza Albuquerque', 'Carlos Henrique Prado'],
+                  onAbrir: () => toast('Abrir serviço'),
+                },
+                {
+                  titulo: 'Treinamento NR-35',
+                  os: 1035,
+                  cliente: 'Construtora Horizonte Ltda.',
+                  setor: 'Segurança do Trabalho',
+                  tom: 'warning',
+                  situacao: <Situacoes prazo="2026-10-24" situacao="depois" emAlerta diasSemMovimentacao={9} />,
+                  pessoas: ['João Pedro Martins'],
+                  acao: <Button size="sm" variant="outline">Estou ciente</Button>,
+                  onAbrir: () => toast('Abrir serviço'),
+                },
+              ],
+            },
+            {
+              id: 'concluido',
+              titulo: 'Concluídos no mês',
+              tom: 'success',
+              itens: [
+                {
+                  titulo: 'LTCAT',
+                  os: 1021,
+                  cliente: 'Hospital São Lucas',
+                  setor: 'Higiene Ocupacional',
+                  situacao: <ResultadoDoPrazo prazo="2026-10-10" termino="2026-10-08" noPrazo />,
+                  tempo: <span className="inline-flex items-center gap-1"><CalendarCheck className="size-3.5" /> Concluído em 08/10/2026</span>,
+                  pessoas: ['Ana Beatriz Fontes'],
+                  onAbrir: () => toast('Abrir serviço'),
+                },
+              ],
+            },
+          ]}
+        />
       </Section>
     </div>
   );

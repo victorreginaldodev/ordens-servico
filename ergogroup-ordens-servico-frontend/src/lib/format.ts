@@ -109,3 +109,6 @@ export const getIniciais = (nome: string | null | undefined): string =>
     .slice(0, 2)
     .join('')
     .toUpperCase() || '?';
+
+/** Texto com conteúdo de verdade: descrições como "." ou "-" (comuns nos dados migrados) não aparecem. */
+export const temTexto = (t: string | null | undefined): t is string => !!t && /[\p{L}\p{N}]/u.test(t);

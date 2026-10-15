@@ -1,11 +1,13 @@
 import type { ColumnDef, RowData, SortingFn } from '@tanstack/react-table';
 import type { LucideIcon } from 'lucide-react';
 import type { EmptyStateProps } from '@/components/kit';
+import type { DateInput } from '@/lib/format';
+import type { PresetDePeriodo } from '@/lib/periodo';
 
 export type Density = 'comfortable' | 'compact';
 
-/** Como os registros aparecem: linhas de tabela ou cards em grade. */
-export type Layout = 'tabela' | 'cards';
+/** Como os registros aparecem: linhas de tabela, cards em grade ou quadro em colunas (desenhado pela tela). */
+export type Layout = 'tabela' | 'cards' | 'quadro';
 
 /** P1 = sempre visível · P2 = oculta abaixo de 1280px · P3 = oculta por padrão (menu Colunas). */
 export type ColumnPriority = 1 | 2 | 3;
@@ -63,6 +65,17 @@ export interface DataTableFacet<T = any> {
   options?: FacetOption[];
   /** Valor(es) do registro para este filtro. Lista = o registro aparece em cada opção (ex.: setores de uma pessoa). */
   getValue?: (row: T) => string | string[] | null | undefined;
+  /** Campo de busca dentro do filtro, para listas longas (ex.: clientes). */
+  searchable?: boolean;
+}
+
+/** Filtro por período de uma data do registro (ex.: data da venda). Fica na URL como `f.<id>`. */
+export interface DataTablePeriodFilter<T> {
+  id: string;
+  label: string;
+  getDate: (row: T) => DateInput;
+  /** Períodos oferecidos; o padrão serve para datas passadas (sem "Próximos 7 dias"). */
+  presets?: PresetDePeriodo[];
 }
 
 export interface DataTableRowAction<T> {

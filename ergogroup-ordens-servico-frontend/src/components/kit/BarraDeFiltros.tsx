@@ -1,7 +1,9 @@
 import { CalendarRange, Check, ChevronDown, Columns3, List, Search, X, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ROTULO_PERIODO, intervaloDoPeriodo, type Periodo, type PresetDePeriodo } from '@/lib/periodo';
 
@@ -119,6 +121,93 @@ export function OpcaoDeFiltro({ marcado, onClick, children, extra }: { marcado: 
   );
 }
 
+const PRESETS_PADRAO: PresetDePeriodo[] = ['semana', 'prox7', 'mes', 'mes_passado', 'personalizado'];
+
+/** `AAAA-MM-DD` ↔ `Date` local (sem fuso, para o dia não "voltar" um). */
+const isoParaData = (v?: string) => {
+  if (!v) return undefined;
+  const [a, m, d] = v.split('-').map(Number);
+  return new Date(a, m - 1, d);
+};
+const dataParaIso = (d?: Date) =>
+  d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : undefined;
+const curta = (v: string) => v.split('-').reverse().slice(0, 2).join('/');
+const completa = (v?: string) => (v ? v.split('-').reverse().join('/') : '—');
+
+/**
+ * Conteúdo do filtro de período: períodos prontos e, no "Personalizado", um calendário de intervalo.
+ * Vai dentro de um popover (`FiltroDePeriodo`, filtro de data do `DataTable`); quem usa decide o gatilho.
+ */
+export function SeletorDePeriodo({
+  valor,
+  onChange,
+  presets = PRESETS_PADRAO,
+  titulo = 'Período',
+  rotuloLimpar = 'Limpar data',
+}: {
+  valor: Periodo | null;
+  onChange: (periodo: Periodo | null) => void;
+  presets?: PresetDePeriodo[];
+  titulo?: string;
+  rotuloLimpar?: string;
+}) {
+  const personalizado = valor?.preset === 'personalizado';
+  return (
+    <div>
+      <TituloDoFiltro>{titulo}</TituloDoFiltro>
+      {presets.map((p) => {
+        const intervalo = p === 'personalizado' ? null : intervaloDoPeriodo({ preset: p });
+        return (
+          <OpcaoDeFiltro
+            key={p}
+            marcado={valor?.preset === p}
+            onClick={() => onChange(valor?.preset === p ? null : { preset: p })}
+            extra={intervalo ? `${curta(intervalo.de)} a ${curta(intervalo.ate)}` : null}
+          >
+            {ROTULO_PERIODO[p]}
+          </OpcaoDeFiltro>
+        );
+      })}
+      {personalizado ? (
+        <div className="mt-1 border-t pt-1">
+          <Calendar
+            mode="range"
+            locale={ptBR}
+            numberOfMonths={1}
+            defaultMonth={isoParaData(valor.de) ?? isoParaData(valor.ate)}
+            selected={{ from: isoParaData(valor.de), to: isoParaData(valor.ate) }}
+            onSelect={(r) => onChange({ preset: 'personalizado', de: dataParaIso(r?.from), ate: dataParaIso(r?.to) })}
+            className="mx-auto w-fit p-2"
+            classNames={{
+              cell: 'relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/15 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md [&:has(.day-range-start)]:rounded-l-md [&:has(.day-range-end)]:rounded-r-md',
+              day_range_start: 'day-range-start',
+              day_range_middle: 'aria-selected:bg-transparent aria-selected:text-foreground',
+              day_today: 'font-semibold text-primary',
+            }}
+          />
+          <div className="grid grid-cols-2 gap-2 px-2 pb-1 text-xs">
+            <div className="rounded-md border px-2 py-1.5">
+              <span className="block text-muted-foreground">De</span>
+              <span className="font-medium tabular-nums">{completa(valor.de)}</span>
+            </div>
+            <div className="rounded-md border px-2 py-1.5">
+              <span className="block text-muted-foreground">Até</span>
+              <span className="font-medium tabular-nums">{completa(valor.ate)}</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {valor ? (
+        <div className="mt-1 flex justify-end border-t px-1 pt-1.5">
+          <Button variant="ghost" size="sm" onClick={() => onChange(null)}>
+            {rotuloLimpar}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** Filtro de data: a data de referência (prazo, chegada, conclusão…) e o período. */
 export function FiltroDePeriodo<Campo extends string>({
   campos,
@@ -135,9 +224,7 @@ export function FiltroDePeriodo<Campo extends string>({
   aberto?: boolean;
   onAberto?: (v: boolean) => void;
 }) {
-  const presets: PresetDePeriodo[] = ['semana', 'prox7', 'mes', 'mes_passado', 'personalizado'];
   const chaves = Object.keys(campos) as Campo[];
-  const curta = (v: string) => v.split('-').reverse().slice(0, 2).join('/');
   return (
     <FiltroDropdown icone={CalendarRange} rotulo="Data" valor={periodo ? ROTULO_PERIODO[periodo.preset] : null} aberto={aberto} onAberto={onAberto} largura="w-72">
       {chaves.length > 1 ? (
@@ -160,39 +247,11 @@ export function FiltroDePeriodo<Campo extends string>({
           </div>
         </>
       ) : null}
-      <TituloDoFiltro>Período{chaves.length === 1 ? ` (${campos[chaves[0]].toLowerCase()})` : ''}</TituloDoFiltro>
-      {presets.map((p) => {
-        const intervalo = p === 'personalizado' ? null : intervaloDoPeriodo({ preset: p });
-        return (
-          <OpcaoDeFiltro
-            key={p}
-            marcado={periodo?.preset === p}
-            onClick={() => onChange(campo, periodo?.preset === p ? null : { preset: p })}
-            extra={intervalo ? `${curta(intervalo.de)} a ${curta(intervalo.ate)}` : null}
-          >
-            {ROTULO_PERIODO[p]}
-          </OpcaoDeFiltro>
-        );
-      })}
-      {periodo?.preset === 'personalizado' ? (
-        <div className="grid grid-cols-2 gap-2 px-2 pb-1 pt-1.5">
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            De
-            <Input type="date" className="h-8" value={periodo.de ?? ''} onChange={(e) => onChange(campo, { ...periodo, de: e.target.value })} />
-          </label>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            Até
-            <Input type="date" className="h-8" value={periodo.ate ?? ''} onChange={(e) => onChange(campo, { ...periodo, ate: e.target.value })} />
-          </label>
-        </div>
-      ) : null}
-      {periodo ? (
-        <div className="mt-1 flex justify-end border-t px-1 pt-1.5">
-          <Button variant="ghost" size="sm" onClick={() => onChange(campo, null)}>
-            Limpar data
-          </Button>
-        </div>
-      ) : null}
+      <SeletorDePeriodo
+        valor={periodo}
+        onChange={(p) => onChange(campo, p)}
+        titulo={`Período${chaves.length === 1 ? ` (${campos[chaves[0]].toLowerCase()})` : ''}`}
+      />
     </FiltroDropdown>
   );
 }

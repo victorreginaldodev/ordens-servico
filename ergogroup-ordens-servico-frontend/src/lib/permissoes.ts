@@ -20,6 +20,7 @@ export const PERMISSOES = [
   'servicos.gerenciar',
   'tarefas.distribuir',
   'tarefas.editar_setor',
+  'tarefas.receber',
   'usuarios.gerenciar',
   'usuarios.gerenciar_diretoria',
   'usuarios.redefinir_senha',
@@ -37,6 +38,7 @@ export const PERMISSOES_POR_SETOR: ReadonlySet<Permissao> = new Set<Permissao>([
   'servicos.gerenciar',
   'tarefas.distribuir',
   'tarefas.editar_setor',
+  'tarefas.receber',
 ]);
 
 /** Setor e função que uma pessoa exerce (`Vinculo` na API). */
@@ -68,6 +70,11 @@ export interface Verificador {
   podeAlguma: (permissoes: Permissao[], setor?: number | null) => boolean;
   /** IDs dos setores em que a permissão vale, ou `'todos'`. */
   setoresCom: (permissao: Permissao) => number[] | 'todos';
+  /**
+   * Ninguém concede o que não tem (`pode_conceder` no backend). Exceção: "Recebe tarefas" não é um poder, é
+   * ser elegível para receber; quem distribui no setor pode concedê-la.
+   */
+  podeConceder: (permissao: Permissao, setor?: number | null) => boolean;
 }
 
 export function criarVerificador(resumo: ResumoPermissoes | null | undefined, superusuario = false): Verificador {
@@ -85,6 +92,7 @@ export function criarVerificador(resumo: ResumoPermissoes | null | undefined, su
   return {
     pode,
     podeAlguma: (permissoes, setor) => permissoes.some((p) => pode(p, setor)),
+    podeConceder: (permissao, setor) => pode(permissao === 'tarefas.receber' ? 'tarefas.distribuir' : permissao, setor),
     setoresCom: (permissao) => {
       if (superusuario || (r.todos_os_setores && globais.has(permissao))) return 'todos';
       return [...porSetor.entries()].filter(([, p]) => p.has(permissao)).map(([id]) => id);

@@ -6,8 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/kit';
 import { useVendas } from '@/features/vendas/hooks';
 import { usePermissoes } from '@/hooks/usePermissoes';
-import { cn } from '@/lib/utils';
-import { visibleNavGroups } from './navigation';
+import { NAV_ORGANIZACAO, podeVerItem, visibleNavGroups } from './navigation';
 
 const normalize = (v: unknown) =>
   String(v ?? '')
@@ -49,31 +48,43 @@ function VendasResults({ query, onSelect }: { query: string; onSelect: (url: str
   );
 }
 
-/** Gatilho da busca global, à direita do header. Único lugar da busca no app. */
-export function CommandMenu() {
-  const [open, setOpen] = useState(false);
+/** Lupa que abre a busca global na barra do celular (no computador, a busca abre pelo Ctrl+K). */
+export function BuscaGatilho({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Buscar"
+      className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Search className="size-4" aria-hidden />
+    </button>
+  );
+}
+
+/** Busca global (Ctrl+K). Montada uma vez no layout; os gatilhos só mudam `open`. */
+export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { pode, podeAlguma } = usePermissoes();
-  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setOpen((o) => !o);
+        onOpenChange(!open);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     if (!open) setQuery('');
   }, [open]);
 
   const go = (url: string) => {
-    setOpen(false);
+    onOpenChange(false);
     navigate(url);
   };
 
@@ -87,27 +98,15 @@ export function CommandMenu() {
 
   const pages = [
     ...visibleNavGroups(podeAlguma).flatMap((g) => g.items.map((i) => ({ label: i.title, group: g.title, url: i.url, icon: i.icon }))),
+    ...NAV_ORGANIZACAO.items
+      .filter((i) => podeVerItem(i, podeAlguma))
+      .map((i) => ({ label: i.title, group: NAV_ORGANIZACAO.title, url: i.url, icon: i.icon })),
     { label: 'Meu perfil', group: 'Conta', url: '/time/eu', icon: User },
   ].filter((p) => matches(`${p.label} ${p.group}`) && !actions.some((a) => a.url === p.url));
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Buscar"
-        className={cn(
-          'flex h-8 items-center gap-2 rounded-lg border bg-card px-2.5 text-sm text-muted-foreground shadow-sm transition-colors',
-          'hover:border-foreground/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          'w-8 justify-center px-0 sm:w-60 sm:justify-start sm:px-2.5',
-        )}
-      >
-        <Search className="size-4 shrink-0" aria-hidden />
-        <span className="hidden flex-1 text-left sm:inline">Buscar…</span>
-        <kbd className="hidden rounded border border-b-2 bg-background px-1.5 text-2xs font-medium sm:inline">{isMac ? '⌘ K' : 'Ctrl K'}</kbd>
-      </button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="top-[20%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0 [&>button]:hidden">
           <DialogTitle className="sr-only">Busca global</DialogTitle>
           {/* shouldFilter={false}: filtro próprio (ignora acentos e limita as OS); o do cmdk ficaria lento com centenas de OS. */}
