@@ -1,8 +1,7 @@
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Sum
 
 from apps.analise.utils import agregar_por_mes, preencher_meses
 from apps.ordens_servico.models import OrdemServico, TipoCondicao
-from apps.ordens_servico.models.ordem_servico import Status
 from apps.ordens_servico.services.financeiro import FILTRO_SITUACAO, SITUACOES, Situacao
 
 
@@ -26,21 +25,16 @@ def calcular_kpis() -> dict:
 
 
 def calcular_faturamento() -> dict:
-    """A faturar, faturado e previsão (ADR 0008, 9), no total e por tipo de condição, e a receita recorrente
-    mensal: a soma do valor mensal dos recorrentes não cancelados."""
+    """A faturar, faturado e previsão (ADR 0008, 9), no total e por tipo de condição (à vista e parcelado)."""
     qs = OrdemServico.objects.all()
 
     def somas(queryset):
         return {situacao: queryset.filter(FILTRO_SITUACAO[situacao]).aggregate(total=Sum('valor'))['total'] or 0
                 for situacao in SITUACOES}
 
-    recorrentes = qs.filter(tipo_condicao=TipoCondicao.RECORRENTE).exclude(status=Status.CANCELADA)
-    agregado_recorrente = recorrentes.aggregate(total=Sum('valor_mensal'), quantidade=Count('id'))
     return {
         'total_previsao': somas(qs)[Situacao.PREVISAO],
         'por_tipo_condicao': {tipo: somas(qs.filter(tipo_condicao=tipo)) for tipo in TipoCondicao.values},
-        'receita_recorrente_mensal': agregado_recorrente['total'] or 0,
-        'recorrentes_ativos': agregado_recorrente['quantidade'],
     }
 
 

@@ -10,10 +10,16 @@ from apps.clientes.models import Cliente
 from apps.clientes.serializers import ClienteListSerializer, ClienteSerializer
 from apps.organizacoes.permissoes import Permissao, tem_permissao
 
+# A observação da OS é a observação de pagamento e faturamento (revisão de 13/10/2026): fica com os valores.
 CAMPOS_FINANCEIROS = (
-    'valor', 'valor_mensal', 'tipo_condicao', 'tipo_condicao_display', 'forma_pagamento', 'forma_pagamento_display',
-    'quantidade_parcelas', 'data_acordada_cobranca', 'intervalo_parcelas_dias', 'dia_fechamento',
-    'dia_vencimento', 'liberar_em', 'liberar_em_display', 'condicao_resumo',
+    'valor', 'tipo_condicao', 'tipo_condicao_display', 'forma_pagamento', 'forma_pagamento_display',
+    'quantidade_parcelas', 'data_acordada_cobranca', 'vencimento_dias_apos_nota', 'dia_vencimento_demais', 'liberar_em',
+    'liberar_em_display', 'condicao_resumo', 'observacao',
+)
+# Mudou algum destes na edição: o vencimento passa a ser obrigatório também no à vista.
+CAMPOS_DA_CONDICAO = (
+    'valor', 'tipo_condicao', 'forma_pagamento', 'quantidade_parcelas', 'data_acordada_cobranca',
+    'vencimento_dias_apos_nota', 'dia_vencimento_demais', 'liberar_em',
 )
 
 
@@ -43,7 +49,8 @@ class OcultaValoresMixin:
 
 class AndamentoSerializer(serializers.Serializer):
     total = serializers.IntegerField()
-    na_fila = serializers.IntegerField()
+    novo = serializers.IntegerField()
+    a_distribuir = serializers.IntegerField()
     distribuido = serializers.IntegerField()
     em_execucao = serializers.IntegerField()
     concluido = serializers.IntegerField()
@@ -67,7 +74,7 @@ class OrdemServicoListSerializer(OcultaValoresMixin, serializers.ModelSerializer
     class Meta:
         model = OrdemServico
         fields = [
-            'id', 'cliente', 'cliente_nome', 'data_venda', 'vendido_por_nome', 'valor', 'valor_mensal',
+            'id', 'cliente', 'cliente_nome', 'data_venda', 'vendido_por_nome', 'valor',
             'tipo_condicao', 'tipo_condicao_display', 'condicao_resumo', 'forma_pagamento', 'forma_pagamento_display',
             'liberar_em', 'liberar_em_display', 'andamento', 'status',
             'status_display', 'prioridade', 'prioridade_display', 'prazo',
@@ -119,9 +126,9 @@ class OrdemServicoSerializer(OcultaValoresMixin, serializers.ModelSerializer):
             'id', 'cliente', 'cliente_detail', 'servicos',
             'criado_por', 'criado_por_nome', 'data_venda', 'criada_em',
             'status', 'status_display', 'prioridade', 'prioridade_display', 'prazo', 'valor',
-            'valor_mensal', 'tipo_condicao', 'tipo_condicao_display', 'condicao_resumo',
+            'tipo_condicao', 'tipo_condicao_display', 'condicao_resumo',
             'forma_pagamento', 'forma_pagamento_display', 'quantidade_parcelas',
-            'data_acordada_cobranca', 'intervalo_parcelas_dias', 'dia_fechamento', 'dia_vencimento',
+            'data_acordada_cobranca', 'vencimento_dias_apos_nota', 'dia_vencimento_demais',
             'liberar_em', 'liberar_em_display', 'nome_contato_envio_nf', 'contato_envio_nf',
             'observacao', 'concluida', 'cobranca_realizada', 'referencia_lancamento',
             'origem_lancamento', 'origem_lancamento_display', 'data_cobranca',
@@ -146,9 +153,20 @@ class OrdemServicoSerializer(OcultaValoresMixin, serializers.ModelSerializer):
         def atual(campo):
             return attrs.get(campo, getattr(self.instance, campo, None))
 
+        # Na edição, mandar a data limpa os dias (e vice-versa): o vencimento é um ou outro.
+        if self.instance is not None:
+            if attrs.get('data_acordada_cobranca') and 'vencimento_dias_apos_nota' not in attrs:
+                attrs['vencimento_dias_apos_nota'] = None
+            if attrs.get('vencimento_dias_apos_nota') and 'data_acordada_cobranca' not in attrs:
+                attrs['data_acordada_cobranca'] = None
+            # Passou para à vista: o dia das demais parcelas deixa de existir.
+            if attrs.get('tipo_condicao') == 'a_vista' and 'dia_vencimento_demais' not in attrs:
+                attrs['dia_vencimento_demais'] = None
+        exigir = self.instance is None or any(campo in attrs for campo in CAMPOS_DA_CONDICAO)
         erros = validar_condicao_pagamento(
             atual('tipo_condicao'), atual('quantidade_parcelas'), atual('data_acordada_cobranca'),
-            atual('dia_vencimento'), atual('valor_mensal'),
+            atual('vencimento_dias_apos_nota'), exigir_vencimento=exigir,
+            dia_vencimento_demais=atual('dia_vencimento_demais'),
         )
         if erros:
             raise serializers.ValidationError(erros)

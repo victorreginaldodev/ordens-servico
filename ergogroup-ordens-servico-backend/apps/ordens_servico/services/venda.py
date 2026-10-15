@@ -7,11 +7,12 @@ from apps.ordens_servico.models import OrdemServico, Servico
 
 def avisar_chegada(servicos):
     """Agenda, para o fim da transação, um e-mail por setor com os serviços que chegaram a ele."""
-    from apps.ordens_servico.emails import notificar_chegada_aos_setores
+    from apps.ordens_servico.emails import ator_atual, notificar_chegada_aos_setores
 
     servicos = [servico for servico in servicos if servico.setor_id]
     if servicos:
-        transaction.on_commit(lambda: notificar_chegada_aos_setores(servicos))
+        por = ator_atual()
+        transaction.on_commit(lambda: notificar_chegada_aos_setores(servicos, por=por))
 
 
 @transaction.atomic

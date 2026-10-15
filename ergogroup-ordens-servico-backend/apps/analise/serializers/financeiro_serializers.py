@@ -29,7 +29,6 @@ class SomasPorSituacaoSerializer(serializers.Serializer):
 class PorTipoCondicaoSerializer(serializers.Serializer):
     a_vista = SomasPorSituacaoSerializer()
     parcelado = SomasPorSituacaoSerializer()
-    recorrente = SomasPorSituacaoSerializer()
 
 
 class FinanceiroAnaliseResponseSerializer(serializers.Serializer):
@@ -40,10 +39,6 @@ class FinanceiroAnaliseResponseSerializer(serializers.Serializer):
         max_digits=14, decimal_places=2, help_text='Não liberadas e não faturadas, sem as OS canceladas.',
     )
     por_tipo_condicao = PorTipoCondicaoSerializer(help_text='A faturar, faturado e previsão por tipo de condição.')
-    receita_recorrente_mensal = serializers.DecimalField(
-        max_digits=14, decimal_places=2, help_text='Soma do valor mensal dos recorrentes não cancelados.',
-    )
-    recorrentes_ativos = serializers.IntegerField()
     ticket_medio = serializers.DecimalField(max_digits=14, decimal_places=2, allow_null=True)
     vendas_por_mes = MesDecimalSerializer(many=True)
     clientes = ClientesAnaliseSerializer()

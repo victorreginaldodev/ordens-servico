@@ -16,9 +16,9 @@ class FormaPagamento(models.TextChoices):
     OUTRO = 'outro', 'Outro'
 
 class TipoCondicao(models.TextChoices):
+    """O recorrente saiu em 13/10/2026: um contrato mensal é registrado como parcelado (ex.: 24x)."""
     A_VISTA = 'a_vista', 'À vista'
     PARCELADO = 'parcelado', 'Parcelado'
-    RECORRENTE = 'recorrente', 'Recorrente'
 
 class LiberarEm(models.TextChoices):
     VENDA = 'venda', 'Na venda'
@@ -28,28 +28,37 @@ class OrigemLancamento(models.TextChoices):
     MANUAL = 'manual', 'Manual'
     INTEGRACAO = 'integracao', 'Integração'
 
-INTERVALO_PARCELAS_PADRAO_DIAS = 30
+DIAS_APOS_NOTA = [MinValueValidator(1), MaxValueValidator(365)]
 DIA_DO_MES = [MinValueValidator(1), MaxValueValidator(31)]
 
 
 def validar_condicao_pagamento(
-    tipo_condicao, quantidade_parcelas, data_acordada_cobranca, dia_vencimento, valor_mensal=None,
+    tipo_condicao, quantidade_parcelas, data_acordada_cobranca, vencimento_dias_apos_nota, exigir_vencimento=False,
+    dia_vencimento_demais=None,
 ):
-    """Regras da condição de pagamento por tipo (ADRs 0007 e 0008). Devolve ``{campo: mensagem}``; vazio se
-    válida. No recorrente, ``quantidade_parcelas`` é o número de meses."""
+    """Regras da condição de pagamento (ADR 0007, revisão de 13/10/2026). Devolve ``{campo: mensagem}``; vazio se
+    válida. O vencimento (no parcelado, o da 1ª parcela) é uma data combinada **ou** um número de dias após a
+    emissão da nota, nunca os dois. É obrigatório no parcelado e, com ``exigir_vencimento``, também no à vista
+    (vendas novas e edições da condição; as vendas antigas sem vencimento continuam válidas).
+    ``dia_vencimento_demais`` (dia das parcelas da 2ª em diante, 1 a 31) só existe no parcelado."""
     erros = {}
-    if tipo_condicao == TipoCondicao.PARCELADO:
-        if not quantidade_parcelas or quantidade_parcelas < 2:
-            erros['quantidade_parcelas'] = 'O parcelado precisa de pelo menos 2 parcelas.'
-        if not data_acordada_cobranca:
-            erros['data_acordada_cobranca'] = 'Informe o primeiro vencimento.'
-    elif tipo_condicao == TipoCondicao.RECORRENTE:
-        if not quantidade_parcelas or quantidade_parcelas < 1:
-            erros['quantidade_parcelas'] = 'Informe o número de meses do recorrente.'
-        if not dia_vencimento:
-            erros['dia_vencimento'] = 'Informe o dia de vencimento do recorrente.'
-        if not valor_mensal:
-            erros['valor_mensal'] = 'Informe o valor mensal do recorrente.'
+    parcelado = tipo_condicao == TipoCondicao.PARCELADO
+    if parcelado and (not quantidade_parcelas or quantidade_parcelas < 2):
+        erros['quantidade_parcelas'] = 'O parcelado precisa de pelo menos 2 parcelas.'
+    if data_acordada_cobranca and vencimento_dias_apos_nota:
+        erros['vencimento_dias_apos_nota'] = 'Informe a data do vencimento ou os dias após a nota, não os dois.'
+    elif vencimento_dias_apos_nota is not None and not 1 <= vencimento_dias_apos_nota <= 365:
+        erros['vencimento_dias_apos_nota'] = 'Use de 1 a 365 dias após a nota.'
+    elif (parcelado or exigir_vencimento) and not data_acordada_cobranca and not vencimento_dias_apos_nota:
+        erros['data_acordada_cobranca'] = (
+            'Informe quando vence a 1ª parcela: a data combinada ou quantos dias após a nota.' if parcelado
+            else 'Informe quando vence: a data combinada ou quantos dias após a nota.'
+        )
+    if dia_vencimento_demais is not None:
+        if not parcelado:
+            erros['dia_vencimento_demais'] = 'O dia das demais parcelas só existe no parcelado.'
+        elif not 1 <= dia_vencimento_demais <= 31:
+            erros['dia_vencimento_demais'] = 'Use um dia entre 1 e 31.'
     return erros
 
 def formatar_reais(valor):
@@ -83,20 +92,20 @@ class OrdemServico(models.Model):
 
     # Condições de pagamento combinadas na venda (ADR 0007). O sistema registra, não controla parcelas.
     valor = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    # Recorrente: valor de cada mês. O valor total continua em `valor`; um não é calculado do outro.
-    valor_mensal = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     tipo_condicao = models.CharField(max_length=10, choices=TipoCondicao.choices, default=TipoCondicao.A_VISTA)
     forma_pagamento = models.CharField(max_length=15, choices=FormaPagamento.choices, default=FormaPagamento.BOLETO)
-    # Parcelado: número de parcelas. Recorrente: número de meses.
+    # Parcelado: número de parcelas, sempre mensais, no mesmo dia do mês da 1ª.
     quantidade_parcelas = models.IntegerField(null=True, blank=True)
-    # Primeiro vencimento.
+    # Vencimento (no parcelado, o da 1ª parcela): a data combinada OU quantos dias depois da emissão da nota.
     data_acordada_cobranca = models.DateField(null=True, blank=True)
-    intervalo_parcelas_dias = models.PositiveSmallIntegerField(null=True, blank=True)
-    dia_fechamento = models.PositiveSmallIntegerField(null=True, blank=True, validators=DIA_DO_MES)
-    dia_vencimento = models.PositiveSmallIntegerField(null=True, blank=True, validators=DIA_DO_MES)
+    vencimento_dias_apos_nota = models.PositiveSmallIntegerField(null=True, blank=True, validators=DIAS_APOS_NOTA)
+    # Parcelado: dia do mês das parcelas da 2ª em diante. Vazio = no mesmo dia do mês da 1ª. A 2ª vence no mês
+    # seguinte ao da 1ª, e um dia que não existe no mês (ex.: 31) vira o último dia (faturamento/03, seção 8.3).
+    dia_vencimento_demais = models.PositiveSmallIntegerField(null=True, blank=True, validators=DIA_DO_MES)
     liberar_em = models.CharField(max_length=10, choices=LiberarEm.choices, default=LiberarEm.CONCLUSAO)
     nome_contato_envio_nf = models.CharField(max_length=50, default='')
     contato_envio_nf = models.EmailField(default='')
+    # Observações de pagamento e faturamento (é o uso real do campo). Só para quem vê valores.
     observacao = models.TextField(null=True, blank=True)
 
     liberada_para_cobranca = models.BooleanField(default=False)
@@ -147,18 +156,13 @@ class OrdemServico(models.Model):
     def clean(self):
         super().clean()
         erros = validar_condicao_pagamento(
-            self.tipo_condicao, self.quantidade_parcelas, self.data_acordada_cobranca, self.dia_vencimento,
-            self.valor_mensal,
+            self.tipo_condicao, self.quantidade_parcelas, self.data_acordada_cobranca, self.vencimento_dias_apos_nota,
+            dia_vencimento_demais=self.dia_vencimento_demais,
         )
         if erros:
             raise ValidationError(erros)
 
     def save(self, *args, **kwargs):
-        if self.tipo_condicao == TipoCondicao.PARCELADO and self.intervalo_parcelas_dias is None:
-            self.intervalo_parcelas_dias = INTERVALO_PARCELAS_PADRAO_DIAS
-            update_fields = kwargs.get('update_fields')
-            if update_fields is not None:
-                kwargs['update_fields'] = {*update_fields, 'intervalo_parcelas_dias'}
         liberando_na_criacao = self.pk is None and self.liberar_em == LiberarEm.VENDA
         if liberando_na_criacao:
             self.liberada_para_cobranca = True
@@ -183,10 +187,16 @@ class OrdemServico(models.Model):
         updates = {}
 
         if self.status != Status.CANCELADA:
-            todos_concluidos = tem_servicos and not servicos.exclude(status='concluida').exists()
-            tem_execucao = servicos.filter(status__in=['em_andamento', 'concluida']).exists()
+            # Serviço cancelado não conta: a OS conclui (e libera, se for na conclusão) quando os demais terminam,
+            # e fica cancelada quando todos foram cancelados (decidido em 13/10/2026, faturamento/03).
+            ativos = servicos.exclude(status='cancelado')
+            todos_cancelados = tem_servicos and not ativos.exists()
+            todos_concluidos = ativos.exists() and not ativos.exclude(status='concluida').exists()
+            tem_execucao = ativos.filter(status__in=['em_andamento', 'concluida']).exists()
 
-            if todos_concluidos:
+            if todos_cancelados:
+                novo_status = Status.CANCELADA
+            elif todos_concluidos:
                 novo_status = Status.CONCLUIDA
             elif tem_execucao:
                 novo_status = Status.EM_ANDAMENTO
@@ -240,29 +250,36 @@ class OrdemServico(models.Model):
         return self.concluida
 
     @property
+    def vencimento_resumo(self):
+        """Ex.: "10/08/2026" ou "21 dias após a nota"; None sem vencimento."""
+        if self.data_acordada_cobranca:
+            return formatar_data(self.data_acordada_cobranca)
+        if self.vencimento_dias_apos_nota:
+            dias = self.vencimento_dias_apos_nota
+            return f'{dias} dia{"s" if dias > 1 else ""} após a nota'
+        return None
+
+    @property
     def condicao_resumo(self):
         """Texto pronto da condição de pagamento, o mesmo no comercial, no financeiro e nos e-mails
-        (ADR 0008, 6). Ex.: "Parcelado em 6x a cada 30 dias, 1º vencimento 10/08/2026"."""
-        partes = []
+        (ADR 0008, 6). Ex.: "Parcelado em 6x de R$ 1.583,33 (mensais), 1ª parcela 10/08/2026" ou
+        "…, 1ª parcela 21 dias após a nota, demais todo dia 10"."""
+        vencimento = self.vencimento_resumo
         if self.tipo_condicao == TipoCondicao.PARCELADO:
-            texto = f'Parcelado em {self.quantidade_parcelas or "?"}x'
-            if self.intervalo_parcelas_dias:
-                texto += f' a cada {self.intervalo_parcelas_dias} dias'
-            partes.append(texto)
-        elif self.tipo_condicao == TipoCondicao.RECORRENTE:
-            texto = f'Recorrente: {self.quantidade_parcelas or "?"} meses'
-            if self.valor_mensal is not None:
-                texto += f' de {formatar_reais(self.valor_mensal)}'
-            partes.append(texto)
-            if self.dia_fechamento:
-                partes.append(f'fecha dia {self.dia_fechamento}')
-            if self.dia_vencimento:
-                partes.append(f'vence dia {self.dia_vencimento}')
-        else:
-            partes.append('À vista')
-        if self.data_acordada_cobranca:
-            partes.append(f'1º vencimento {formatar_data(self.data_acordada_cobranca)}')
-        return ', '.join(partes)
+            n = self.quantidade_parcelas
+            texto = f'Parcelado em {n or "?"}x'
+            if n and self.valor:
+                texto += f' de {formatar_reais(self.valor / n)}'
+            texto += ' (mensais)'
+            if vencimento:
+                texto += f', 1ª parcela {vencimento}'
+            if self.dia_vencimento_demais:
+                texto += f', demais todo dia {self.dia_vencimento_demais}'
+            return texto
+        if self.tipo_condicao == TipoCondicao.A_VISTA:
+            return f'À vista, vence {vencimento}' if vencimento else 'À vista'
+        # Registros antigos da auditoria (o recorrente saiu em 13/10/2026).
+        return 'Recorrente (condição antiga)'
 
     def registrar_lancamento(self, referencia, data, por, origem=OrigemLancamento.MANUAL):
         """Guarda o "check" do financeiro: a OS foi lançada no sistema externo. Exige a OS liberada."""
@@ -279,11 +296,12 @@ class OrdemServico(models.Model):
         ])
 
     def _notificar_liberacao_para_cobranca(self):
-        from apps.ordens_servico.emails import notificar_liberacao_cobranca
+        from apps.ordens_servico.emails import ator_atual, notificar_liberacao_cobranca, resumo_da_execucao
 
-        transaction.on_commit(
-            lambda: notificar_liberacao_cobranca(self, tipo='OS', valor=self.valor)
-        )
+        por = ator_atual()
+        transaction.on_commit(lambda: notificar_liberacao_cobranca(
+            self, tipo='OS', valor=self.valor, por=por, execucao=resumo_da_execucao(self),
+        ))
 
     @property
     def dias_em_aberto(self):

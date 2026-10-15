@@ -31,11 +31,14 @@ class HerancaPrioridadeSerializerTestCase(APITestCase):
         self.ordem_servico = OrdemServico.objects.create(
             cliente=self.cliente, data_venda=timezone.localdate(), valor=0, prioridade=Prioridade.ALTA,
         )
+        self.catalogo = Catalogo.objects.create(nome='PGR', setor=setor_padrao())
         self.client.force_authenticate(user=self.usuario)
 
     def test_servico_sem_prioridade_no_payload_herda_da_ordem_servico(self):
         url = reverse('servicos-list')
-        response = self.client.post(url, {'ordem_servico': self.ordem_servico.pk, 'descricao': 'sem prioridade'})
+        response = self.client.post(url, {
+            'ordem_servico': self.ordem_servico.pk, 'catalogo': self.catalogo.pk, 'descricao': 'sem prioridade',
+        })
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['prioridade'], Prioridade.ALTA)
@@ -43,7 +46,8 @@ class HerancaPrioridadeSerializerTestCase(APITestCase):
     def test_servico_com_prioridade_explicita_nao_herda(self):
         url = reverse('servicos-list')
         response = self.client.post(url, {
-            'ordem_servico': self.ordem_servico.pk, 'descricao': 'com prioridade', 'prioridade': Prioridade.BAIXA,
+            'ordem_servico': self.ordem_servico.pk, 'catalogo': self.catalogo.pk, 'descricao': 'com prioridade',
+            'prioridade': Prioridade.BAIXA,
         })
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -206,10 +210,11 @@ class NotificacoesEmailTestCase(APITestCase):
         self.assertEqual(len(emails_liberacao), 1)
         self.assertEqual(set(emails_liberacao[0].to), {self.gestor_financeiro.email, self.financeiro.email})
 
-    def test_cobranca_realizada_na_os_notifica_financeiro_e_comercial(self):
+    def test_cobranca_realizada_na_os_notifica_so_o_vendedor(self):
+        # ADR 0010: a venda faturada avisa só quem registrou a venda.
         ordem_servico = OrdemServico.objects.create(
             cliente=self.cliente, data_venda=timezone.localdate(), valor=500,
-            liberada_para_cobranca=True,
+            liberada_para_cobranca=True, criado_por=self.comercial,
         )
 
         mail.outbox = []
@@ -219,10 +224,7 @@ class NotificacoesEmailTestCase(APITestCase):
             ordem_servico.save(update_fields=['cobranca_realizada', 'referencia_lancamento'])
 
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(
-            set(mail.outbox[0].to),
-            {self.gestor_financeiro.email, self.financeiro.email, self.comercial.email},
-        )
+        self.assertEqual(mail.outbox[0].to, [self.comercial.email])
 
     def test_liberacao_e_cobranca_realizada_na_os_operacional(self):
         catalogo_operacional = CatalogoOperacional.objects.create(nome='Catalogo Operacional Notif')
