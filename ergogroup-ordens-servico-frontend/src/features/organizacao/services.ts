@@ -1,5 +1,6 @@
 import api from '@/services/api';
 import type { Esquemas } from '@/api/tipos';
+import type { ComAvisos } from '@/lib/avisos';
 import type { Permissao } from '@/lib/permissoes';
 
 const BASE = '/api/organizacoes';
@@ -100,13 +101,14 @@ export interface FuncaoPayload {
   setores: number[];
 }
 
-export const criarFuncao = async (organizacao: number, payload: FuncaoPayload): Promise<Funcao> => {
-  const { data } = await api.post<Funcao>(`${BASE}/funcoes/`, { organizacao, ...payload });
+export const criarFuncao = async (organizacao: number, payload: FuncaoPayload): Promise<ComAvisos<Funcao>> => {
+  const { data } = await api.post<ComAvisos<Funcao>>(`${BASE}/funcoes/`, { organizacao, ...payload });
   return data;
 };
 
-export const atualizarFuncao = async (id: number, payload: Partial<FuncaoPayload>): Promise<Funcao> => {
-  const { data } = await api.patch<Funcao>(`${BASE}/funcoes/${id}/`, payload);
+/** Tirar "Recebe tarefas" ou desativar a função pode deixar um setor sem quem receba: o backend avisa em `avisos`. */
+export const atualizarFuncao = async (id: number, payload: Partial<FuncaoPayload>): Promise<ComAvisos<Funcao>> => {
+  const { data } = await api.patch<ComAvisos<Funcao>>(`${BASE}/funcoes/${id}/`, payload);
   return data;
 };
 

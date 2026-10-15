@@ -1,6 +1,7 @@
 import api from '@/services/api';
 import type { UserProfile } from '@/services/auth';
 import type { Esquemas } from '@/api/tipos';
+import type { ComAvisos } from '@/lib/avisos';
 import type { ResumoPermissoes, Vinculo } from '@/lib/permissoes';
 
 const endpoint = '/api/contas/usuarios/';
@@ -20,6 +21,8 @@ export interface UpdateUserPayload {
   nome_completo?: string;
   ativo?: boolean;
   vinculos?: VinculoPayload[];
+  /** Setores, fora o da lotação, em que a pessoa também recebe tarefas. Enviar a lista substitui. */
+  tambem_executa_em?: number[];
 }
 
 export const getUsers = async (): Promise<UsuarioApi[]> => {
@@ -27,13 +30,14 @@ export const getUsers = async (): Promise<UsuarioApi[]> => {
   return Array.isArray(res.data) ? res.data : [];
 };
 
-export const createUser = async (payload: CreateUserPayload): Promise<UsuarioApi> => {
-  const res = await api.post<UsuarioApi>(endpoint, payload);
+export const createUser = async (payload: CreateUserPayload): Promise<ComAvisos<UsuarioApi>> => {
+  const res = await api.post<ComAvisos<UsuarioApi>>(endpoint, payload);
   return res.data;
 };
 
-export const updateUser = async (id: number, payload: UpdateUserPayload): Promise<UsuarioApi> => {
-  const res = await api.patch<UsuarioApi>(`${endpoint}${id}/`, payload);
+/** Tirar a última pessoa que recebe tarefas num setor com catálogos ativos não é barrado: vem em `avisos`. */
+export const updateUser = async (id: number, payload: UpdateUserPayload): Promise<ComAvisos<UsuarioApi>> => {
+  const res = await api.patch<ComAvisos<UsuarioApi>>(`${endpoint}${id}/`, payload);
   return res.data;
 };
 
@@ -42,8 +46,9 @@ export const deleteUser = async (id: number): Promise<void> => {
 };
 
 /** Desativada, a pessoa não entra mais no sistema; tarefas e histórico continuam. */
-export const setUserAtivo = async (id: number, ativo: boolean): Promise<void> => {
-  await api.patch(`${endpoint}${id}/${ativo ? 'ativar' : 'desativar'}/`);
+export const setUserAtivo = async (id: number, ativo: boolean): Promise<ComAvisos<{ detail: string }>> => {
+  const res = await api.patch<ComAvisos<{ detail: string }>>(`${endpoint}${id}/${ativo ? 'ativar' : 'desativar'}/`);
+  return res.data;
 };
 
 // ── Perfil do usuário autenticado ────────────────────────────────────────────
@@ -57,6 +62,8 @@ export type ProfileResponse = {
   is_staff: boolean;
   is_superuser: boolean;
   vinculos: Vinculo[];
+  /** Setores, fora o da lotação, em que a pessoa também recebe tarefas. */
+  tambem_executa_em?: Esquemas['Atuacao'][];
   permissoes: ResumoPermissoes;
   data_criacao: string;
   last_login: string | null;

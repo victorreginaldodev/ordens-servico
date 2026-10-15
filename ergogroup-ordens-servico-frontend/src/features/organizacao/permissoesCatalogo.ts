@@ -13,21 +13,52 @@ export interface GrupoPermissoes {
 }
 
 export const GRUPOS_PERMISSOES: GrupoPermissoes[] = [
-  { id: 'os', titulo: 'Ordens de serviço', permissoes: ['os.ver_todas', 'os.gerenciar', 'os.excluir', 'os_operacional.gerenciar'] },
+  { id: 'vendas', titulo: 'Vendas', permissoes: ['os.ver_todas', 'os.gerenciar', 'os.excluir', 'os_operacional.gerenciar'] },
   {
     id: 'execucao',
-    titulo: 'Execução no setor',
-    permissoes: ['servicos.ver_setor', 'servicos.gerenciar', 'tarefas.distribuir', 'tarefas.editar_setor', 'setores.todos'],
+    titulo: 'Execução',
+    permissoes: ['tarefas.receber', 'servicos.ver_setor', 'tarefas.distribuir', 'servicos.gerenciar', 'tarefas.editar_setor', 'setores.todos'],
   },
   { id: 'financeiro', titulo: 'Financeiro', permissoes: ['financeiro.ver_valores', 'financeiro.registrar_cobranca'] },
   { id: 'cadastros', titulo: 'Cadastros', permissoes: ['clientes.gerenciar', 'catalogo.gerenciar'] },
   {
     id: 'organizacao',
-    titulo: 'Time e organização',
+    titulo: 'Pessoas e organização',
     permissoes: ['usuarios.gerenciar', 'usuarios.gerenciar_diretoria', 'usuarios.redefinir_senha', 'organizacao.configurar'],
   },
-  { id: 'indicadores', titulo: 'Indicadores e histórico', permissoes: ['indicadores.ver_geral', 'auditoria.ver'] },
+  { id: 'indicadores', titulo: 'Indicadores e auditoria', permissoes: ['indicadores.ver_geral', 'auditoria.ver'] },
 ];
+
+/**
+ * Nome da permissão em linguagem de tela (revisão de permissões, P4). Quando falta, vale a frase do backend.
+ */
+export const TITULO_PERMISSAO: Partial<Record<Permissao, string>> = {
+  'os.ver_todas': 'Ver todas as vendas',
+  'os.gerenciar': 'Vender: criar e editar OS e seus serviços',
+  'os.excluir': 'Excluir OS',
+  'tarefas.receber': 'Recebe tarefas: pode ser responsável por tarefas',
+  'servicos.ver_setor': 'Acompanhar o setor: ver a fila, o andamento e a equipe',
+  'tarefas.distribuir': 'Distribuir: escolher responsável e prazo',
+  'servicos.gerenciar': 'Ajustar e excluir os serviços do setor',
+  'tarefas.editar_setor': 'Editar as tarefas de qualquer pessoa do setor',
+  'setores.todos': 'Atuar em todos os setores',
+  'financeiro.ver_valores': 'Ver valores e condições de pagamento',
+  'financeiro.registrar_cobranca': 'Registrar cobrança e nota fiscal',
+  'clientes.gerenciar': 'Cadastrar, editar e excluir clientes',
+  'catalogo.gerenciar': 'Cadastrar o catálogo de serviços e o setor de cada um',
+  'usuarios.gerenciar': 'Gerenciar o time',
+  'usuarios.gerenciar_diretoria': 'Gerenciar as pessoas da diretoria',
+  'usuarios.redefinir_senha': 'Trocar a senha de outra pessoa',
+  'organizacao.configurar': 'Configurar setores e funções',
+  'indicadores.ver_geral': 'Ver os indicadores de toda a equipe',
+  'auditoria.ver': 'Ver o histórico de alterações',
+};
+
+export const tituloDaPermissao = (p: { codigo: string; descricao: string }) =>
+  TITULO_PERMISSAO[p.codigo as Permissao] ?? p.descricao;
+
+/** Onde a permissão vale, como aparece ao lado do nome. */
+export const ESCOPO_PERMISSAO = { setor: 'No setor da pessoa', global: 'Empresa toda' } as const;
 
 /** Texto de apoio abaixo da frase oficial: o que muda na prática. */
 export const AJUDA_PERMISSAO: Partial<Record<Permissao, string>> = {
@@ -35,13 +66,16 @@ export const AJUDA_PERMISSAO: Partial<Record<Permissao, string>> = {
   'os.gerenciar': 'Cria a OS, define cliente, contrato, condições e serviços.',
   'os.excluir': 'Apaga a OS com seus serviços e tarefas. Não há como desfazer.',
   'os_operacional.gerenciar': 'Inclui o catálogo operacional.',
-  'servicos.ver_setor': 'Vê a fila de triagem, o painel e a produtividade das pessoas do setor.',
-  'servicos.gerenciar': 'Ajusta prazo, prioridade e estimativas dos serviços do setor.',
+  'tarefas.receber':
+    'A pessoa aparece na lista de responsáveis do setor. Quem é de outro setor recebe pelo "Também executa em", na pessoa. "Atuar em todos os setores" não estende esta permissão.',
+  'servicos.ver_setor': 'Vê o Painel do setor: a fila, o andamento, a equipe e a produtividade das pessoas. Com "Distribuir", organiza o setor e recebe o aviso de chegada.',
+  'servicos.gerenciar': 'Ajusta prazo e prioridade dos serviços do setor e pode excluí-los.',
   'tarefas.distribuir': 'Cria tarefas e escolhe quem executa. É o papel de quem faz a triagem.',
-  'tarefas.editar_setor': 'Muda status e dados de tarefas de outras pessoas do setor.',
-  'setores.todos': 'As permissões de execução desta função passam a valer em todos os setores, não só nos da pessoa.',
-  'financeiro.ver_valores': 'Sem ela, valores e condições de pagamento ficam ocultos em toda a tela.',
-  'financeiro.registrar_cobranca': 'Marca a OS como cobrada e informa a nota fiscal.',
+  'tarefas.editar_setor': 'Muda a situação e os dados de tarefas de outras pessoas do setor.',
+  'setores.todos':
+    'As permissões de execução desta função passam a valer em todos os setores (vê a Visão geral no lugar do Painel do setor). Não inclui receber tarefas.',
+  'financeiro.ver_valores': 'Sem ela, valores e condições de pagamento ficam ocultos em toda a tela, e o Painel financeiro some do menu.',
+  'financeiro.registrar_cobranca': 'Vê as Cobranças, marca a OS como cobrada e informa a nota fiscal. Exige "Ver valores".',
   'usuarios.gerenciar': 'Adiciona pessoas, define setores e funções, desativa e exclui.',
   'usuarios.gerenciar_diretoria': 'Altera pessoas cuja função também tem esta permissão.',
   'usuarios.redefinir_senha': 'Troca a senha de outra pessoa sem precisar da senha dela.',
@@ -66,13 +100,26 @@ export const DEPENDENCIAS_SUGERIDAS: Array<{ se: Permissao; entao: Permissao; te
     texto: 'Quem distribui tarefas normalmente também precisa ver os serviços do setor.',
   },
   {
-    se: 'financeiro.registrar_cobranca',
-    entao: 'financeiro.ver_valores',
-    texto: 'Quem registra cobrança normalmente também precisa ver os valores.',
-  },
-  {
     se: 'usuarios.gerenciar_diretoria',
     entao: 'usuarios.gerenciar',
     texto: 'Gerenciar a diretoria só funciona junto com gerenciar o time.',
   },
 ];
+
+/**
+ * Combinações obrigatórias (o backend recusa sem elas): marcar `se` marca `exige`; desmarcar `exige` desmarca `se`.
+ * Revisão de permissões, P7: as Cobranças mostram valores.
+ */
+export const PERMISSOES_EXIGIDAS: Array<{ se: Permissao; exige: Permissao }> = [
+  { se: 'financeiro.registrar_cobranca', exige: 'financeiro.ver_valores' },
+];
+
+/** Aplica as combinações obrigatórias ao marcar ou desmarcar `codigo`. */
+export function aplicarExigidas(marcadas: Permissao[], codigo: Permissao, marcar: boolean): Permissao[] {
+  let lista = marcar ? [...new Set([...marcadas, codigo])] : marcadas.filter((p) => p !== codigo);
+  for (const regra of PERMISSOES_EXIGIDAS) {
+    if (marcar && codigo === regra.se && !lista.includes(regra.exige)) lista = [...lista, regra.exige];
+    if (!marcar && codigo === regra.exige) lista = lista.filter((p) => p !== regra.se);
+  }
+  return lista;
+}

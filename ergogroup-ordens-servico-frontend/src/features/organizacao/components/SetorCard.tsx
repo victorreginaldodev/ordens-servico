@@ -1,4 +1,4 @@
-import { Package, UserX, Users } from 'lucide-react';
+import { Inbox, Package, UserX, Users } from 'lucide-react';
 import { AtivoBadge, AvatarStack, Chip } from '@/components/kit';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ interface SetorCardProps {
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
 export function SetorCard({ resumo, detalhesCarregando, onAbrir }: SetorCardProps) {
-  const { setor, membros, catalogos } = resumo;
+  const { setor, membros } = resumo;
   return (
     <button
       type="button"
@@ -28,6 +28,10 @@ export function SetorCard({ resumo, detalhesCarregando, onAbrir }: SetorCardProp
         <h2 className="text-base font-semibold leading-snug">{setor.nome}</h2>
         {!setor.ativo ? (
           <AtivoBadge ativo={false} />
+        ) : setor.sem_quem_receba ? (
+          <Chip tom="warning" icone={Inbox} dica="O setor executa serviços, mas ninguém recebe tarefas nele: não há a quem distribuir.">
+            Sem quem receba tarefas
+          </Chip>
         ) : setor.sem_organizador ? (
           <Chip tom="warning" icone={UserX} dica="Ninguém tem as permissões de ver e distribuir os serviços deste setor: o que chegar fica na fila sem responsável.">
             Sem quem organize
@@ -50,8 +54,14 @@ export function SetorCard({ resumo, detalhesCarregando, onAbrir }: SetorCardProp
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Package className="size-3.5" aria-hidden />
-              {plural(catalogos.length, 'catálogo', 'catálogos')}
+              {setor.executa_servicos ? `Executa ${plural(setor.catalogos_ativos, 'catálogo', 'catálogos')}` : 'Não executa serviços'}
             </span>
+            {setor.executa_servicos && (
+              <span className="inline-flex items-center gap-1.5">
+                <Inbox className="size-3.5" aria-hidden />
+                {plural(setor.recebem_tarefas, 'recebe', 'recebem')} tarefas
+              </span>
+            )}
           </div>
         )}
         {setor.organizadores.length > 0 && (

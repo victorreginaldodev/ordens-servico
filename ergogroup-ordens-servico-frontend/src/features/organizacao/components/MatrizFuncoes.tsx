@@ -1,6 +1,6 @@
 import { Check, TriangleAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { GRUPOS_PERMISSOES, PERMISSOES_SENSIVEIS } from '../permissoesCatalogo';
+import { GRUPOS_PERMISSOES, PERMISSOES_SENSIVEIS, tituloDaPermissao } from '../permissoesCatalogo';
 import type { Funcao, PermissaoDisponivel } from '../services';
 
 interface MatrizFuncoesProps {
@@ -64,7 +64,7 @@ export function MatrizFuncoes({ funcoes, catalogo, onAbrir }: MatrizFuncoesProps
                 <tr key={codigo} className="border-b last:border-0 hover:bg-muted/30">
                   <th scope="row" className="sticky left-0 z-10 bg-card px-3 py-2 text-left font-normal shadow-[inset_-1px_0_0_hsl(var(--border))]">
                     <span className="flex items-center gap-1.5">
-                      {porCodigo.get(codigo)!.descricao}
+                      {tituloDaPermissao(porCodigo.get(codigo)!)}
                       {PERMISSOES_SENSIVEIS.has(codigo) && <TriangleAlert className="size-3 shrink-0 text-warning-strong" aria-label="Sensível" />}
                     </span>
                   </th>

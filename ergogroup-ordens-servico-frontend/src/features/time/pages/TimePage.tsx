@@ -24,9 +24,11 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import { mensagemDeErro, statusDoErro } from '@/lib/api-errors';
+import { toastComAvisos } from '@/lib/avisos';
 import { useFuncoes } from '@/features/organizacao/hooks';
 import { useDeleteUser, useProfileDetail, useSetUserAtivo, useUpsertUser, useUsers } from '../hooks';
 import { CreateUserPayload, UpdateUserPayload, UsuarioApi, VinculoPayload } from '../services';
+import { TambemExecutaEmEditor } from '../components/TambemExecutaEmEditor';
 import { VinculosEditor, type VinculoLinha } from '../components/VinculosEditor';
 import { mesmosVinculos, nomeDaPessoa } from '../utils';
 
@@ -39,6 +41,7 @@ const schema = z
     email: z.string().email('E-mail inválido'),
     ativo: z.boolean(),
     vinculos: z.array(z.object({ setor: z.number().nullable(), funcao: z.number().nullable() })),
+    tambem_executa_em: z.array(z.number()),
   })
   .superRefine((val, ctx) => {
     if (!val.id && (!val.password || val.password.length < 6)) {
@@ -66,7 +69,10 @@ const defaultValues: FormValues = {
   email: '',
   ativo: true,
   vinculos: [],
+  tambem_executa_em: [],
 };
+
+const mesmosSetores = (a: number[], b: number[]) => a.length === b.length && [...a].sort().every((v, i) => v === [...b].sort()[i]);
 
 const paraPayload = (linhas: VinculoLinha[]): VinculoPayload[] =>
   linhas.map((l) => ({ setor: l.setor as number, funcao: l.funcao as number }));
@@ -87,6 +93,7 @@ const TimePage = () => {
   const podeGerenciarDiretoria = pode('usuarios.gerenciar_diretoria');
   const meuId = useCurrentUser().user?.id;
   const vinculosOriginais: VinculoLinha[] = (editingId && editingDetail?.vinculos) || [];
+  const atuacoesOriginais = (editingId && editingDetail?.tambem_executa_em?.map((a) => a.setor)) || [];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -104,6 +111,7 @@ const TimePage = () => {
         email: editingDetail.email,
         ativo: editingDetail.ativo ?? true,
         vinculos: editingDetail.vinculos.map((v) => ({ setor: v.setor, funcao: v.funcao })),
+        tambem_executa_em: editingDetail.tambem_executa_em?.map((a) => a.setor) ?? [],
         password: '',
       });
     } else if (!editingId) {
@@ -124,10 +132,15 @@ const TimePage = () => {
         // Só envia os vínculos se mudaram: reenviar uma função que quem edita não pode conceder
         // seria recusado pelo backend, mesmo sem alteração.
         ...(mesmosVinculos(values.vinculos, vinculosOriginais) ? {} : { vinculos: paraPayload(values.vinculos) }),
+        // Mesma ideia: só envia "também executa em" se mudou.
+        ...(mesmosSetores(values.tambem_executa_em, atuacoesOriginais) ? {} : { tambem_executa_em: values.tambem_executa_em }),
       };
       upsert.mutate(payload, {
-        onSuccess: () => {
-          toast({ title: 'Pessoa atualizada', description: 'As alterações foram salvas.' });
+        onSuccess: (salva) => {
+          toast({
+            title: salva.avisos?.length ? 'Pessoa atualizada, com um aviso' : 'Pessoa atualizada',
+            ...toastComAvisos(salva.avisos, 'As alterações foram salvas.'),
+          });
           setEditingId(null);
           form.reset(defaultValues);
           setOpen(false);
@@ -149,6 +162,7 @@ const TimePage = () => {
         email: values.email,
         ativo: values.ativo,
         vinculos: paraPayload(values.vinculos),
+        tambem_executa_em: values.tambem_executa_em,
       };
       upsert.mutate(payload, {
         onSuccess: () => {
@@ -192,6 +206,24 @@ const TimePage = () => {
         width: '200px',
         cell: (u) => <VinculosLinhas vinculos={u.vinculos} campo="funcao_nome" />,
       }),
+      col.custom<UsuarioApi>('tambem_executa_em', 'Também executa em', {
+        accessor: (u) => u.tambem_executa_em.map((a) => a.setor_nome).join(', ') || undefined,
+        sortingFn: 'textPtBr',
+        width: '220px',
+        priority: 2,
+        cell: (u) =>
+          u.tambem_executa_em.length ? (
+            <span className="flex flex-wrap gap-1" title={u.tambem_executa_em.map((a) => a.setor_nome).join(', ')}>
+              {u.tambem_executa_em.map((a) => (
+                <span key={a.setor} className="rounded-md bg-muted px-1.5 py-0.5 text-xs">
+                  {a.setor_nome}
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      }),
       col.situacao<UsuarioApi>('situacao', 'Situação', (u) => u.ativo),
       col.data<UsuarioApi>('desde', 'No sistema desde', (u) => u.data_criacao, { priority: 3 }),
     ],
@@ -206,6 +238,7 @@ const TimePage = () => {
         getValue: (u) => (u.vinculos.length ? u.vinculos.map((v) => v.setor_nome) : 'Sem setor'),
       },
       { columnId: 'funcao', label: 'Função', getValue: (u) => u.vinculos.map((v) => v.funcao_nome) },
+      { columnId: 'tambem_executa_em', label: 'Também executa em', getValue: (u) => u.tambem_executa_em.map((a) => a.setor_nome) },
     ],
     [],
   );
@@ -214,8 +247,9 @@ const TimePage = () => {
     setAtivo.mutate(
       { id: u.id, ativo },
       {
-        onSuccess: () => {
-          toast({ title: ativo ? 'Pessoa reativada' : 'Pessoa desativada', description: nomeDaPessoa(u) });
+        onSuccess: (r) => {
+          const titulo = ativo ? 'Pessoa reativada' : 'Pessoa desativada';
+          toast({ title: r.avisos?.length ? `${titulo}, com um aviso` : titulo, ...toastComAvisos(r.avisos, nomeDaPessoa(u)) });
           setConfirmar(null);
         },
         onError: (error) =>
@@ -414,6 +448,26 @@ const TimePage = () => {
                         value={field.value}
                         onChange={field.onChange}
                         originais={vinculosOriginais}
+                        disabled={!canManageUsers}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tambem_executa_em"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>
+                      Também executa em <span className="font-normal text-muted-foreground">(opcional)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <TambemExecutaEmEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        lotacao={form.watch('vinculos')[0]?.setor ?? null}
                         disabled={!canManageUsers}
                       />
                     </FormControl>

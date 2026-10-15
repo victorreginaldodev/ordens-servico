@@ -33,8 +33,8 @@ export const organizacaoKeys = {
 
 /** Quem altera uma função precisa configurar a organização e ter todas as permissões dela (regra do backend). */
 export const usePodeEditarFuncao = () => {
-  const { pode } = usePermissoes();
-  return (f: Pick<Funcao, 'permissoes'>) => pode('organizacao.configurar') && f.permissoes.every((p) => pode(p));
+  const { pode, podeConceder } = usePermissoes();
+  return (f: Pick<Funcao, 'permissoes'>) => pode('organizacao.configurar') && f.permissoes.every((p) => podeConceder(p));
 };
 
 /** Catálogo fixo de permissões: muda só com deploy do backend. */

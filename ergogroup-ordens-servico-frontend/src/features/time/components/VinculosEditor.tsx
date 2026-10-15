@@ -22,13 +22,13 @@ interface VinculosEditorProps {
 
 /** Setores e funções de uma pessoa: uma linha por setor. */
 export function VinculosEditor({ value, onChange, originais = [], disabled }: VinculosEditorProps) {
-  const { pode } = usePermissoes();
+  const { podeConceder: podeConcederPermissao } = usePermissoes();
   const { data: setores = [] } = useSetores();
   const { data: funcoes = [] } = useFuncoes();
 
   // Ninguém concede permissão que não tem (mesma regra do backend).
   const podeConceder = (funcao: Funcao | undefined, setor: number | null) =>
-    !!funcao && funcao.permissoes.every((p) => pode(p, setor));
+    !!funcao && funcao.permissoes.every((p) => podeConcederPermissao(p, setor));
   const funcaoPorId = new Map(funcoes.map((f) => [f.id, f]));
 
   const travada = (linha: VinculoLinha) =>

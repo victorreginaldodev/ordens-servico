@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useToast } from '@/hooks/use-toast';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { mensagemDeErro, statusDoErro } from '@/lib/api-errors';
+import { toastComAvisos } from '@/lib/avisos';
 import type { Permissao } from '@/lib/permissoes';
 import { cn } from '@/lib/utils';
 import {
@@ -27,7 +28,16 @@ import {
   usePodeEditarFuncao,
   useSalvarFuncao,
 } from '../hooks';
-import { AJUDA_PERMISSAO, DEPENDENCIAS_SUGERIDAS, GRUPOS_PERMISSOES, PERMISSOES_SENSIVEIS } from '../permissoesCatalogo';
+import {
+  AJUDA_PERMISSAO,
+  DEPENDENCIAS_SUGERIDAS,
+  ESCOPO_PERMISSAO,
+  GRUPOS_PERMISSOES,
+  PERMISSOES_SENSIVEIS,
+  aplicarExigidas,
+  tituloDaPermissao,
+} from '../permissoesCatalogo';
+import { telasDaFuncao } from '../previaDeAcesso';
 import type { Funcao, Membro, Setor } from '../services';
 
 /**
@@ -125,7 +135,7 @@ function EtapaForm({
   onEtapa: (e: EtapaFuncao | null) => void;
 }) {
   const { toast } = useToast();
-  const { pode } = usePermissoes();
+  const { pode, podeConceder } = usePermissoes();
   const podeEditarFuncao = usePodeEditarFuncao();
   const { data: catalogo = [], isPending: carregandoCatalogo } = usePermissoesDisponiveis();
   const { data: organizacao } = useOrganizacaoAtual();
@@ -153,11 +163,15 @@ function EtapaForm({
 
   const alternar = (campo: 'permissoes' | 'setores', valor: string | number, marcar: boolean) => {
     const atual = form.getValues(campo) as Array<string | number>;
-    form.setValue(campo, (marcar ? [...atual, valor] : atual.filter((v) => v !== valor)) as never, {
-      shouldDirty: true,
-      shouldValidate: campo === 'setores',
-    });
+    const nova =
+      campo === 'permissoes'
+        ? aplicarExigidas(atual as Permissao[], valor as Permissao, marcar)
+        : marcar
+          ? [...atual, valor]
+          : atual.filter((v) => v !== valor);
+    form.setValue(campo, nova as never, { shouldDirty: true, shouldValidate: campo === 'setores' });
   };
+  const telas = telasDaFuncao(marcadas, setoresMarcados);
 
   const onSubmit = (v: Valores) =>
     salvar.mutate(
@@ -168,7 +182,8 @@ function EtapaForm({
       },
       {
         onSuccess: (salva) => {
-          toast({ title: funcao ? 'Função atualizada' : 'Função criada', description: salva.nome });
+          const titulo = funcao ? 'Função atualizada' : 'Função criada';
+          toast({ title: salva.avisos?.length ? `${titulo}, com um aviso` : titulo, ...toastComAvisos(salva.avisos, salva.nome) });
           onFechar();
         },
         onError: (error) => {
@@ -297,7 +312,7 @@ function EtapaForm({
                       const info = porCodigo.get(codigo)!;
                       const marcada = marcadas.includes(codigo);
                       // Ninguém concede o que não tem; desmarcar o que já está na função é permitido.
-                      const bloqueada = somenteLeitura || (!marcada && !pode(codigo));
+                      const bloqueada = somenteLeitura || (!marcada && !podeConceder(codigo));
                       const sensivel = PERMISSOES_SENSIVEIS.has(codigo);
                       const id = `funcao-perm-${codigo}`;
                       return (
@@ -311,10 +326,8 @@ function EtapaForm({
                           />
                           <label htmlFor={id} className={cn('min-w-0 flex-1', !bloqueada && 'cursor-pointer')}>
                             <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span className="text-sm font-medium">{info.descricao}</span>
-                              <span className="rounded bg-muted px-1.5 text-2xs text-muted-foreground">
-                                {info.escopo === 'setor' ? 'Nos setores da pessoa' : 'Empresa toda'}
-                              </span>
+                              <span className="text-sm font-medium">{tituloDaPermissao(info)}</span>
+                              <span className="rounded bg-muted px-1.5 text-2xs text-muted-foreground">{ESCOPO_PERMISSAO[info.escopo]}</span>
                               {sensivel && (
                                 <span className="inline-flex items-center gap-1 text-2xs font-medium text-warning-strong">
                                   <TriangleAlert className="size-3" /> Sensível
@@ -324,7 +337,7 @@ function EtapaForm({
                             {AJUDA_PERMISSAO[codigo] && (
                               <span className="mt-0.5 block text-xs text-muted-foreground">{AJUDA_PERMISSAO[codigo]}</span>
                             )}
-                            {!somenteLeitura && !marcada && !pode(codigo) && (
+                            {!somenteLeitura && !marcada && !podeConceder(codigo) && (
                               <span className="mt-0.5 block text-xs text-muted-foreground">Você não tem esta permissão, então não pode concedê-la.</span>
                             )}
                           </label>
@@ -341,6 +354,18 @@ function EtapaForm({
               );
             })
           )}
+
+          <div className="rounded-md border bg-muted/30 px-3 py-2.5 text-sm">
+            <p className="font-medium">Quem tem esta função vê no menu</p>
+            <p className="mt-0.5 text-muted-foreground">
+              {telas.length
+                ? telas.join(' · ')
+                : 'Só as telas que todos veem (Meus serviços, Clientes, Catálogo e o Painel operacional).'}
+            </p>
+            {marcadas.includes('tarefas.receber') && (
+              <p className="mt-1 text-muted-foreground">E aparece na lista de responsáveis dos setores em que tiver esta função.</p>
+            )}
+          </div>
         </section>
       </div>
 
@@ -379,8 +404,8 @@ function EtapaDesativar({ funcao, membros, onVoltar, onConcluido }: { funcao: Fu
     alterar.mutate(
       { id: funcao.id, ativo: false },
       {
-        onSuccess: () => {
-          toast({ title: 'Função desativada', description: funcao.nome });
+        onSuccess: (salva) => {
+          toast({ title: salva.avisos?.length ? 'Função desativada, com um aviso' : 'Função desativada', ...toastComAvisos(salva.avisos, funcao.nome) });
           onConcluido();
         },
         onError: (error) => toast({ title: 'Não foi possível desativar', description: mensagemDeErro(error, 'Tente novamente.'), variant: 'destructive' }),

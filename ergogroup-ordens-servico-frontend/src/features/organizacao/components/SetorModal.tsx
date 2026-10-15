@@ -148,6 +148,18 @@ function EtapaDetalhe({
         <DialogDescription>{setor.descricao || 'Sem descrição.'}</DialogDescription>
       </DialogHeader>
 
+      <p className="text-sm text-muted-foreground">
+        {setor.executa_servicos
+          ? `Executa ${setor.catalogos_ativos} ${setor.catalogos_ativos === 1 ? 'catálogo' : 'catálogos'} · ${setor.recebem_tarefas} ${setor.recebem_tarefas === 1 ? 'pessoa recebe' : 'pessoas recebem'} tarefas`
+          : 'Não executa serviços: nenhum catálogo ativo é deste setor.'}
+      </p>
+
+      {setor.ativo && setor.sem_quem_receba ? (
+        <p className="rounded-lg border border-warning/40 bg-warning-subtle px-3 py-2 text-sm text-warning-strong">
+          <b>Este setor executa serviços, mas ninguém recebe tarefas nele.</b> Dê a alguém do setor uma função com "Recebe tarefas", ou
+          marque "Também executa em" na pessoa, no Time.
+        </p>
+      ) : null}
       {setor.ativo && setor.sem_organizador ? (
         <p className="rounded-lg border border-warning/40 bg-warning-subtle px-3 py-2 text-sm text-warning-strong">
           <b>Este setor ainda não tem quem organize.</b> Ninguém tem as permissões de ver e distribuir os serviços dele, então o que
@@ -383,6 +395,29 @@ function EtapaDesativar({ resumo, onCancelar, onConcluido }: { resumo: ResumoSet
   const { toast } = useToast();
   const alterarStatus = useAlterarStatusSetor();
   const { setor, membros } = resumo;
+  // Setor com catálogos ativos não é desativado (o backend devolve 400): as vendas desses serviços iriam para ele.
+  const catalogosAtivos = setor.catalogos_ativos;
+
+  if (catalogosAtivos > 0)
+    return (
+      <>
+        <DialogHeader>
+          <DialogTitle>{setor.nome} ainda executa catálogos</DialogTitle>
+          <DialogDescription>
+            Este setor executa {plural(catalogosAtivos, 'catálogo ativo', 'catálogos ativos')}. Passe-os a outro setor (ou
+            desative-os) no Catálogo antes de desativar o setor; senão, os serviços vendidos iriam para um setor desativado.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={onCancelar}>
+            Voltar
+          </Button>
+          <Button asChild>
+            <Link to={`/catalogo?f.setor=${encodeURIComponent(setor.nome)}`}>Ir para o Catálogo</Link>
+          </Button>
+        </DialogFooter>
+      </>
+    );
 
   const desativar = () =>
     alterarStatus.mutate(
@@ -405,7 +440,7 @@ function EtapaDesativar({ resumo, onCancelar, onConcluido }: { resumo: ResumoSet
           {membros.length > 0
             ? `${plural(membros.length, 'pessoa deixa', 'pessoas deixam')} de ter as permissões que este setor concede enquanto ele estiver desativado.`
             : 'Ninguém está neste setor agora.'}{' '}
-          Serviços e catálogos já ligados continuam no setor, e você pode reativá-lo depois.
+          Os serviços já vendidos continuam no setor, e você pode reativá-lo depois.
         </DialogDescription>
       </DialogHeader>
       <DialogFooter className="gap-2 sm:gap-0">
