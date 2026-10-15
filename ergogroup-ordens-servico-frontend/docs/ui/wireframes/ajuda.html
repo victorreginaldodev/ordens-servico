@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe — Ajuda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Tokens propostos em docs/ui/design-system.md §2 */
+:root{
+  --background:0 0% 100%;--foreground:222 47% 11%;--card:0 0% 100%;
+  --muted:210 40% 96%;--muted-foreground:215 20% 42%;--border:214 32% 91%;
+  --accent:210 40% 96%;--primary:173 58% 31%;--primary-foreground:0 0% 100%;
+  --sidebar:210 40% 98%;
+  --success-subtle:138 76% 96%;--success-strong:142 72% 26%;
+  --warning-subtle:48 96% 94%;--warning-strong:26 90% 33%;
+  --danger-subtle:0 86% 96%;--danger-strong:0 70% 40%;
+  --info-subtle:214 95% 96%;--info-strong:224 70% 42%;
+}
+[data-theme="dark"]{
+  --background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 18%;--muted-foreground:215 20% 62%;--border:222 30% 18%;
+  --accent:222 30% 14%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --sidebar:222 47% 7%;
+  --success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-padding-top:72px}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:hsl(var(--background));color:hsl(var(--foreground));font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+a{color:inherit}
+svg.lucide{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+.muted{color:hsl(var(--muted-foreground))}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:hsl(var(--muted));padding:1px 5px;border-radius:4px}
+
+/* Barra do wireframe (fora do produto) */
+.wf{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:8px 16px;background:repeating-linear-gradient(45deg,hsl(var(--muted)),hsl(var(--muted)) 6px,hsl(var(--background)) 6px,hsl(var(--background)) 12px);border-bottom:1px dashed hsl(var(--muted-foreground)/.5);font-size:12px}
+.wf b{font-weight:600}
+.seg{display:inline-flex;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));padding:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:hsl(var(--muted-foreground))}
+.seg button.on{background:hsl(var(--foreground));color:hsl(var(--background))}
+
+/* Shell do sistema (igual às outras telas) */
+.app{display:flex;min-height:calc(100vh - 41px)}
+.sb{width:240px;flex-shrink:0;background:hsl(var(--sidebar));border-right:1px solid hsl(var(--border));display:flex;flex-direction:column;position:sticky;top:0;height:100vh;transition:width .2s}
+.sb.col{width:64px}
+.sb-top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;border-bottom:1px solid hsl(var(--border))}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden}
+.logo-mark{width:28px;height:28px;border-radius:8px;background:hsl(var(--primary));color:hsl(var(--primary-foreground));display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.logo span.g{color:hsl(var(--primary))}
+.icon-btn{width:32px;height:32px;display:grid;place-items:center;border:0;background:none;border-radius:8px;cursor:pointer;color:hsl(var(--muted-foreground))}
+.icon-btn:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.nav{flex:1;overflow-y:auto;padding:8px}
+.grp{font-size:11px;line-height:16px;font-weight:600;color:hsl(var(--muted-foreground));padding:16px 8px 6px;white-space:nowrap}
+.sb.col .grp{visibility:hidden;padding:8px 0 4px;height:12px}
+.it{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:8px;color:hsl(var(--muted-foreground));font-weight:500;cursor:pointer;white-space:nowrap;overflow:hidden;text-decoration:none}
+.it:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.it.on{background:hsl(var(--card));color:hsl(var(--foreground));box-shadow:0 0 0 1px hsl(var(--border)),0 1px 2px hsl(0 0% 0%/.04)}
+.it.on svg{color:hsl(var(--primary))}
+.sb.col .it{justify-content:center;padding:0}
+.sb.col .it span,.sb.col .who{display:none}
+.sb.col .sb-top{justify-content:center;padding:0}
+.sb.col .sb-top .logo{display:none}
+.sb-foot{border-top:1px solid hsl(var(--border));padding:8px}
+.me{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;cursor:pointer}
+.me:hover{background:hsl(var(--accent))}
+.av{width:32px;height:32px;border-radius:50%;background:hsl(var(--primary)/.15);color:hsl(var(--primary));display:grid;place-items:center;font-size:12px;font-weight:600;flex-shrink:0}
+.who{min-width:0;flex:1;line-height:18px}
+.who .n{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .r{font-size:12px;color:hsl(var(--muted-foreground))}
+.new{outline:2px dashed hsl(var(--primary)/.6);outline-offset:-2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.hd{height:56px;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid hsl(var(--border));background:hsl(var(--background));position:sticky;top:0;z-index:20}
+.crumb{display:flex;align-items:center;gap:6px;color:hsl(var(--muted-foreground));white-space:nowrap;overflow:hidden}
+.crumb b{color:hsl(var(--foreground));font-weight:600}
+.crumb svg{width:14px;height:14px;opacity:.6}
+.gsearch{margin-left:auto;display:flex;align-items:center;gap:8px;width:300px;height:36px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:10px;color:hsl(var(--muted-foreground));background:hsl(var(--muted)/.4);cursor:text;flex-shrink:0}
+.kbd{margin-left:auto;font-size:11px;border:1px solid hsl(var(--border));border-radius:4px;padding:0 5px;background:hsl(var(--card))}
+
+/* Proposta (fora do produto) */
+.prop{margin:20px 32px 0;border:1px dashed hsl(var(--primary)/.5);border-radius:12px;background:hsl(var(--primary)/.04);padding:14px 18px}
+.prop summary{cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px}
+.prop summary::-webkit-details-marker{display:none}
+.tag{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.prop .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:12px}
+.prop h3{font-size:13px;margin:0 0 4px}
+.prop ul{padding-left:18px}
+.prop li{margin:2px 0}
+
+/* Layout da ajuda: índice | conteúdo | nesta página */
+.docs{display:grid;grid-template-columns:248px minmax(0,1fr) 208px;flex:1}
+.idx{border-right:1px solid hsl(var(--border));position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:16px 12px 32px}
+.idx-search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));margin-bottom:8px}
+.idx-search input{border:0;outline:0;background:none;flex:1;min-width:0}
+.idx-g{margin-top:10px}
+.idx-g>button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:6px 8px;font-weight:600;font-size:13px;cursor:pointer;border-radius:6px;text-align:left}
+.idx-g>button:hover{background:hsl(var(--accent))}
+.idx-g>button .chev{margin-left:auto;transition:transform .15s;opacity:.6}
+.idx-g.closed>button .chev{transform:rotate(-90deg)}
+.idx-g.closed ul{display:none}
+.idx-g ul{list-style:none;padding:2px 0 4px 0;margin:0 0 0 15px;border-left:1px solid hsl(var(--border))}
+.idx-g li a{display:block;padding:5px 10px;margin-left:-1px;border-left:2px solid transparent;color:hsl(var(--muted-foreground));text-decoration:none;font-size:13px;line-height:18px}
+.idx-g li a:hover{color:hsl(var(--foreground))}
+.idx-g li a.on{color:hsl(var(--primary));border-left-color:hsl(var(--primary));font-weight:600}
+.idx-g li a.todo{opacity:.55}
+.idx-empty{padding:12px 8px;font-size:13px}
+
+.body{padding:32px 48px 64px;min-width:0}
+.art{max-width:720px;margin:0 auto}
+.art .mod{font-size:12px;font-weight:600;color:hsl(var(--primary));text-transform:uppercase;letter-spacing:.04em}
+.art h1{font-size:30px;line-height:38px;font-weight:700;letter-spacing:-.02em;margin:4px 0 8px}
+.art .lead{font-size:16px;line-height:26px;color:hsl(var(--muted-foreground))}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 10px;border-radius:999px;border:1px solid hsl(var(--border));background:hsl(var(--card));text-decoration:none}
+.pill svg{width:14px;height:14px;color:hsl(var(--muted-foreground))}
+a.pill:hover{border-color:hsl(var(--primary)/.5);color:hsl(var(--primary))}
+a.pill:hover svg{color:hsl(var(--primary))}
+.art h2{font-size:20px;line-height:28px;font-weight:700;letter-spacing:-.01em;margin:36px 0 10px;padding-top:4px;display:flex;align-items:center;gap:8px}
+.art h2 .anc{opacity:0;color:hsl(var(--muted-foreground));text-decoration:none;font-weight:500}
+.art h2:hover .anc{opacity:1}
+.art p{font-size:15px;line-height:25px;margin:8px 0}
+.art ul,.art ol{font-size:15px;line-height:25px;padding-left:22px;margin:8px 0}
+.art li{margin:4px 0}
+.art b{font-weight:600}
+.art table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px;line-height:21px}
+.art th{text-align:left;font-weight:600;font-size:12px;color:hsl(var(--muted-foreground));padding:8px 12px;border-bottom:1px solid hsl(var(--border));background:hsl(var(--muted)/.5)}
+.art td{padding:10px 12px;border-bottom:1px solid hsl(var(--border));vertical-align:top}
+.art .tbl{border:1px solid hsl(var(--border));border-radius:10px;overflow:hidden;margin:12px 0}
+.art .tbl table{margin:0}
+.art .tbl tr:last-child td{border-bottom:0}
+.steps{list-style:none;padding:0!important;counter-reset:s}
+.steps>li{counter-increment:s;position:relative;padding-left:40px;margin:14px 0!important}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:hsl(var(--primary)/.12);color:hsl(var(--primary));font-weight:700;font-size:13px;display:grid;place-items:center}
+.call{display:flex;gap:12px;padding:12px 14px;border-radius:10px;margin:16px 0;font-size:14px;line-height:22px}
+.call svg{margin-top:3px}
+.call.dica{background:hsl(var(--info-subtle));color:hsl(var(--info-strong))}
+.call.atencao{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.call div{color:hsl(var(--foreground))}
+.call b.t{display:block;color:inherit}
+.call.dica b.t{color:hsl(var(--info-strong))}
+.call.atencao b.t{color:hsl(var(--warning-strong))}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 0}
+.flow span{font-size:13px;font-weight:500;padding:5px 10px;border-radius:8px;background:hsl(var(--muted))}
+.flow svg{width:14px;height:14px;color:hsl(var(--muted-foreground))}
+.ex{border:1px solid hsl(var(--border));border-radius:10px;padding:10px 14px;margin:8px 0;font-size:14px;background:hsl(var(--card))}
+.ex .muted{font-size:12px}
+.ui{font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid hsl(var(--border));background:hsl(var(--card));font-size:13px;white-space:nowrap}
+.see{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.see a{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid hsl(var(--border));border-radius:10px;text-decoration:none;font-weight:500}
+.see a:hover{border-color:hsl(var(--primary)/.5)}
+.see a svg{color:hsl(var(--primary))}
+.pn{display:flex;justify-content:space-between;gap:12px;margin-top:48px;padding-top:20px;border-top:1px solid hsl(var(--border))}
+.pn a{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border:1px solid hsl(var(--border));border-radius:10px;text-decoration:none;min-width:200px;max-width:48%}
+.pn a:hover{border-color:hsl(var(--primary)/.5)}
+.pn a.nx{text-align:right;margin-left:auto}
+.pn small{font-size:12px;color:hsl(var(--muted-foreground))}
+.pn b{color:hsl(var(--primary))}
+.upd{margin-top:16px;font-size:12px}
+.skel{height:12px;border-radius:6px;background:hsl(var(--muted));margin:12px 0}
+.todo-box{border:1px dashed hsl(var(--border));border-radius:12px;padding:20px;margin-top:24px}
+
+.toc{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:32px 16px 32px 8px}
+.toc h4{font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.toc h4 svg{width:14px;height:14px}
+.toc ul{list-style:none;padding:0;border-left:1px solid hsl(var(--border))}
+.toc a{display:block;padding:4px 12px;margin-left:-1px;border-left:2px solid transparent;font-size:13px;line-height:18px;color:hsl(var(--muted-foreground));text-decoration:none}
+.toc a:hover{color:hsl(var(--foreground))}
+.toc a.on{color:hsl(var(--primary));border-left-color:hsl(var(--primary));font-weight:500}
+.toc .top{display:flex;align-items:center;gap:6px;margin-top:16px;font-size:12px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;border:0;background:none;padding:0}
+
+/* Telas menores */
+.idx-btn{display:none}
+.idx-close{display:none!important;align-items:center;gap:6px;width:100%;margin-bottom:8px}
+@media (max-width:1180px){.docs{grid-template-columns:232px minmax(0,1fr)}.toc{display:none}}
+@media (max-width:860px){
+  .sb{display:none}.gsearch{display:none}
+  .docs{grid-template-columns:minmax(0,1fr)}
+  .hd{z-index:40}
+  .idx{display:none;position:fixed;inset:56px 0 0 0;height:auto;z-index:30;background:hsl(var(--background))}
+  .idx-close{display:flex!important}
+  .idx.open{display:block}
+  .idx-btn{display:inline-flex}
+  .body{padding:20px 16px 48px}
+  .prop{margin:16px 16px 0}.prop .grid{grid-template-columns:1fr}
+  .see{grid-template-columns:1fr}
+  .pn{flex-direction:column}.pn a{max-width:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wf">
+  <b>Wireframe · Ajuda</b>
+  <span>Perfil <span class="seg" id="wf-perfil"><button class="on" data-v="dir">Diretoria (tudo)</button><button data-v="com">Comercial</button><button data-v="tec">Técnico de setor</button></span></span>
+  <span>Menu do sistema <span class="seg" id="wf-sb"><button class="on" data-v="a">Aberto</button><button data-v="r">Recolhido</button></span></span>
+  <span>Tema <span class="seg" id="wf-tema"><button class="on" data-v="light">Claro</button><button data-v="dark">Escuro</button></span></span>
+  <span class="muted">Conteúdo de exemplo: módulo Vendas (backend/docs/modulos/02-vendas.md) reescrito para o usuário</span>
+</div>
+
+<div class="app">
+  <aside class="sb" id="sb">
+    <div class="sb-top">
+      <div class="logo"><div class="logo-mark">E</div><span>Ergo<span class="g">group</span></span></div>
+      <button class="icon-btn" id="sb-toggle" title="Recolher menu"><i data-lucide="panel-left"></i></button>
+    </div>
+    <nav class="nav" id="appnav"></nav>
+    <div class="sb-foot">
+      <a class="it on new" href="#vendas/o-que-e" title="Ajuda"><i data-lucide="circle-help"></i><span>Ajuda</span></a>
+      <div class="me"><div class="av">MS</div><div class="who"><div class="n">Mariana Souza Lima</div><div class="r" id="who-r">Diretoria</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="hd">
+      <button class="icon-btn idx-btn" id="idx-btn" title="Índice"><i data-lucide="menu"></i></button>
+      <div class="crumb" id="crumb"></div>
+      <div class="gsearch"><i data-lucide="search"></i><span>Buscar telas e ajuda…</span><span class="kbd">Ctrl K</span></div>
+    </header>
+
+    <details class="prop">
+      <summary><i data-lucide="file-pen-line"></i> Proposta: tela de Ajuda <span class="tag">proposta, a aprovar</span></summary>
+      <div class="grid">
+        <div>
+          <h3>Onde fica</h3>
+          <ul>
+            <li>Rota <code>/ajuda/:modulo/:pagina</code>, dentro do layout do sistema (menu e cabeçalho iguais às outras telas).</li>
+            <li>Entrada <b>Ajuda</b> no rodapé do menu lateral, acima da pessoa (tracejado neste wireframe). Aparece para todos.</li>
+            <li>A busca global (<code>Ctrl K</code>) também traz as páginas da ajuda, num grupo “Ajuda”.</li>
+            <li>Opcional: um ícone <code>?</code> no cabeçalho de cada tela abre a página da ajuda daquela tela (ex.: Nova venda → “Registrar uma venda”).</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Layout</h3>
+          <ul>
+            <li><b>Esquerda:</b> índice por módulo, com busca pelo título e grupos que abrem e fecham.</li>
+            <li><b>Centro:</b> uma página por função: título, uma frase do que é, “quem pode” e um link para a tela, seções curtas, passos numerados, tabelas pequenas e caixas de <b>Dica</b> e <b>Atenção</b>. No fim, “Ver também” e Anterior/Próxima.</li>
+            <li><b>Direita:</b> “Nesta página”, com as seções da página e a seção atual destacada ao rolar.</li>
+            <li>Abaixo de 1180px some a coluna da direita; no celular o índice vira um botão no cabeçalho.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Conteúdo</h3>
+          <ul>
+            <li>Escrito a partir de <code>backend/docs/modulos/</code>, sem códigos de permissão, endpoints nem nomes de arquivo. Permissão aparece pelo nome da tela de Funções (ex.: “Vender: criar e editar OS e seus serviços”).</li>
+            <li>Os pontos em aberto do README dos módulos não entram; entra só o comportamento de hoje que o usuário sente.</li>
+            <li>Arquivos <code>.md</code> em <code>src/features/ajuda/conteudo/</code>, um por página, mostrados com <code>react-markdown</code> (dependência nova).</li>
+            <li>Índice filtrado pelo perfil: cada página diz quais permissões precisa; quem não tem não a vê (troque o Perfil na barra acima).</li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <div class="docs">
+      <aside class="idx" id="idx">
+        <button class="btn-close idx-close icon-btn" id="idx-close" style="width:auto;padding:0 8px"><i data-lucide="x"></i>Fechar índice</button>
+        <label class="idx-search"><i data-lucide="search"></i><input id="idx-q" placeholder="Buscar na ajuda"></label>
+        <div id="idx-list"></div>
+      </aside>
+      <main class="body"><article class="art" id="art"></article></main>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Perfis do wireframe ---------- */
+const PERFIS = {
+  dir: { nome: 'Diretoria', perms: ['vender', 'ver_todas', 'excluir', 'valores', 'cobranca', 'setor', 'organizacao', 'catalogo', 'clientes'] },
+  com: { nome: 'Comercial', perms: ['vender', 'ver_todas', 'valores'] },
+  tec: { nome: 'Técnico · Engenharia', perms: [] },
+};
+let perfil = 'dir';
+const pode = (lista) => !lista || lista.some((p) => PERFIS[perfil].perms.includes(p));
+
+/* ---------- Menu do sistema (só para contexto) ---------- */
+const APPNAV = [
+  ['Vendas', [['Vendas', 'handshake', ['vender', 'ver_todas']], ['Nova venda', 'circle-plus', ['vender']]]],
+  ['Execução', [['Visão geral', 'layout-grid', ['organizacao']], ['Meus serviços', 'list-checks']]],
+  ['Financeiro', [['Cobranças', 'receipt', ['cobranca']]]],
+  ['Análise BI', [['Painel operacional', 'activity'], ['Painel financeiro', 'wallet', ['valores']]]],
+  ['Cadastros', [['Clientes', 'building-2'], ['Catálogo', 'package']]],
+];
+function renderAppNav() {
+  document.getElementById('appnav').innerHTML = APPNAV.map(([g, its]) => {
+    const vis = its.filter((i) => pode(i[2]));
+    if (!vis.length) return '';
+    return `<div class="grp">${g}</div>` + vis.map(([t, ic]) => `<a class="it" title="${t}"><i data-lucide="${ic}"></i><span>${t}</span></a>`).join('');
+  }).join('');
+}
+
+/* ---------- Conteúdo da ajuda ----------
+   Cada página: id, título, frase de abertura, quem pode, tela, seções.
+   Só o módulo Vendas está escrito; os outros mostram o lugar reservado. */
+const P = {
+  vender: 'Vender: criar e editar OS e seus serviços',
+  ver_todas: 'Ver todas as vendas',
+  excluir: 'Excluir OS',
+  valores: 'Ver valores e condições de pagamento',
+  servicos_setor: 'Ajustar e excluir os serviços do setor',
+};
+const dica = (t, h) => `<div class="call dica"><i data-lucide="lightbulb"></i><div><b class="t">${t}</b>${h}</div></div>`;
+const atencao = (t, h) => `<div class="call atencao"><i data-lucide="triangle-alert"></i><div><b class="t">${t}</b>${h}</div></div>`;
+const tbl = (cab, linhas) => `<div class="tbl"><table><thead><tr>${cab.map((c) => `<th>${c}</th>`).join('')}</tr></thead><tbody>${linhas.map((l) => `<tr>${l.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const seta = '<i data-lucide="arrow-right"></i>';
+const link = (pag, txt) => `<a href="#vendas/${pag}" style="color:hsl(var(--primary));font-weight:500">${txt}</a>`;
+
+const VENDAS = [
+  {
+    id: 'o-que-e', titulo: 'O que é uma venda',
+    lead: 'A venda (também chamada de OS, ordem de serviço) registra o que foi vendido a um cliente: os serviços, quem vendeu e como o cliente vai pagar.',
+    secoes: [
+      ['o-que-tem', 'O que tem numa venda', `
+        <ul>
+          <li><b>Cliente e venda:</b> para quem foi vendido, a data da venda e a prioridade. Quem vendeu é preenchido sozinho.</li>
+          <li><b>Serviços vendidos:</b> cada serviço é escolhido do catálogo, com uma descrição do que será feito.</li>
+          <li><b>Condição de pagamento:</b> o valor e como o cliente vai pagar. Só aparece para quem vê valores.</li>
+        </ul>`],
+      ['setores', 'Cada serviço vai para um setor', `
+        <p>O catálogo diz qual setor executa cada serviço. Ao registrar a venda, cada serviço vai sozinho para a fila do setor certo. Uma mesma venda pode ter serviços de vários setores.</p>
+        ${dica('Mudou o setor no catálogo?', 'Os serviços já vendidos continuam no setor em que entraram. Só as vendas novas vão para o setor novo.')}`],
+      ['caminho', 'O caminho de uma venda', `
+        <div class="flow"><span>Venda registrada</span>${seta}<span>Setores recebem</span>${seta}<span>Serviços executados</span>${seta}<span>Liberada para faturar</span>${seta}<span>Faturada</span></div>
+        <p>Quando o financeiro registra o faturamento, quem vendeu recebe um e-mail avisando que a OS foi faturada.</p>`],
+    ],
+    ver: ['registrar', 'status'],
+  },
+  {
+    id: 'registrar', titulo: 'Registrar uma venda', quem: ['vender'], tela: ['Nova venda', '/vendas/nova'],
+    lead: 'A Nova venda tem três partes na mesma página. Ao lado, um resumo mostra o que ainda falta preencher. Tudo é salvo de uma vez, ao clicar em Registrar.',
+    secoes: [
+      ['cliente', '1. Cliente e venda', `
+        <ol class="steps">
+          <li>Escolha o <b>cliente</b>. Dá para buscar pelo nome ou pelo CNPJ.</li>
+          <li>Informe a <b>data da venda</b>. Ela pode ser diferente de hoje.</li>
+          <li>Escolha a <b>prioridade</b>: baixa, média ou alta. Se você não escolher, fica baixa.</li>
+        </ol>
+        ${dica('Prioridade dos serviços', 'Os serviços herdam a prioridade da venda. Se um serviço for mais urgente, dá para escolher outra prioridade só para ele.')}`],
+      ['servicos', '2. Serviços vendidos', `
+        <ol class="steps">
+          <li>Clique em <span class="ui">Adicionar serviço</span>.</li>
+          <li>Escolha o serviço do catálogo e escreva <b>o que será feito</b>.</li>
+          <li>Clique em <span class="ui">Adicionar à OS</span>. O modal continua aberto para o próximo serviço e mostra os que já entraram.</li>
+        </ol>
+        <p>Cada serviço mostra o setor que vai executá-lo. A venda precisa de pelo menos um serviço.</p>
+        ${atencao('Não achou o serviço?', 'Só aparecem os serviços ativos de setores ativos. Se faltar algum, fale com quem cuida do catálogo.')}`],
+      ['pagamento', '3. Pagamento', `
+        <p>Informe o valor, se é à vista ou parcelado, a forma de pagamento, o vencimento e quando o financeiro pode faturar. A tela mostra a prévia das datas e do valor de cada parcela.</p>
+        <p>Cada campo está explicado em ${link('condicao', 'Condição de pagamento')} e em ${link('liberar', 'Liberar para faturamento')}.</p>`],
+      ['depois', 'Depois de registrar', `
+        <p>Ao clicar em <span class="ui">Registrar</span>:</p>
+        <ul>
+          <li>a venda é criada com os serviços;</li>
+          <li>cada setor recebe um e-mail com os serviços que chegaram;</li>
+          <li>se a venda foi liberada para faturar na venda, o financeiro também recebe um e-mail;</li>
+          <li>a tela abre o ${link('resumo', 'Resumo da venda')}.</li>
+        </ul>`],
+      ['aviso', 'Se aparecer um aviso', `
+        <p>A mensagem <b>“Venda registrada, com um aviso”</b> quer dizer que algum setor da venda ainda não tem ninguém para receber tarefas.</p>
+        <p>A venda foi salva normalmente. Avise quem configura setores e funções para que o setor consiga executar o serviço.</p>`],
+    ],
+    ver: ['condicao', 'servicos'],
+  },
+  {
+    id: 'condicao', titulo: 'Condição de pagamento', quem: ['valores'],
+    lead: 'É o que foi combinado com o cliente. O sistema registra a condição para o financeiro; ele não gera boletos nem controla as parcelas.',
+    secoes: [
+      ['tipo', 'À vista ou parcelado', tbl(['Tipo', 'Quando usar'], [
+        ['<b>À vista</b>', 'O cliente paga tudo de uma vez.'],
+        ['<b>Parcelado</b>', 'O cliente paga em parcelas mensais, no mínimo 2. Contratos mensais, como gestão em 24x, também entram aqui.'],
+      ])],
+      ['forma', 'Forma de pagamento', `<p>Boleto (já vem marcado), PIX, transferência, crédito, débito, dinheiro, cheque ou outro. A forma vale para a venda toda.</p>`],
+      ['vencimento', 'Vencimento', `
+        <p>Escolha <b>uma</b> das duas formas:</p>
+        <ul>
+          <li><b>Numa data:</b> a data combinada com o cliente.</li>
+          <li><b>Dias após a nota:</b> de 1 a 365 dias depois da emissão da nota.</li>
+        </ul>
+        <p>No parcelado, o vencimento é o da 1ª parcela.</p>`],
+      ['parcelas', 'Demais parcelas', `
+        <p>No parcelado, você pode dizer o dia do mês (1 a 31) em que vencem as parcelas da 2ª em diante. Se deixar vazio, elas vencem no mesmo dia do mês da 1ª.</p>
+        ${dica('Dia que não existe no mês', 'Se o dia for 31 e o mês tiver 30 dias, a parcela vence no último dia do mês.')}`],
+      ['nota', 'Contato da nota e observações', `
+        <ul>
+          <li><b>Para quem enviar a nota:</b> nome e e-mail do contato no cliente. A tela sugere o representante do cliente.</li>
+          <li><b>Observações:</b> o que o financeiro precisa saber. Por exemplo: sinal já pago, número do pedido de compra, outro e-mail para a nota. Só quem vê valores enxerga.</li>
+        </ul>`],
+      ['resumo', 'Como a condição aparece', `
+        <p>O sistema monta uma frase com a condição. Ela aparece igual nas vendas, no financeiro e nos e-mails:</p>
+        <div class="ex">À vista, vence 10/08/2026</div>
+        <div class="ex">Parcelado em 6x de R$ 1.583,33 (mensais), 1ª parcela 21 dias após a nota, demais todo dia 10</div>`],
+    ],
+    ver: ['liberar', 'quem-pode'],
+  },
+  {
+    id: 'liberar', titulo: 'Liberar para faturamento', quem: ['valores'],
+    lead: 'Diz a partir de quando o financeiro pode emitir a nota. Você escolhe na venda e o sistema libera sozinho: não existe botão para liberar.',
+    secoes: [
+      ['opcoes', 'As duas opções', tbl(['Opção', 'O que acontece'], [
+        ['<b>Na venda</b>', 'A venda já nasce liberada. O financeiro recebe um e-mail na hora e a venda aparece em Cobranças, em “A faturar”.'],
+        ['<b>Quando todos os serviços terminarem</b><br><span class="muted">(já vem marcada)</span>', 'A venda é liberada sozinha quando o último serviço é concluído, de qualquer setor. Serviços cancelados não contam.'],
+      ])],
+      ['qual', 'Qual escolher', `
+        <ul>
+          <li><b>Na venda:</b> quando a nota sai antes ou durante o serviço. Por exemplo: pagamento antecipado, entrada ou contrato mensal.</li>
+          <li><b>Quando todos os serviços terminarem:</b> quando a nota sai depois da entrega.</li>
+        </ul>`],
+      ['depois', 'Depois de liberada', `
+        <p>Uma venda liberada não volta atrás. Se algo mudar depois (um serviço acrescentado ou excluído, o valor ou a condição alterados), o financeiro vê o aviso “Mudou depois da liberação” na Conferência do faturamento.</p>
+        ${atencao('Trocou para “na venda” depois de salvar?', 'A venda não é liberada na mesma hora. A liberação acontece na próxima vez que algum serviço da venda for atualizado.')}`],
+    ],
+    ver: ['condicao', 'status'],
+  },
+  {
+    id: 'acompanhar', titulo: 'Acompanhar as vendas', quem: ['vender', 'ver_todas'], tela: ['Vendas', '/vendas'],
+    lead: 'A tela Vendas lista as vendas com o andamento de cada uma, para você saber o que já foi feito e o que falta.',
+    secoes: [
+      ['visoes', 'Visões', tbl(['Visão', 'O que mostra'], [
+        ['<b>Todas</b>', 'Todas as vendas que você pode ver.'],
+        ['<b>Para distribuir</b>', 'Vendas com algum serviço que o setor ainda não distribuiu.'],
+        ['<b>Em execução</b>', 'Vendas com serviços em andamento.'],
+        ['<b>Concluídas</b>', 'Vendas com todos os serviços concluídos.'],
+      ])],
+      ['andamento', 'Andamento', `<p>Cada venda mostra quantos serviços já terminaram, por exemplo <b>“2 de 4 concluídos”</b>. Para ver o detalhe de cada serviço, abra o ${link('resumo', 'Resumo da venda')}.</p>`],
+      ['filtros', 'Filtros', `
+        <ul>
+          <li><span class="ui">Minhas vendas</span>, no topo: só as vendas que você registrou.</li>
+          <li>Vendedor, cliente, status e data da venda.</li>
+          <li>Para quem vê valores: condição de pagamento e situação financeira.</li>
+        </ul>`],
+      ['quais', 'Quais vendas aparecem para você', tbl(['Se você pode…', 'Vê'], [
+        ['Ver todas as vendas', 'Todas as vendas.'],
+        ['Acompanhar o setor', 'As vendas com serviço do seu setor e as vendas em que você tem tarefa.'],
+        ['Nenhuma das duas', 'Só as vendas em que você tem tarefa.'],
+      ])],
+    ],
+    ver: ['resumo', 'status'],
+  },
+  {
+    id: 'resumo', titulo: 'Resumo da venda e PDF', quem: ['vender', 'ver_todas'], tela: ['Vendas › abrir uma venda', '/vendas/:id'],
+    lead: 'O Resumo da venda responde à pergunta do cliente: “como está meu serviço?”.',
+    secoes: [
+      ['mostra', 'O que o resumo mostra', `
+        <ul>
+          <li>Quem vendeu e quando.</li>
+          <li>Para cada serviço: o setor, a etapa, os responsáveis com o prazo, o início, o término e quem finalizou.</li>
+          <li>Para quem vê valores: a condição de pagamento e a situação financeira (se já foi liberada e faturada).</li>
+        </ul>`],
+      ['linha', 'Linha do tempo', `<p>Embaixo do resumo fica a linha do tempo da venda: tudo o que aconteceu com ela, com os serviços e com as tarefas, em ordem.</p>`],
+      ['pdf', 'Gerar o PDF', `<p>Clique em <span class="ui">PDF</span> para gerar o resumo da venda em PDF e enviar ao cliente.</p>`],
+      ['acoes', 'Outras ações', `
+        <ul>
+          <li><span class="ui">Editar venda</span>: veja ${link('editar', 'Editar uma venda')}.</li>
+          <li><span class="ui">Acrescentar serviço</span>: veja ${link('servicos', 'Serviços depois da venda')}.</li>
+          <li><span class="ui">Excluir venda</span>: veja ${link('excluir', 'Excluir uma venda')}.</li>
+        </ul>`],
+    ],
+    ver: ['editar', 'servicos'],
+  },
+  {
+    id: 'editar', titulo: 'Editar uma venda', quem: ['vender'], tela: ['Resumo da venda › Editar venda', '/vendas/:id/editar'],
+    lead: 'A edição usa a mesma página da Nova venda, sem a parte de serviços.',
+    secoes: [
+      ['pode', 'O que dá para mudar', `<p>O cliente, a data da venda, a prioridade e o pagamento. O pagamento só aparece para quem vê valores.</p>`],
+      ['nao', 'O que não muda por aqui', `
+        <ul>
+          <li><b>Serviços:</b> acrescente, troque ou exclua pelo Resumo da venda. Veja ${link('servicos', 'Serviços depois da venda')}.</li>
+          <li><b>Status, liberação e faturamento:</b> o sistema calcula sozinho.</li>
+        </ul>`],
+      ['vencimento', 'Vencimento ao editar', `
+        <p>Se você trocar o vencimento de “numa data” para “dias após a nota” (ou o contrário), o que estava antes é apagado. Se passar de parcelado para à vista, o dia das demais parcelas também é apagado.</p>
+        ${dica('Venda antiga sem vencimento', 'Dá para editar o resto normalmente. Se mexer no pagamento, o vencimento passa a ser obrigatório.')}`],
+    ],
+    ver: ['condicao', 'servicos'],
+  },
+  {
+    id: 'servicos', titulo: 'Serviços depois da venda', quem: ['vender', 'servicos_setor'], tela: ['Resumo da venda', '/vendas/:id'],
+    lead: 'Depois de registrada, a venda ainda pode ganhar serviços, e cada serviço pode ser trocado ou excluído.',
+    secoes: [
+      ['acrescentar', 'Acrescentar um serviço', `
+        <p>No Resumo da venda, clique em <span class="ui">Acrescentar serviço</span>. O cadastro é o mesmo da Nova venda. Só o setor do novo serviço recebe o e-mail de chegada.</p>
+        <p>Se a venda já estava liberada para faturar, o financeiro vê a mudança na Conferência do faturamento.</p>`],
+      ['trocar', 'Trocar o serviço', tbl(['Troca', 'Quando pode'], [
+        ['Para um serviço <b>do mesmo setor</b>', 'Sempre.'],
+        ['Para um serviço <b>de outro setor</b>', 'Só se o serviço ainda não começou e não tem tarefas. Você também precisa poder vender ou ajustar os serviços do setor de destino.'],
+      ]) + `<p>Na troca de setor, o setor novo recebe o e-mail de chegada e precisa dar ciência de novo.</p>`],
+      ['excluir', 'Excluir um serviço', atencao('Não dá para desfazer', 'Excluir um serviço apaga também as tarefas dele.')],
+      ['cancelar', 'Cancelar um serviço', `<p>Hoje não há como cancelar um serviço. Se ele não vai mais ser feito, exclua o serviço.</p>`],
+    ],
+    ver: ['resumo', 'liberar'],
+  },
+  {
+    id: 'status', titulo: 'Status da venda',
+    lead: 'O status da venda é calculado a partir dos serviços. Ninguém muda o status à mão.',
+    secoes: [
+      ['tabela', 'Os status', tbl(['Status', 'Quando'], [
+        ['<b>Aberta</b>', 'Nenhum serviço começou, ou a venda ainda não tem serviços.'],
+        ['<b>Em andamento</b>', 'Algum serviço já começou ou terminou, e ainda falta algum.'],
+        ['<b>Concluída</b>', 'Todos os serviços terminaram. Os cancelados não contam.'],
+        ['<b>Cancelada</b>', 'Todos os serviços foram cancelados.'],
+      ])],
+      ['etapas', 'E as etapas dos serviços?', `
+        <p>Cada serviço passa por estas etapas dentro do setor:</p>
+        <div class="flow"><span>Novo</span>${seta}<span>A distribuir</span>${seta}<span>Distribuído</span>${seta}<span>Em execução</span>${seta}<span>Concluído</span></div>
+        <p>Elas estão explicadas no módulo Execução nos setores.</p>`],
+    ],
+    ver: ['acompanhar', 'liberar'],
+  },
+  {
+    id: 'excluir', titulo: 'Excluir uma venda', quem: ['excluir'], tela: ['Resumo da venda › Excluir venda', '/vendas/:id'],
+    lead: 'Excluir apaga a venda, os serviços e as tarefas deles.',
+    secoes: [
+      ['como', 'Como excluir', `
+        <ol class="steps">
+          <li>Abra o Resumo da venda.</li>
+          <li>Clique em <span class="ui">Excluir venda</span>.</li>
+          <li>Confirme no modal.</li>
+        </ol>
+        ${atencao('Não dá para desfazer', 'Depois de excluída, a venda não pode ser recuperada.')}`],
+    ],
+    ver: ['resumo', 'quem-pode'],
+  },
+  {
+    id: 'quem-pode', titulo: 'Quem pode o quê em Vendas',
+    lead: 'O que cada pessoa consegue fazer depende das permissões da função dela. As permissões são marcadas em Funções e permissões.',
+    secoes: [
+      ['acoes', 'Ações e permissões', tbl(['Para…', 'Precisa de'], [
+        ['Registrar e editar uma venda', P.vender],
+        ['Acrescentar um serviço', P.vender],
+        ['Trocar ou excluir um serviço', `${P.vender}, ou ${P.servicos_setor.toLowerCase()} no setor do serviço`],
+        ['Ver a tela Vendas e o Resumo da venda', `${P.vender}, ou ${P.ver_todas.toLowerCase()}`],
+        ['Ver o valor e a condição de pagamento', P.valores],
+        ['Excluir uma venda', P.excluir],
+      ])],
+      ['valores', 'Quem não vê valores', `
+        <p>Sem a permissão de ver valores, o valor, a condição de pagamento e as observações somem de todas as telas.</p>
+        ${dica('Registrou a venda e não vê mais o valor?', 'É esperado: quem registra a venda informa o valor, mas, se não tem a permissão de ver valores, deixa de vê-lo depois de salvar.')}`],
+    ],
+    ver: ['o-que-e', 'acompanhar'],
+  },
+];
+
+const MODULOS = [
+  { id: 'inicio', titulo: 'Primeiros passos', icon: 'rocket', paginas: [['entrar', 'Entrar e recuperar a senha'], ['menu', 'Menu e tela inicial'], ['perfil', 'Meu perfil']] },
+  { id: 'vendas', titulo: 'Vendas', icon: 'handshake', quem: ['vender', 'ver_todas'], paginas: VENDAS },
+  { id: 'execucao', titulo: 'Execução nos setores', icon: 'list-checks', paginas: [['chegada', 'Como o serviço chega ao setor'], ['meus', 'Meus serviços'], ['painel', 'Painel do setor e Visão geral'], ['ciencia', 'Ciência de recebimento'], ['distribuir', 'Distribuir um serviço'], ['tarefas', 'Tarefas'], ['alertas', 'Prazos e alertas']] },
+  { id: 'financeiro', titulo: 'Financeiro', icon: 'receipt', quem: ['cobranca'], paginas: [['cobrancas', 'Cobranças'], ['faturar', 'Registrar o faturamento'], ['conferencia', 'Conferência do faturamento'], ['situacao', 'Situação financeira da venda']] },
+  { id: 'cadastros', titulo: 'Cadastros', icon: 'building-2', paginas: [['clientes', 'Clientes'], ['catalogo', 'Catálogo de serviços']] },
+  { id: 'indicadores', titulo: 'Indicadores', icon: 'activity', paginas: [['operacional', 'Painel operacional'], ['financeiro', 'Painel financeiro', ['valores']]] },
+  { id: 'organizacao', titulo: 'Organização', icon: 'network', quem: ['organizacao'], paginas: [['setores', 'Setores'], ['funcoes', 'Funções e permissões'], ['time', 'Time']] },
+  { id: 'historico', titulo: 'Histórico e avisos', icon: 'history', paginas: [['linha', 'Linha do tempo'], ['emails', 'E-mails que o sistema envia']] },
+];
+// Normaliza: páginas não escritas viram { id, titulo, todo }
+MODULOS.forEach((m) => { m.paginas = m.paginas.map((p) => Array.isArray(p) ? { id: p[0], titulo: p[1], quem: p[2], todo: true } : p); });
+
+const visiveis = () => MODULOS.filter((m) => pode(m.quem)).map((m) => ({ ...m, paginas: m.paginas.filter((p) => pode(p.quem)) })).filter((m) => m.paginas.length);
+const sequencia = () => visiveis().flatMap((m) => m.paginas.map((p) => ({ m, p })));
+
+/* ---------- Render ---------- */
+let atual = { m: 'vendas', p: 'o-que-e' };
+const fechados = new Set();
+
+function renderIdx() {
+  const q = document.getElementById('idx-q').value.trim().toLowerCase();
+  const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const mods = visiveis().map((m) => ({ ...m, paginas: q ? m.paginas.filter((p) => norm(p.titulo + ' ' + m.titulo).includes(norm(q))) : m.paginas })).filter((m) => m.paginas.length);
+  document.getElementById('idx-list').innerHTML = mods.length ? mods.map((m) => `
+    <div class="idx-g ${fechados.has(m.id) && !q ? 'closed' : ''}" data-m="${m.id}">
+      <button><i data-lucide="${m.icon}"></i>${m.titulo}<i class="chev" data-lucide="chevron-down"></i></button>
+      <ul>${m.paginas.map((p) => `<li><a href="#${m.id}/${p.id}" class="${atual.m === m.id && atual.p === p.id ? 'on' : ''} ${p.todo ? 'todo' : ''}">${p.titulo}</a></li>`).join('')}</ul>
+    </div>`).join('') : `<div class="idx-empty muted">Nada encontrado para “${q}”.</div>`;
+  document.querySelectorAll('.idx-g>button').forEach((b) => b.onclick = () => {
+    const id = b.parentElement.dataset.m;
+    fechados.has(id) ? fechados.delete(id) : fechados.add(id);
+    renderIdx();
+  });
+  lucide.createIcons();
+}
+
+function renderPagina() {
+  const seq = sequencia();
+  let i = seq.findIndex((x) => x.m.id === atual.m && x.p.id === atual.p);
+  if (i < 0) { i = 0; atual = { m: seq[0].m.id, p: seq[0].p.id }; }
+  const { m, p } = seq[i];
+  const ant = seq[i - 1], prox = seq[i + 1];
+  const art = document.getElementById('art');
+
+  document.getElementById('crumb').innerHTML = `<span>Ajuda</span><i data-lucide="chevron-right"></i><span>${m.titulo}</span><i data-lucide="chevron-right"></i><b>${p.titulo}</b>`;
+
+  let html = `<div class="mod">${m.titulo}</div><h1>${p.titulo}</h1>`;
+  if (p.todo) {
+    html += `<p class="lead">Esta página será escrita na implementação, a partir do módulo correspondente em <code>backend/docs/modulos/</code>.</p>
+      <div class="todo-box">${'<div class="skel" style="width:90%"></div><div class="skel" style="width:75%"></div><div class="skel" style="width:82%"></div>'.repeat(2)}</div>`;
+  } else {
+    html += `<p class="lead">${p.lead}</p>`;
+    const meta = [];
+    if (p.quem) meta.push(`<span class="pill"><i data-lucide="key-round"></i>Precisa de: ${p.quem.map((q) => P[q]).join(' ou ')}</span>`);
+    if (p.tela) meta.push(`<a class="pill" href="#" onclick="return false" title="${p.tela[1]}"><i data-lucide="external-link"></i>Abrir a tela: ${p.tela[0]}</a>`);
+    if (meta.length) html += `<div class="meta">${meta.join('')}</div>`;
+    html += p.secoes.map(([id, h, corpo]) => `<h2 id="${id}">${h}<a class="anc" href="#${m.id}/${p.id}/${id}">#</a></h2>${corpo}`).join('');
+    if (p.ver) {
+      const alvo = p.ver.map((v) => m.paginas.find((x) => x.id === v)).filter(Boolean);
+      if (alvo.length) html += `<h2 id="ver">Ver também</h2><div class="see">${alvo.map((x) => `<a href="#${m.id}/${x.id}"><i data-lucide="book-open"></i>${x.titulo}</a>`).join('')}</div>`;
+    }
+  }
+  html += `<div class="pn">${ant ? `<a href="#${ant.m.id}/${ant.p.id}"><small>Anterior</small><b>${ant.p.titulo}</b></a>` : ''}${prox ? `<a class="nx" href="#${prox.m.id}/${prox.p.id}"><small>Próxima</small><b>${prox.p.titulo}</b></a>` : ''}</div>`;
+  if (!p.todo) html += `<div class="upd muted">Atualizado em 15/10/2026</div>`;
+  art.innerHTML = html;
+
+  // Nesta página
+  const hs = [...art.querySelectorAll('h2[id]')];
+  document.getElementById('toc').innerHTML = hs.length ? `<h4><i data-lucide="align-left"></i>Nesta página</h4><ul>${hs.map((h) => `<li><a href="#${m.id}/${p.id}/${h.id}" data-id="${h.id}">${h.childNodes[0].textContent}</a></li>`).join('')}</ul><button class="top" onclick="scrollTo({top:0,behavior:'smooth'})"><i data-lucide="arrow-up"></i>Voltar ao topo</button>` : '';
+  observar(hs);
+  lucide.createIcons();
+}
+
+let obs;
+function observar(hs) {
+  obs && obs.disconnect();
+  const marcar = (id) => document.querySelectorAll('.toc a').forEach((a) => a.classList.toggle('on', a.dataset.id === id));
+  if (hs[0]) marcar(hs[0].id);
+  obs = new IntersectionObserver((es) => {
+    const vis = es.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    if (vis[0]) marcar(vis[0].target.id);
+  }, { rootMargin: '-64px 0px -65% 0px' });
+  hs.forEach((h) => obs.observe(h));
+}
+
+function rota(caminho) {
+  const [m, p, sec] = (caminho || location.hash.slice(1) || 'vendas/o-que-e').split('/');
+  const mudou = atual.m !== m || atual.p !== p || !document.getElementById('art').innerHTML;
+  atual = { m, p };
+  if (mudou) { renderPagina(); renderIdx(); }
+  document.getElementById('idx').classList.remove('open');
+  const alvo = sec && document.getElementById(sec);
+  alvo ? alvo.scrollIntoView({ behavior: 'smooth' }) : mudou && scrollTo({ top: 0 });
+}
+
+/* ---------- Controles do wireframe ---------- */
+function seg(id, fn) {
+  const el = document.getElementById(id);
+  el.querySelectorAll('button').forEach((b) => b.onclick = () => {
+    el.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+    fn(b.dataset.v);
+  });
+}
+seg('wf-perfil', (v) => { perfil = v; document.getElementById('who-r').textContent = PERFIS[v].nome; renderAppNav(); renderIdx(); renderPagina(); renderIdx(); });
+seg('wf-sb', (v) => document.getElementById('sb').classList.toggle('col', v === 'r'));
+seg('wf-tema', (v) => document.documentElement.dataset.theme = v);
+document.getElementById('sb-toggle').onclick = () => document.querySelector(`#wf-sb button[data-v="${document.getElementById('sb').classList.contains('col') ? 'a' : 'r'}"]`).click();
+document.getElementById('idx-btn').onclick = () => { document.querySelector('.hd').scrollIntoView(); document.getElementById('idx').classList.toggle('open'); };
+document.getElementById('idx-close').onclick = () => document.getElementById('idx').classList.remove('open');
+document.getElementById('idx-q').oninput = renderIdx;
+addEventListener('hashchange', () => rota());
+// Links internos funcionam mesmo onde o hash não muda (ex.: pré-visualização como data: URL)
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a || a.getAttribute('href') === '#') return;
+  e.preventDefault();
+  const caminho = a.getAttribute('href').slice(1);
+  try { history.pushState(null, '', '#' + caminho); } catch (_) {}
+  rota(caminho);
+});
+
+renderAppNav();
+rota();
+</script>
+</body>
+</html>

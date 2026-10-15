@@ -14,6 +14,8 @@ Tecnicamente, é uma **especificação funcional** (ou documentação de regras 
 
 Quando uma regra mudar, atualize o módulo junto com o código.
 
+A **Ajuda** do sistema (frontend, `src/features/ajuda/conteudo/`, rota `/ajuda`) é a versão destes módulos escrita para quem usa o sistema. Quando uma regra mudar, atualize também a página correspondente da Ajuda.
+
 ## Ordem de leitura
 
 Os módulos 01 a 04 seguem o ciclo da venda: **quem faz** → **vende** → **executa** → **fatura**. Os demais são apoio e regras que valem para todos.

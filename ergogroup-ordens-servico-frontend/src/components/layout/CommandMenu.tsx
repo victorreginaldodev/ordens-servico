@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, FileText, Loader2, Plus, Search, User } from 'lucide-react';
+import { BookOpen, Building2, CircleHelp, FileText, Loader2, Plus, Search, User } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/kit';
+import { urlDaPagina } from '@/features/ajuda/conteudo';
+import { useAjuda } from '@/features/ajuda/useAjuda';
 import { useVendas } from '@/features/vendas/hooks';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { NAV_ORGANIZACAO, podeVerItem, visibleNavGroups } from './navigation';
@@ -15,6 +17,7 @@ const normalize = (v: unknown) =>
     .toLowerCase();
 
 const MAX_OS = 8;
+const MAX_AJUDA = 6;
 
 /** Resultados de vendas: só monta (e só busca a lista) com a busca aberta e algo digitado. */
 function VendasResults({ query, onSelect }: { query: string; onSelect: (url: string) => void }) {
@@ -67,6 +70,7 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const { pode, podeAlguma } = usePermissoes();
+  const ajuda = useAjuda();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -102,7 +106,16 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
       .filter((i) => podeVerItem(i, podeAlguma))
       .map((i) => ({ label: i.title, group: NAV_ORGANIZACAO.title, url: i.url, icon: i.icon })),
     { label: 'Meu perfil', group: 'Conta', url: '/time/eu', icon: User },
+    { label: 'Ajuda', group: 'Conta', url: '/ajuda', icon: CircleHelp },
   ].filter((p) => matches(`${p.label} ${p.group}`) && !actions.some((a) => a.url === p.url));
+
+  // Páginas da Ajuda: só com algo digitado, pelo título e pelo resumo.
+  const paginasDaAjuda = q
+    ? ajuda
+        .flatMap((m) => m.paginas.map((p) => ({ ...p, moduloTitulo: m.titulo })))
+        .filter((p) => normalize(`${p.titulo} ${p.resumo} ${p.moduloTitulo}`).includes(q))
+        .slice(0, MAX_AJUDA)
+    : [];
 
   return (
     <>
@@ -114,7 +127,7 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
             shouldFilter={false}
             className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:h-10 [&_[cmdk-item]]:rounded-md"
           >
-            <CommandInput value={query} onValueChange={setQuery} placeholder="Buscar venda (nº da OS ou cliente), página ou ação…" />
+            <CommandInput value={query} onValueChange={setQuery} placeholder="Buscar venda (nº da OS ou cliente), página, ação ou ajuda…" />
             <CommandList className="max-h-96 pb-2">
               {q && podeAlguma(['os.gerenciar', 'os.ver_todas']) ? <VendasResults query={query} onSelect={go} /> : null}
               {actions.length ? (
@@ -134,6 +147,17 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
                       <p.icon className="size-4 text-muted-foreground" />
                       <span className="flex-1">{p.label}</span>
                       <span className="text-xs text-muted-foreground">{p.group}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ) : null}
+              {paginasDaAjuda.length ? (
+                <CommandGroup heading="Ajuda">
+                  {paginasDaAjuda.map((p) => (
+                    <CommandItem key={urlDaPagina(p)} value={`ajuda-${p.modulo}-${p.id}`} onSelect={() => go(urlDaPagina(p))} className="gap-2.5">
+                      <BookOpen className="size-4 text-muted-foreground" />
+                      <span className="flex-1 truncate">{p.titulo}</span>
+                      <span className="text-xs text-muted-foreground">{p.moduloTitulo}</span>
                     </CommandItem>
                   ))}
                 </CommandGroup>

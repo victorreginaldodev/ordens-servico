@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { BotaoAjudaDaTela } from '@/features/ajuda/components/BotaoAjudaDaTela';
 import { cn } from '@/lib/utils';
 
 export interface PageHeaderProps {
@@ -40,7 +41,10 @@ export function PageHeader({ title, count, description, actions, backTo, classNa
           {description ? <p className="mt-0.5 text-sm text-muted-foreground">{description}</p> : null}
         </div>
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      <div className="flex shrink-0 items-center gap-2 empty:hidden">
+        <BotaoAjudaDaTela />
+        {actions}
+      </div>
     </div>
   );
 }

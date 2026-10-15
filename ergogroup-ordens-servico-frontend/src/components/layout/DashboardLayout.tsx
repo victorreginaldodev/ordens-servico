@@ -6,6 +6,7 @@ import { useEV2Modal } from '@/hooks/useEV2Modal';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import UnderDevelopmentOverlay from '@/components/UnderDevelopmentOverlay';
+import { guardarTelaDeOrigem } from '@/features/ajuda/telaDeOrigem';
 import { cn } from '@/lib/utils';
 import { authService } from '@/services/auth';
 import { AppHeader, PageBreadcrumb } from './AppHeader';
@@ -28,7 +29,7 @@ interface DashboardLayoutProps {
  * das páginas internas. No celular, uma barra fina abre o menu e a busca. Só o conteúdo rola.
  */
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { open: ev2Open, dismiss: dismissEV2, show: showEV2 } = useEV2Modal();
   // Setores, funções e permissões podem mudar depois do login: relê a pessoa logada
   // ao abrir o sistema e, no máximo, a cada 5 minutos.
@@ -72,6 +73,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     scrollRef.current?.scrollTo({ top: 0 });
     setMobileOpen(false);
   }, [pathname]);
+
+  // O "Voltar ao sistema" da Ajuda (tela cheia) volta para a última tela aberta aqui.
+  useEffect(() => guardarTelaDeOrigem(pathname + search), [pathname, search]);
 
   const isReady = READY_PREFIXES.some((p) => pathname.startsWith(p));
 

@@ -254,3 +254,30 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
 }
+
+/* Ajuda: listas numeradas viram passos (features/ajuda/components/MarkdownDaAjuda.tsx) */
+.ajuda-passos {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: passo;
+}
+.ajuda-passos > li {
+  counter-increment: passo;
+  position: relative;
+  padding-left: 2.5rem;
+}
+.ajuda-passos > li::before {
+  content: counter(passo);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  font-size: 13px;
+  font-weight: 700;
+}

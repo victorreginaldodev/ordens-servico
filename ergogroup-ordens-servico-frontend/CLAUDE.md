@@ -71,6 +71,7 @@ No frontend:
 - R5 entregue em 11/10/2026 (falta o teste contra o backend local): `features/vendas/pages/` (Vendas, Nova venda/edição em etapas, Resumo da venda com PDF, acrescentar serviço e exclusão). As telas antigas de OS saíram das rotas e são removidas na R7.
 - R6 entregue em 11/10/2026 (falta o teste contra o backend local): `features/financeiro/pages/` (Cobranças com as três situações, aviso de alerta, filtros e registrar lançamento; situação financeira da OS em `/cobrancas/:id`) e os indicadores novos na Análise financeira. A tela antiga de faturamento saiu das rotas e é removida na R7.
 - R7 concluída em 11/10/2026: setores com "sem quem organize" e organizadores, avisos do catálogo ao salvar, remoção do legado (telas antigas de OS e faturamento, código morto), Análise operacional sem horas e complexidade, tipos gerados na organização e no time.
+- Ajuda entregue em 15/10/2026 (wireframe `docs/ui/wireframes/ajuda.html`, aprovado): `features/ajuda/`, rota `/ajuda/:modulo/:pagina` em tela cheia (sem o menu do sistema, com "Voltar ao sistema" para a última tela aberta), item "Ajuda" no rodapé do menu, páginas da Ajuda na busca (Ctrl+K) e o "?" no `PageHeader` de cada tela. O texto fica em `features/ajuda/conteudo/<modulo>/<pagina>.md` (convenções no `README.md` da pasta) e é a versão para o usuário de `backend/docs/modulos/`: mudou uma regra, atualize os dois.
 - Próxima fase: R8 (revisão final e testes contra o backend local), conduzida pelo usuário. Falta testar R4 a R6 contra o backend local.
 
 ### Cuidados técnicos (backend)

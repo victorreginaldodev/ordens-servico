@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, Sparkles, X } from 'lucide-react';
+import { ChevronDown, CircleHelp, PanelLeftClose, PanelLeftOpen, Sparkles, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,9 @@ import { findActiveNav, visibleNavGroups, type NavItem } from './navigation';
 import { UserMenu } from './UserMenu';
 
 const GROUPS_KEY = 'sidebar:closed-groups';
+
+/** Fora dos grupos do menu: fica no rodapé, para todos. A Ajuda abre em tela cheia, sem este menu. */
+const AJUDA: NavItem = { title: 'Ajuda', url: '/ajuda', icon: CircleHelp };
 
 const readClosedGroups = (): string[] => {
   try {
@@ -158,8 +161,9 @@ export function AppSidebar({ collapsed: collapsedProp, onToggle, variant = 'rail
         })}
       </nav>
 
-      {/* Rodapé: novidades + usuário */}
+      {/* Rodapé: ajuda + novidades + usuário */}
       <div className="flex shrink-0 flex-col gap-0.5 px-2.5 pb-2.5 pt-1">
+        <NavLinkItem item={AJUDA} active={false} collapsed={collapsed} onNavigate={onNavigate} />
         <Tooltip>
           <TooltipTrigger asChild>
             <button

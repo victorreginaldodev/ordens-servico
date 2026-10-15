@@ -51,6 +51,9 @@ import CobrancasPage from '@/features/financeiro/pages/CobrancasPage';
 import SituacaoFinanceiraPage from '@/features/financeiro/pages/SituacaoFinanceiraPage';
 import ConferenciaPage from '@/features/financeiro/pages/ConferenciaPage';
 
+// Ajuda
+import AjudaPage from '@/features/ajuda/pages/AjudaPage';
+
 // Operational Orders
 import OperationalOrderListPage from '@/features/ordens/pages/OperationalOrderListPage';
 
@@ -151,6 +154,11 @@ const AppRoutes = () => (
     <Route path="/organizacao/setores" element={w(<SetoresPage />)} />
     <Route path="/organizacao/funcoes" element={g(<FuncoesPage />, ['organizacao.configurar', 'usuarios.gerenciar'])} />
     <Route path="/organizacao/dados" element={w(<CompanySettingsPage />)} />
+
+    {/* Ajuda: tela cheia, sem o menu do sistema; aberta para todos, cada página filtra o que mostra pelas permissões */}
+    {['/ajuda', '/ajuda/:modulo', '/ajuda/:modulo/:pagina'].map((path) => (
+      <Route key={path} path={path} element={<AjudaPage />} />
+    ))}
 
     {/* Endereços antigos */}
     <Route path="/usuarios" element={<Navigate to="/time" replace />} />
