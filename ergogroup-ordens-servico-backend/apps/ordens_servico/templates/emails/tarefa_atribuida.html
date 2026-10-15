@@ -1,40 +1,30 @@
 {% extends "emails/base_email.html" %}
 
-{% block titulo %}Nova tarefa atribuída — Tarefa #{{ tarefa.pk }}{% endblock %}
+{% block titulo %}{% if tarefas|length == 1 %}Nova tarefa para você{% else %}{{ tarefas|length }} tarefas novas para você{% endif %}{% endblock %}
 
-{% block cabecalho %}Nova tarefa atribuída a você{% endblock %}
-
-{% block badge %}
-<td align="right" style="vertical-align:top;">
-    <span style="display:inline-block; padding:4px 12px; border-radius:999px; background-color:{{ prioridade_cor }}; color:#FFFFFF; font-family:Arial, Helvetica, sans-serif; font-size:12px; font-weight:bold;">
-        Prioridade {{ tarefa.get_prioridade_display }}
-    </span>
-</td>
-{% endblock %}
+{% block cabecalho %}{% if tarefas|length == 1 %}Nova tarefa para você{% else %}{{ tarefas|length }} tarefas novas para você{% endif %}{% endblock %}
 
 {% block conteudo %}
-<p style="margin:0 0 16px;">Olá, {{ tarefa.responsavel.nome_completo|default:tarefa.responsavel.email }}. Uma tarefa foi atribuída a você.</p>
+<p style="margin:0 0 16px;">Olá, {{ responsavel.nome_completo|default:responsavel.email }}. {% if tarefas|length == 1 %}Uma tarefa foi distribuída{% else %}Estas tarefas foram distribuídas{% endif %} para você.</p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
     <tr>
-        <td style="width:180px; padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Tarefa</td>
-        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">#{{ tarefa.pk }} — {{ tarefa.descricao|default:"Sem descrição" }}</td>
-    </tr>
-    <tr>
+        <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">OS</td>
+        <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Cliente</td>
         <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Serviço</td>
-        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">#{{ tarefa.servico_id }} — {{ tarefa.servico.descricao }}</td>
-    </tr>
-    <tr>
-        <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Ordem de Serviço</td>
-        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">#{{ tarefa.servico.ordem_servico_id }} — {{ tarefa.servico.ordem_servico.cliente.nome }}</td>
-    </tr>
-    <tr>
         <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Prazo</td>
-        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">{{ tarefa.prazo|date:"d/m/Y"|default:"Não definido" }}</td>
+        <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Prioridade</td>
     </tr>
+    {% for item in tarefas %}
     <tr>
-        <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A;">Horas estimadas</td>
-        <td style="padding:10px 14px;">{{ tarefa.horas_estimadas_efetivas|default:"Não definido" }}</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">#{{ item.tarefa.servico.ordem_servico_id }}</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">{{ item.tarefa.servico.ordem_servico.cliente.nome }}</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">{{ item.servico_nome }}{% if item.tarefa.descricao %}<br><span style="color:#64748B;">{{ item.tarefa.descricao }}</span>{% endif %}</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">{{ item.tarefa.prazo|date:"d/m/Y"|default:"Não definido" }}</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;"><span style="color:{{ item.prioridade_cor }}; font-weight:bold;">{{ item.tarefa.get_prioridade_display }}</span></td>
     </tr>
+    {% endfor %}
 </table>
+
+<p style="margin:16px 0 0;"><a href="{{ link }}" style="color:#0F766E; font-weight:bold;">Abrir Meus serviços</a></p>
 {% endblock %}

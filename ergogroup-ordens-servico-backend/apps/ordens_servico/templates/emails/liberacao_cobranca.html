@@ -33,4 +33,50 @@
         <td style="padding:10px 14px;">{{ liberada_por|default:"Sistema" }}</td>
     </tr>
 </table>
+
+{% if execucao %}
+<h2 style="margin:24px 0 8px; font-size:16px; color:#0F172A;">Execução</h2>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
+    <tr>
+        <td style="width:180px; padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Da venda à liberação</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">{% if execucao.dias_venda_ate_liberacao is not None %}{{ execucao.dias_venda_ate_liberacao }} dia{{ execucao.dias_venda_ate_liberacao|pluralize }}{% else %}Não informado{% endif %}</td>
+    </tr>
+    <tr>
+        <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Média por serviço</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #E2E8F0;">{% if execucao.media_dias_por_servico is not None %}{{ execucao.media_dias_por_servico }} dias em execução{% else %}Não informado{% endif %}</td>
+    </tr>
+    <tr>
+        <td style="padding:10px 14px; background-color:#F1F5F9; font-weight:bold; color:#0F172A;">Quem trabalhou</td>
+        <td style="padding:10px 14px;">{{ execucao.pessoas|join:", " }}</td>
+    </tr>
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden; font-size:13px;">
+    <tr>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Pessoa</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Serviço</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Recebeu</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Início</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Término</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Dias parada</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; color:#0F172A; border-bottom:1px solid #E2E8F0;">Dias em execução</td>
+    </tr>
+    {% for linha in execucao.tarefas %}
+    <tr>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ linha.pessoa }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ linha.servico }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ linha.atribuida_em|date:"d/m/Y"|default:"-" }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ linha.data_inicio|date:"d/m/Y"|default:"-" }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ linha.data_termino|date:"d/m/Y"|default:"-" }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{% if linha.dias_parada is not None %}{{ linha.dias_parada }}{% else %}-{% endif %}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{% if linha.dias_execucao is not None %}{{ linha.dias_execucao }}{% else %}-{% endif %}</td>
+    </tr>
+    {% endfor %}
+</table>
+<p style="margin:8px 0 0; font-size:12px; color:#64748B;">Dias parada: da atribuição da tarefa ao início do trabalho.</p>
+{% endif %}
+
+{% if link %}
+<p style="margin:16px 0 0;"><a href="{{ link }}" style="color:#0F766E; font-weight:bold;">Abrir no sistema</a></p>
+{% endif %}
 {% endblock %}

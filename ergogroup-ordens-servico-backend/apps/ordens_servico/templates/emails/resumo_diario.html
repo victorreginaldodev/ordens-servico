@@ -1,0 +1,78 @@
+{% extends "emails/base_email.html" %}
+
+{% block titulo %}Resumo do dia{% endblock %}
+
+{% block cabecalho %}Pendências de hoje{% endblock %}
+
+{% block conteudo %}
+<p style="margin:0 0 16px;">Olá, {{ usuario.nome_completo|default:usuario.email }}. Estes itens estão parados e dependem de você.</p>
+
+{% for bloco in setores %}
+<h2 style="margin:24px 0 8px; font-size:16px; color:#0F172A;">{{ bloco.setor.nome }}</h2>
+
+{% if bloco.sem_distribuir %}
+<p style="margin:0 0 8px; font-weight:bold;">Sem ciência ou sem distribuição há {{ dias_sem_distribuir }} dias ou mais</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
+    <tr>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">OS</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Cliente</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Serviço</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Chegou há</td>
+    </tr>
+    {% for item in bloco.sem_distribuir %}
+    <tr>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">#{{ item.ordem_servico_id }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.cliente }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.servico }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.dias }} dias</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if bloco.parados %}
+<p style="margin:0 0 8px; font-weight:bold;">Sem movimentação há {{ dias_sem_movimentacao }} dias ou mais</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
+    <tr>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">OS</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Cliente</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Serviço</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Com quem</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Parado há</td>
+    </tr>
+    {% for item in bloco.parados %}
+    <tr>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">#{{ item.ordem_servico_id }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.cliente }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.servico }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.responsaveis|join:", "|default:"-" }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.dias }} dias</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<p style="margin:0 0 8px;"><a href="{{ link }}/setor/{{ bloco.setor.id }}" style="color:#0F766E; font-weight:bold;">Abrir o painel do setor</a></p>
+{% endfor %}
+
+{% if a_faturar %}
+<h2 style="margin:24px 0 8px; font-size:16px; color:#0F172A;">Liberadas há {{ dias_sem_lancamento }} dias ou mais sem faturar</h2>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
+    <tr>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">OS</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Cliente</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Valor</td>
+        <td style="padding:8px 10px; background-color:#F1F5F9; font-weight:bold; border-bottom:1px solid #E2E8F0;">Liberada há</td>
+    </tr>
+    {% for item in a_faturar %}
+    <tr>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">#{{ item.ordem_servico_id }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.cliente }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.valor }}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #E2E8F0;">{{ item.dias }} dias</td>
+    </tr>
+    {% endfor %}
+</table>
+<p style="margin:0 0 8px;"><a href="{{ link }}/cobrancas" style="color:#0F766E; font-weight:bold;">Abrir Cobranças</a></p>
+{% endif %}
+{% endblock %}

@@ -37,4 +37,7 @@
         <td style="padding:10px 14px;">{{ realizada_por|default:"Sistema" }}</td>
     </tr>
 </table>
+{% if link %}
+<p style="margin:16px 0 0;"><a href="{{ link }}" style="color:#0F766E; font-weight:bold;">Abrir no sistema</a></p>
+{% endif %}
 {% endblock %}

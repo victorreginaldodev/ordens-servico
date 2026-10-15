@@ -3,9 +3,11 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from apps.ordens_servico.emails import (
+    ator_atual,
     notificar_atribuicao_tarefa,
     notificar_cobranca_realizada,
     notificar_liberacao_cobranca,
+    notificar_venda_faturada,
 )
 from apps.ordens_servico.models import OrdemServico, OrdemServicoOperacional, Tarefa
 
@@ -20,11 +22,15 @@ def _cachear_responsavel_anterior_tarefa(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Tarefa)
 def enviar_email_atribuicao_tarefa(sender, instance, created, **kwargs):
+    # A distribuição em lote manda um e-mail por pessoa com todas as tarefas dela (execucao.distribuir).
+    if getattr(instance, '_aviso_agrupado', False):
+        return
     anterior_id = getattr(instance, '_responsavel_anterior_id', None)
     if not created and anterior_id == instance.responsavel_id:
         return
 
-    transaction.on_commit(lambda: notificar_atribuicao_tarefa(instance))
+    por = ator_atual()
+    transaction.on_commit(lambda: notificar_atribuicao_tarefa(instance, por=por))
 
 
 @receiver(pre_save, sender=OrdemServico)
@@ -41,9 +47,8 @@ def enviar_email_cobranca_realizada_os(sender, instance, created, **kwargs):
     if created or anterior or not instance.cobranca_realizada:
         return
 
-    transaction.on_commit(
-        lambda: notificar_cobranca_realizada(instance, tipo='OS', valor=instance.valor)
-    )
+    por = ator_atual()
+    transaction.on_commit(lambda: notificar_venda_faturada(instance, por=por))
 
 
 @receiver(pre_save, sender=OrdemServicoOperacional)

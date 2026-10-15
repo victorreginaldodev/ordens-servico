@@ -1,3 +1,5 @@
+"""Notificações por e-mail (ADR 0010). Regras: só avisa quem tem algo a fazer; nunca quem fez a ação; um e-mail
+por pessoa por ação; atrasos só no resumo diário de pendências."""
 import logging
 
 from django.conf import settings
@@ -17,6 +19,14 @@ CORES_PRIORIDADE = {
 }
 
 
+def ator_atual():
+    """Quem está fazendo a ação nesta requisição (pelo contexto da auditoria); None fora de uma requisição.
+    Lido na hora de agendar o envio, porque o e-mail sai só no fim da transação."""
+    from apps.auditoria.context import get_auditoria_context, usuario_do_contexto
+
+    return usuario_do_contexto(get_auditoria_context())
+
+
 def _usuarios_ativos():
     return Usuario.objects.filter(is_active=True).exclude(email='')
 
@@ -25,11 +35,13 @@ def _emails_com_permissao(permissao):
     return [u.email for u in _usuarios_ativos() if tem_permissao(u, permissao)]
 
 
-def _enviar(assunto, template, contexto, destinatarios):
+def _enviar(assunto, template, contexto, destinatarios, excluir=None):
     if not settings.EMAIL_NOTIFICATIONS_ENABLED:
         return 0
 
-    destinatarios = list(dict.fromkeys(destinatarios))
+    # Quem fez a ação não recebe o aviso dela.
+    email_do_ator = (getattr(excluir, 'email', '') or '').lower()
+    destinatarios = [email for email in dict.fromkeys(destinatarios) if email and email.lower() != email_do_ator]
     if not destinatarios:
         return 0
 
@@ -52,7 +64,11 @@ def _enviar(assunto, template, contexto, destinatarios):
     return len(destinatarios)
 
 
-def notificar_chegada_aos_setores(servicos):
+def _nome_do_servico(servico):
+    return servico.catalogo.nome if servico.catalogo_id else servico.descricao
+
+
+def notificar_chegada_aos_setores(servicos, por=None):
     """Um e-mail por setor, para quem organiza o setor, com os serviços que chegaram a ele (ADR 0008, 5)."""
     por_setor = {}
     for servico in servicos:
@@ -68,26 +84,49 @@ def notificar_chegada_aos_setores(servicos):
         contexto = {
             'setor': setor,
             'servicos': itens,
-            'link': f'{settings.FRONTEND_URL}/ordens/{ordens[0]}' if len(ordens) == 1 else settings.FRONTEND_URL,
+            'link': f'{settings.FRONTEND_URL}/setor/{setor.id}',
         }
-        total += _enviar(assunto, 'emails/servicos_chegaram.html', contexto, destinatarios)
+        total += _enviar(assunto, 'emails/servicos_chegaram.html', contexto, destinatarios, excluir=por)
     return total
 
 
-def notificar_atribuicao_tarefa(tarefa):
-    responsavel = tarefa.responsavel
-    if not responsavel or not responsavel.email:
-        return 0
+def notificar_distribuicao(tarefas, por=None):
+    """Um e-mail por responsável com as tarefas que ele recebeu nesta ação: uma distribuição com várias tarefas
+    para a mesma pessoa vira um e-mail só."""
+    por_responsavel = {}
+    for tarefa in tarefas:
+        if tarefa.responsavel_id:
+            por_responsavel.setdefault(tarefa.responsavel_id, []).append(tarefa)
 
-    assunto = f'Nova tarefa atribuída a você - Tarefa #{tarefa.pk}'
-    contexto = {
-        'tarefa': tarefa,
-        'prioridade_cor': CORES_PRIORIDADE.get(tarefa.prioridade, '#64748B'),
-    }
-    return _enviar(assunto, 'emails/tarefa_atribuida.html', contexto, [responsavel.email])
+    total = 0
+    for itens in por_responsavel.values():
+        responsavel = itens[0].responsavel
+        if not responsavel.is_active or not responsavel.email:
+            continue
+        ordens = sorted({tarefa.servico.ordem_servico_id for tarefa in itens})
+        if len(itens) == 1:
+            assunto = f'Nova tarefa para você - OS #{ordens[0]}'
+        else:
+            assunto = f'{len(itens)} tarefas novas para você - OS ' + ', '.join(f'#{numero}' for numero in ordens)
+        contexto = {
+            'responsavel': responsavel,
+            'tarefas': [{
+                'tarefa': tarefa,
+                'servico_nome': _nome_do_servico(tarefa.servico),
+                'prioridade_cor': CORES_PRIORIDADE.get(tarefa.prioridade, '#64748B'),
+            } for tarefa in itens],
+            'link': f'{settings.FRONTEND_URL}/meus-servicos',
+        }
+        total += _enviar(assunto, 'emails/tarefa_atribuida.html', contexto, [responsavel.email], excluir=por)
+    return total
 
 
-def notificar_liberacao_cobranca(instancia, tipo, valor=None):
+def notificar_atribuicao_tarefa(tarefa, por=None):
+    """Tarefa criada ou reatribuída fora da distribuição em lote (ex.: troca de responsável)."""
+    return notificar_distribuicao([tarefa], por=por)
+
+
+def notificar_liberacao_cobranca(instancia, tipo, valor=None, por=None, execucao=None):
     # Quem pode registrar a cobrança é quem precisa saber que ela foi liberada.
     destinatarios = _emails_com_permissao(Permissao.FINANCEIRO_REGISTRAR_COBRANCA)
     if not destinatarios:
@@ -103,8 +142,80 @@ def notificar_liberacao_cobranca(instancia, tipo, valor=None):
         'liberada_por': _nome_usuario(
             getattr(instancia, 'liberada_para_cobranca_por', None) or getattr(instancia, 'liberada_cobranca_por', None)
         ),
+        'execucao': execucao,
+        'link': f'{settings.FRONTEND_URL}/cobrancas/{instancia.pk}' if tipo == 'OS' else None,
     }
-    return _enviar(assunto, 'emails/liberacao_cobranca.html', contexto, destinatarios)
+    return _enviar(assunto, 'emails/liberacao_cobranca.html', contexto, destinatarios, excluir=por)
+
+
+def resumo_da_execucao(ordem):
+    """O que vai junto com a liberação da OS: quantos dias ela levou da venda à liberação, a média de dias por
+    serviço e quem trabalhou nela, com atribuição, início, término e dias parada (da atribuição ao início) de
+    cada tarefa. None se nada foi executado (ex.: liberada na venda)."""
+    from apps.ordens_servico.models import Tarefa
+    from apps.ordens_servico.models.servico import StatusServico
+    from apps.ordens_servico.models.tarefa import StatusTarefa
+
+    tarefas = list(
+        Tarefa.objects.filter(servico__ordem_servico=ordem)
+        .exclude(status=StatusTarefa.CANCELADA)
+        .exclude(servico__status=StatusServico.CANCELADO)
+        .select_related('responsavel', 'servico__catalogo')
+        .order_by('servico_id', 'data_inicio', 'id')
+    )
+    if not any(tarefa.status == StatusTarefa.CONCLUIDA for tarefa in tarefas):
+        return None
+
+    linhas = []
+    for tarefa in tarefas:
+        atribuida = tarefa.atribuida_em.date() if tarefa.atribuida_em else None
+        linhas.append({
+            'pessoa': _nome_usuario(tarefa.responsavel),
+            'servico': _nome_do_servico(tarefa.servico),
+            'atribuida_em': atribuida,
+            'data_inicio': tarefa.data_inicio,
+            'data_termino': tarefa.data_termino,
+            'dias_parada': (tarefa.data_inicio - atribuida).days if atribuida and tarefa.data_inicio else None,
+            'dias_execucao': (
+                (tarefa.data_termino - tarefa.data_inicio).days if tarefa.data_inicio and tarefa.data_termino else None
+            ),
+        })
+
+    duracoes = [
+        (servico.data_termino - servico.data_inicio).days
+        for servico in ordem.servicos.exclude(status=StatusServico.CANCELADO)
+        if servico.data_inicio and servico.data_termino
+    ]
+    liberada = ordem.liberada_para_cobranca_em
+    return {
+        'dias_venda_ate_liberacao': (
+            (liberada.date() - ordem.criada_em.date()).days if liberada and ordem.criada_em else None
+        ),
+        'media_dias_por_servico': round(sum(duracoes) / len(duracoes), 1) if duracoes else None,
+        'pessoas': sorted({linha['pessoa'] for linha in linhas if linha['pessoa']}),
+        'tarefas': linhas,
+    }
+
+
+def notificar_venda_faturada(ordem, por=None):
+    """O faturamento fecha o ciclo da venda: avisa só o vendedor (quem registrou a venda)."""
+    vendedor = ordem.criado_por
+    if not vendedor or not vendedor.is_active or not vendedor.email:
+        return 0
+
+    assunto = f'OS #{ordem.pk} - faturada'
+    contexto = {
+        'tipo': 'OS',
+        'numero': ordem.pk,
+        'cliente': ordem.cliente,
+        'valor': ordem.valor,
+        'referencia_rotulo': 'Referência do lançamento',
+        'referencia': ordem.referencia_lancamento,
+        'data_cobranca': ordem.data_cobranca,
+        'realizada_por': _nome_usuario(ordem.cobranca_realizada_por),
+        'link': f'{settings.FRONTEND_URL}/vendas/{ordem.pk}',
+    }
+    return _enviar(assunto, 'emails/cobranca_realizada.html', contexto, [vendedor.email], excluir=por)
 
 
 def notificar_cobranca_realizada(instancia, tipo, valor=None):
@@ -131,6 +242,24 @@ def notificar_cobranca_realizada(instancia, tipo, valor=None):
         'realizada_por': _nome_usuario(instancia.cobranca_realizada_por),
     }
     return _enviar(assunto, 'emails/cobranca_realizada.html', contexto, destinatarios)
+
+
+def notificar_resumo_diario(usuario, setores, a_faturar):
+    """Resumo diário de pendências de uma pessoa (ADR 0010). Só sai se houver pendência."""
+    if not usuario.email or not (setores or a_faturar):
+        return 0
+    total = sum(len(bloco['sem_distribuir']) + len(bloco['parados']) for bloco in setores) + len(a_faturar)
+    assunto = f'Resumo do dia: {total} pendência' + ('s' if total > 1 else '')
+    contexto = {
+        'usuario': usuario,
+        'setores': setores,
+        'a_faturar': a_faturar,
+        'dias_sem_distribuir': settings.DIAS_CONFERENCIA_SEM_DISTRIBUIR,
+        'dias_sem_movimentacao': settings.DIAS_ALERTA_SEM_MOVIMENTACAO,
+        'dias_sem_lancamento': settings.DIAS_ALERTA_SEM_LANCAMENTO,
+        'link': settings.FRONTEND_URL,
+    }
+    return _enviar(assunto, 'emails/resumo_diario.html', contexto, [usuario.email])
 
 
 def _nome_usuario(usuario):
