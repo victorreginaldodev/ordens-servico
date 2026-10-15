@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AlertCircle, CircleCheck, CircleDashed, Clock, Receipt, Repeat } from 'lucide-react';
+import { AlertCircle, CircleCheck, CircleDashed, Clock, Receipt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TipoCondicaoBadge } from '@/components/kit';
@@ -67,19 +67,12 @@ const FinanceiroPage = () => {
 
       <section className="space-y-4">
         <SectionLabel>Indicadores</SectionLabel>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {data ? (
             <>
               <KpiCard title="Faturado" value={formatCurrency(Number(data.total_cobrado))} changeType="positive" icon={CircleCheck} />
               <KpiCard title="A faturar" value={formatCurrency(Number(data.total_para_cobrar))} change="Liberadas, sem lançamento" changeType="neutral" icon={Clock} />
               <KpiCard title="Previsão" value={formatCurrency(Number(data.total_previsao))} change="Ainda não liberadas" changeType="neutral" icon={CircleDashed} />
-              <KpiCard
-                title="Receita recorrente mensal"
-                value={formatCurrency(Number(data.receita_recorrente_mensal))}
-                change={`${data.recorrentes_ativos} recorrente${data.recorrentes_ativos === 1 ? '' : 's'} ativo${data.recorrentes_ativos === 1 ? '' : 's'}`}
-                changeType="neutral"
-                icon={Repeat}
-              />
               <KpiCard title="Ticket médio" value={data.ticket_medio != null ? formatCurrency(Number(data.ticket_medio)) : '—'} changeType="neutral" icon={Receipt} />
             </>
           ) : (
@@ -106,7 +99,7 @@ const FinanceiroPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(['a_vista', 'parcelado', 'recorrente'] as const).map((tipo) => {
+                  {(['a_vista', 'parcelado'] as const).map((tipo) => {
                     const v = data.por_tipo_condicao[tipo];
                     return (
                       <tr key={tipo} className="border-b last:border-0">

@@ -12,22 +12,34 @@ export type Cobrancas = Esquemas['Cobrancas'];
 export type LinhaDeCobranca = Esquemas['LinhaDeCobranca'];
 export type Contadores = Esquemas['Contadores'];
 export type SituacaoFinanceira = Esquemas['SituacaoFinanceira'];
-export type EventoFinanceiro = Esquemas['EventoFinanceiro'];
+export type EventoDoResumo = Esquemas['EventoDoResumo'];
+export type ServicoRealizado = Esquemas['ServicoRealizado'];
+export type ServicoPendente = Esquemas['ServicoPendente'];
+export type CodigoDaConferencia = Esquemas['CodigoDaConferenciaEnum'];
+export type Conferencia = Esquemas['Conferencia'];
+export type Verificacao = Esquemas['Verificacao'];
+export type ItemDaConferencia = Esquemas['ItemDaConferencia'];
+export type Correcao = Esquemas['Correcao'];
 export type IndicadoresFinanceiros = Esquemas['FinanceiroAnaliseResponse'];
 export type LancamentoPayload = Esquemas['PatchedRegistrarCobrancaRequestRequest'];
 
 export type FiltrosDeCobrancas = FiltrosDe<'financeiro_cobrancas_retrieve'>;
 
 /**
- * As OS de uma situação (`a_faturar`, `faturadas` ou `previsao`; padrão `a_faturar`), com os contadores
- * das três sob os mesmos filtros. Exige `financeiro.registrar_cobranca`.
+ * As OS de uma situação (`a_faturar`, `faturadas` ou `previsao`; padrão `a_faturar`) ou das três (`todas`),
+ * com os contadores das três sob os mesmos filtros, o que falta em cada OS da previsão (`pendentes`) e os
+ * códigos da conferência (`pendencias`). As faturadas podem ser limitadas por `faturada_de`/`faturada_ate`.
+ * Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
  */
 export const getCobrancas = async (filtros: FiltrosDeCobrancas = {}): Promise<Cobrancas> => {
   const { data } = await api.get<Cobrancas>('/api/financeiro/cobrancas/', { params: filtros });
   return data;
 };
 
-/** Condição, liberação, lançamento, serviços e eventos financeiros da OS. Exige `financeiro.ver_valores`. */
+/**
+ * Resumo para faturar: condição, liberação, lançamento, os serviços realizados (setor, quem executou, início,
+ * término e quem finalizou), as pendências da conferência e a linha do tempo. Exige `financeiro.ver_valores`.
+ */
 export const getSituacaoFinanceira = async (ordemId: number): Promise<SituacaoFinanceira> => {
   const { data } = await api.get<SituacaoFinanceira>(`/api/financeiro/ordens/${ordemId}/`);
   return data;
@@ -42,8 +54,23 @@ export const registrarLancamento = async (ordemId: number, payload: LancamentoPa
   return data;
 };
 
-/** Indicadores: a faturar, faturado, previsão, por tipo de condição e receita recorrente mensal. */
+/** Indicadores: a faturar, faturado, previsão e por tipo de condição (à vista e parcelado). */
 export const getIndicadoresFinanceiros = async (): Promise<IndicadoresFinanceiros> => {
   const { data } = await api.get<IndicadoresFinanceiros>('/api/analise/financeiro/');
+  return data;
+};
+
+/**
+ * Conferência do faturamento (faturamento/04): as garantias (devem dar 0) e as atenções, com a OS, o serviço, o
+ * setor e quem está com ele. Calculada na hora. Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
+ */
+export const getConferencia = async (): Promise<Conferencia> => {
+  const { data } = await api.get<Conferencia>('/api/financeiro/conferencia/');
+  return data;
+};
+
+/** Refaz a sincronização dos serviços e das OS ainda não liberadas (o que a regra já manda). */
+export const corrigirConferencia = async (): Promise<Correcao> => {
+  const { data } = await api.post<Correcao>('/api/financeiro/conferencia/corrigir/');
   return data;
 };

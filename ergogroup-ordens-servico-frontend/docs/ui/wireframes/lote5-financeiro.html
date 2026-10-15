@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe — Financeiro (lote 5, proposta)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Tokens propostos em docs/ui/design-system.md §2 */
+:root{
+  --background:0 0% 100%;--foreground:222 47% 11%;--card:0 0% 100%;
+  --muted:210 40% 96%;--muted-foreground:215 20% 42%;--border:214 32% 91%;
+  --accent:210 40% 96%;--primary:173 58% 31%;--primary-foreground:0 0% 100%;
+  --sidebar:210 40% 98%;
+  --success-subtle:138 76% 96%;--success-strong:142 72% 26%;
+  --warning-subtle:48 96% 94%;--warning-strong:26 90% 33%;
+  --danger-subtle:0 86% 96%;--danger-strong:0 70% 40%;
+  --info-subtle:214 95% 96%;--info-strong:224 70% 42%;
+}
+[data-theme="dark"]{
+  --background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 18%;--muted-foreground:215 20% 62%;--border:222 30% 18%;
+  --accent:222 30% 14%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --sidebar:222 47% 7%;
+  --success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:hsl(var(--background));color:hsl(var(--foreground));font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+svg.lucide{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+.muted{color:hsl(var(--muted-foreground))}
+.num{font-variant-numeric:tabular-nums}
+
+/* Barra do wireframe (fora do produto) */
+.wf{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:8px 16px;background:repeating-linear-gradient(45deg,hsl(var(--muted)),hsl(var(--muted)) 6px,hsl(var(--background)) 6px,hsl(var(--background)) 12px);border-bottom:1px dashed hsl(var(--muted-foreground)/.5);font-size:12px}
+.wf b{font-weight:600}
+.seg{display:inline-flex;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));padding:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:hsl(var(--muted-foreground))}
+.seg button.on{background:hsl(var(--foreground));color:hsl(var(--background))}
+
+/* Shell */
+.app{display:flex;min-height:calc(100vh - 41px)}
+.sb{width:240px;flex-shrink:0;background:hsl(var(--sidebar));border-right:1px solid hsl(var(--border));display:flex;flex-direction:column;position:sticky;top:0;height:calc(100vh - 41px);transition:width .2s}
+.sb.col{width:64px}
+.sb-top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;border-bottom:1px solid hsl(var(--border))}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden}
+.logo-mark{width:28px;height:28px;border-radius:8px;background:hsl(var(--primary));color:hsl(var(--primary-foreground));display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.logo span.g{color:hsl(var(--primary))}
+.icon-btn{width:32px;height:32px;display:grid;place-items:center;border:0;background:none;border-radius:8px;cursor:pointer;color:hsl(var(--muted-foreground))}
+.icon-btn:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.nav{flex:1;overflow-y:auto;padding:8px}
+.grp{font-size:11px;line-height:16px;font-weight:600;color:hsl(var(--muted-foreground));padding:16px 8px 6px;white-space:nowrap}
+.sb.col .grp{visibility:hidden;padding:8px 0 4px;height:12px}
+.it{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:8px;color:hsl(var(--muted-foreground));font-weight:500;cursor:pointer;white-space:nowrap;overflow:hidden;text-decoration:none}
+.it:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.it.on{background:hsl(var(--card));color:hsl(var(--foreground));box-shadow:0 0 0 1px hsl(var(--border)),0 1px 2px hsl(0 0% 0%/.04)}
+.it.on svg{color:hsl(var(--primary))}
+.sb.col .it{justify-content:center;padding:0}
+.sb.col .it span,.sb.col .logo span,.sb.col .who{display:none}
+.sb.col .sb-top{justify-content:center;padding:0}
+.sb.col .sb-top .logo{display:none}
+.sb-foot{border-top:1px solid hsl(var(--border));padding:8px}
+.me{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;cursor:pointer}
+.me:hover{background:hsl(var(--accent))}
+.av{width:32px;height:32px;border-radius:50%;background:hsl(var(--primary)/.15);color:hsl(var(--primary));display:grid;place-items:center;font-size:12px;font-weight:600;flex-shrink:0}
+.who{min-width:0;flex:1;line-height:18px}
+.who .n{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .r{font-size:12px;color:hsl(var(--muted-foreground))}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.hd{height:56px;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid hsl(var(--border));background:hsl(var(--background));position:sticky;top:0;z-index:20}
+.crumb{display:flex;align-items:center;gap:6px;color:hsl(var(--muted-foreground));white-space:nowrap}
+.crumb b{color:hsl(var(--foreground));font-weight:600}
+.crumb svg{width:14px;height:14px;opacity:.6}
+.gsearch{margin-left:auto;display:flex;align-items:center;gap:8px;width:300px;height:36px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:10px;color:hsl(var(--muted-foreground));background:hsl(var(--muted)/.4);cursor:text}
+.kbd{margin-left:auto;font-size:11px;border:1px solid hsl(var(--border));border-radius:4px;padding:0 5px;background:hsl(var(--card))}
+.content{padding:24px 32px 40px}
+
+/* PageHeader */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+.ph h1{font-size:24px;line-height:32px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.count{font-size:12px;font-weight:600;line-height:16px;padding:2px 8px;border-radius:999px;background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.ph p{color:hsl(var(--muted-foreground));margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:10px;border:1px solid hsl(var(--border));background:hsl(var(--card));font-weight:500;cursor:pointer;white-space:nowrap}
+.btn:hover{background:hsl(var(--accent))}
+.btn.pri{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:transparent;box-shadow:0 1px 2px hsl(0 0% 0%/.08)}
+.btn.pri:hover{background:hsl(var(--primary)/.9)}
+.btn.sm{height:32px;padding:0 10px;font-size:13px}
+.btn.dash{border-style:dashed;color:hsl(var(--muted-foreground))}
+.btn.dash.act{border-style:solid;color:hsl(var(--foreground))}
+
+/* Tabs + visões */
+.tabs{display:flex;gap:4px;border-bottom:1px solid hsl(var(--border));margin-bottom:16px}
+.tabs button{border:0;background:none;padding:8px 12px;font-weight:500;color:hsl(var(--muted-foreground));cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:hsl(var(--foreground));border-color:hsl(var(--primary))}
+.views{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.views button{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:8px;border:0;background:none;font-weight:500;color:hsl(var(--muted-foreground));cursor:pointer}
+.views button:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.views button.on{background:hsl(var(--muted));color:hsl(var(--foreground))}
+.views .c{font-size:12px;font-variant-numeric:tabular-nums;opacity:.8}
+.views button.alert .c{color:hsl(var(--danger-strong));opacity:1;font-weight:600}
+
+/* Moldura da tabela */
+.frame{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card));overflow:hidden}
+.tb{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid hsl(var(--border));flex-wrap:wrap}
+.tsearch{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:8px;width:320px;max-width:100%}
+.tsearch input{border:0;outline:0;background:none;flex:1;min-width:0;font-size:13px}
+.tsearch:focus-within{box-shadow:0 0 0 2px hsl(var(--primary)/.35);border-color:hsl(var(--primary))}
+.tb .sp{flex:1}
+.chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid hsl(var(--border));background:hsl(var(--muted)/.25);font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 4px 0 8px;border-radius:6px;background:hsl(var(--card));border:1px solid hsl(var(--border));font-weight:500}
+.chip button{border:0;background:none;cursor:pointer;display:grid;place-items:center;color:hsl(var(--muted-foreground));border-radius:4px}
+.chip svg{width:12px;height:12px}
+.link{border:0;background:none;color:hsl(var(--primary));font-weight:500;cursor:pointer;font-size:12px}
+.pop{position:absolute;z-index:50;min-width:220px;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:10px;box-shadow:0 8px 24px hsl(0 0% 0%/.12);padding:4px}
+.pop label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}
+.pop label:hover{background:hsl(var(--accent))}
+.pop label .c{margin-left:auto;font-size:12px;color:hsl(var(--muted-foreground));font-variant-numeric:tabular-nums}
+.pop .h{font-size:11px;font-weight:600;color:hsl(var(--muted-foreground));padding:6px 8px 2px}
+.pop input{accent-color:hsl(var(--primary))}
+
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:56px;z-index:5;background:hsl(var(--muted)/.4);backdrop-filter:blur(6px);height:40px;padding:0 12px;text-align:left;font-size:12px;font-weight:500;color:hsl(var(--muted-foreground));border-bottom:1px solid hsl(var(--border));white-space:nowrap}
+[data-theme="dark"] thead th{background:hsl(222 40% 10%)}
+thead th.sortable{cursor:pointer;user-select:none}
+thead th.sortable:hover{color:hsl(var(--foreground))}
+thead th .h{display:inline-flex;align-items:center;gap:4px}
+thead th svg{width:14px;height:14px;opacity:.5}
+thead th.sorted{color:hsl(var(--foreground))}
+thead th.sorted svg{opacity:1}
+th.r,td.r{text-align:right}
+th.r .h{flex-direction:row-reverse}
+tbody tr{border-bottom:1px solid hsl(var(--border));cursor:pointer;outline:none}
+tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:hsl(var(--muted)/.5)}
+tbody tr:focus-visible{box-shadow:inset 0 0 0 2px hsl(var(--primary))}
+tbody tr.inactive{opacity:.65}
+td{padding:10px 12px;vertical-align:middle;white-space:nowrap}
+.dense td{padding-top:6px;padding-bottom:6px}
+.reg .t{font-weight:500;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.reg .s{font-size:12px;line-height:16px;color:hsl(var(--muted-foreground));font-variant-numeric:tabular-nums;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.dense .reg{display:flex;align-items:baseline;gap:10px}
+.dense .reg .t{max-width:280px}
+.badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 7px;border-radius:999px;font-size:12px;font-weight:500}
+.badge svg{width:14px;height:14px}
+.b-warning{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.b-info{background:hsl(var(--info-subtle));color:hsl(var(--info-strong))}
+.b-success{background:hsl(var(--success-subtle));color:hsl(var(--success-strong))}
+.b-danger{background:hsl(var(--danger-subtle));color:hsl(var(--danger-strong))}
+.b-neutral{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.prio{display:inline-flex;align-items:center;gap:4px}
+.prio.alta{color:hsl(var(--danger-strong));font-weight:500}
+.prio.media{color:hsl(var(--warning-strong))}
+.prio.baixa{color:hsl(var(--muted-foreground))}
+.prazo .s{font-size:12px;line-height:16px;display:flex;align-items:center;gap:4px}
+.prazo .s svg{width:12px;height:12px}
+.dense .prazo{display:flex;gap:8px;align-items:baseline}
+.late{color:hsl(var(--danger-strong));font-weight:500}
+.soon{color:hsl(var(--warning-strong))}
+.pessoa{display:inline-flex;align-items:center;gap:8px}
+.pessoa i{width:20px;height:20px;border-radius:50%;font-style:normal;font-size:10px;font-weight:600;display:grid;place-items:center;background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.bool{display:inline-flex;align-items:center;gap:4px}
+.bool svg{width:14px;height:14px;color:hsl(var(--primary))}
+.nivel{display:inline-flex;align-items:center;gap:8px}
+.nivel .bars{display:inline-flex;gap:2px}
+.nivel .bars b{width:4px;height:12px;border-radius:1px;background:hsl(var(--border))}
+.nivel .bars b.f{background:hsl(var(--foreground)/.7)}
+.money{font-weight:500;font-variant-numeric:tabular-nums}
+.act{width:28px;height:28px;display:grid;place-items:center;border:0;background:none;border-radius:6px;color:hsl(var(--muted-foreground));opacity:.5;cursor:pointer}
+tr:hover .act,tr:focus-within .act{opacity:1}
+.act:hover{background:hsl(var(--accent))}
+.dash-v{color:hsl(var(--muted-foreground))}
+
+.ft{display:flex;align-items:center;gap:16px;padding:10px 12px;border-top:1px solid hsl(var(--border));font-size:12px;color:hsl(var(--muted-foreground));flex-wrap:wrap}
+.ft .sp{flex:1}
+.ft select{height:28px;border:1px solid hsl(var(--border));border-radius:6px;background:hsl(var(--card));padding:0 6px;font-size:12px}
+.pg{display:flex;gap:2px;align-items:center}
+.pg button{min-width:28px;height:28px;border:0;background:none;border-radius:6px;cursor:pointer;font-size:12px;font-variant-numeric:tabular-nums;color:hsl(var(--foreground));display:grid;place-items:center}
+.pg button:hover:not(:disabled){background:hsl(var(--accent))}
+.pg button.on{background:hsl(var(--foreground));color:hsl(var(--background));font-weight:600}
+.pg button:disabled{opacity:.35;cursor:default}
+.total{color:hsl(var(--foreground));font-weight:600}
+.empty{padding:56px 16px;text-align:center}
+.empty svg{width:32px;height:32px;color:hsl(var(--muted-foreground));margin-bottom:12px}
+.empty h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.empty p{color:hsl(var(--muted-foreground));margin-bottom:16px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:hsl(var(--foreground));color:hsl(var(--background));padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:1279px){.p2{display:none}}
+/* ---- Lote 5 (financeiro) ---- */
+.tabs .c{font-size:12px;font-weight:500;color:hsl(var(--muted-foreground));margin-left:6px;font-variant-numeric:tabular-nums}
+.tabs .v{display:block;font-size:11px;font-weight:500;color:hsl(var(--muted-foreground));font-variant-numeric:tabular-nums;text-align:left}
+.tabs button{text-align:left;line-height:18px}
+.tabs .arrow{align-self:center;color:hsl(var(--muted-foreground));opacity:.5;padding:0 2px}
+.conf{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:16px;border:1px solid}
+.conf.warn{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong));border-color:hsl(var(--warning-strong)/.25)}
+.conf.ok{background:hsl(var(--success-subtle));color:hsl(var(--success-strong));border-color:hsl(var(--success-strong)/.25)}
+.conf .t{flex:1;min-width:0}
+.conf .t b{font-weight:600}
+.conf .t span{opacity:.85}
+.mes{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:500}
+.mes button{width:28px;height:28px;border:0;background:none;border-radius:6px;cursor:pointer;display:grid;place-items:center}
+.mes button:hover{background:hsl(var(--accent))}
+.amarelo{color:hsl(var(--warning-strong));font-weight:500}
+.vermelho{color:hsl(var(--danger-strong));font-weight:500}
+.btn.out{height:30px;padding:0 10px;font-size:13px}
+.btn.out svg{width:14px;height:14px}
+.acts{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.pend{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 6px;border-radius:6px;font-size:11px;font-weight:500;background:hsl(var(--muted));color:hsl(var(--muted-foreground));margin-left:4px}
+.svc{font-weight:500;text-transform:uppercase;font-size:13px}
+.svc-s{font-size:12px;color:hsl(var(--muted-foreground))}
+.note{font-size:12px;color:hsl(var(--muted-foreground));border:1px dashed hsl(var(--border));border-radius:8px;padding:8px 10px;margin-top:12px}
+.note b{color:hsl(var(--foreground))}
+/* Resumo */
+.grid2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px}
+@media (max-width:1100px){.grid2{grid-template-columns:1fr}}
+.card{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card));padding:16px}
+.card thead th{position:static}
+.card h2{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h2 .sp{flex:1}
+.faixa{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;margin-bottom:16px}
+.faixa svg{width:20px;height:20px;margin-top:1px}
+.faixa b{font-weight:600}
+.faixa .sub{display:block;font-size:13px;opacity:.9;margin-top:2px}
+.dl{display:grid;grid-template-columns:150px 1fr auto;gap:8px 12px;font-size:14px;align-items:center}
+.dl dt{color:hsl(var(--muted-foreground))}
+.copy{width:26px;height:26px;border:0;background:none;border-radius:6px;cursor:pointer;display:grid;place-items:center;color:hsl(var(--muted-foreground))}
+.copy:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.copy svg{width:14px;height:14px}
+.destaque{background:hsl(var(--muted));border-radius:8px;padding:10px 12px;margin-bottom:14px}
+.destaque .l{font-size:12px;color:hsl(var(--muted-foreground))}
+.destaque .v{font-weight:600}
+.obs{border:1px solid hsl(var(--warning-strong)/.3);background:hsl(var(--warning-subtle)/.6);border-radius:8px;padding:10px 12px;margin-top:14px;font-size:13px}
+.obs .l{font-size:12px;font-weight:600;color:hsl(var(--warning-strong));margin-bottom:2px}
+.tl{list-style:none;padding:0;display:grid;gap:12px}
+.tl li{display:flex;gap:10px;font-size:13px}
+.tl .ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.tl .ic svg{width:14px;height:14px}
+.tl .q{font-size:12px;color:hsl(var(--muted-foreground))}
+.seg.sm button{font-size:11px;padding:2px 8px}
+tr.cancel td{opacity:.55;text-decoration:line-through}
+tr.cancel td:last-child{text-decoration:none}
+/* Conferência */
+.chk{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card));margin-bottom:10px;overflow:hidden}
+.chk-h{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.chk-h:hover{background:hsl(var(--muted)/.4)}
+.chk-i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.chk-t{flex:1;min-width:0}
+.chk-t b{font-weight:600;display:block}
+.chk-t span{font-size:12px;color:hsl(var(--muted-foreground))}
+.chk-n{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;min-width:32px;text-align:right}
+.chk-b{border-top:1px solid hsl(var(--border))}
+.secao{font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));margin:20px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+/* Modal */
+.ov{position:fixed;inset:0;background:hsl(222 47% 11%/.45);display:grid;place-items:center;z-index:100;padding:16px}
+.modal{width:520px;max-width:100%;background:hsl(var(--card));border-radius:14px;box-shadow:0 20px 50px hsl(0 0% 0%/.25);overflow:hidden}
+.mh{padding:16px 20px 8px}
+.mh h3{font-size:16px;font-weight:600}
+.steps{display:flex;gap:8px;font-size:12px;color:hsl(var(--muted-foreground));margin-top:6px}
+.steps .on{color:hsl(var(--primary));font-weight:600}
+.mb{padding:8px 20px 16px}
+.mf{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid hsl(var(--border));background:hsl(var(--muted)/.3)}
+.field{display:grid;gap:4px;margin-bottom:12px}
+.field label{font-size:13px;font-weight:500}
+.field input{height:36px;border:1px solid hsl(var(--border));border-radius:8px;padding:0 10px;background:hsl(var(--card))}
+.field .h{font-size:12px;color:hsl(var(--muted-foreground))}
+</style>
+</head>
+<body>
+
+<div class="wf">
+  <b>Wireframe · APROVADO</b>
+  <span>Tela <span class="seg" id="wf-screen"></span></span>
+  <span>Tema <span class="seg" id="wf-theme"></span></span>
+  <span class="muted">Aprovado em 14/10/2026 · na implementação, a tabela segue o DataTable do app (não este desenho) · doc: backend/docs/faturamento/04-proposta-ux-financeiro.md</span>
+</div>
+
+<div class="app">
+  <aside class="sb" id="sb"></aside>
+  <div class="main">
+    <header class="hd" id="hd"></header>
+    <main class="content" id="page"></main>
+  </div>
+</div>
+<div id="modal"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- utilidades ---------- */
+const TODAY = new Date(2026, 9, 14);
+const DAY = 86400000;
+const addDays = (d, n) => new Date(d.getTime() + n * DAY);
+const fd = (d) => d ? d.toLocaleDateString('pt-BR') : '—';
+const brl = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dias = (d) => Math.round((TODAY - d) / DAY);
+const I = (n) => `<i data-lucide="${n}"></i>`;
+const esc = (s) => String(s).replace(/"/g, '&quot;');
+let seed = 11;
+const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+
+/* ---------- dados fictícios ---------- */
+const CLIENTES = ['Metalúrgica Paraná Ltda', 'Hospital São Lucas', 'Construtora Alfa Engenharia', 'Frigorífico Vale Verde S.A.', 'Transportadora Rota Sul', 'Indústria Têxtil Nova Era', 'Cooperativa Agroindustrial Campos', 'Supermercados Bom Preço', 'Laboratório Vida Análises', 'Usina Santa Clara', 'Plásticos Iguaçu Ltda', 'Madeireira Pinhais', 'Clínica Ortopédica Movimento', 'Química Fina Brasil', 'Auto Peças Andrade'];
+const VENDEDORES = ['Ana Martins', 'Paulo Henrique Souza', 'Beatriz Lopes'];
+const FIN = ['Fernanda Reis', 'Juliana Prado'];
+const CAT = [
+  ['PGR', 'Segurança do Trabalho', 'Levantamento de riscos e plano de ação'],
+  ['PCMSO', 'Saúde Ocupacional', 'Programa anual com exames por função'],
+  ['LTCAT', 'Segurança do Trabalho', 'Laudo de condições ambientais'],
+  ['AET', 'Ergonomia', 'Análise ergonômica dos postos da produção'],
+  ['TREINAMENTO NR-35', 'Treinamentos', 'Turma de 20 pessoas, reciclagem'],
+  ['LAUDO DE RUÍDO', 'Higiene Ocupacional', 'Dosimetria em 3 setores'],
+];
+const TECNICOS = { 'Segurança do Trabalho': ['Carlos Paiva', 'Thiago Moura'], 'Saúde Ocupacional': ['Rafael Lima', 'Mariana Souza'], 'Ergonomia': ['Larissa Andrade'], 'Treinamentos': ['Gustavo Teixeira'], 'Higiene Ocupacional': ['Patrícia Nogueira'] };
+const FORMAS = ['Boleto', 'Boleto', 'PIX', 'Transferência'];
+
+function servico(cat, etapa, base) {
+  const [nome, setor, desc] = cat;
+  const resp = pick(TECNICOS[setor]);
+  const s = { nome, setor, desc, etapa, resp: null, inicio: null, termino: null, finalizadoPor: null, semAndamento: 0 };
+  if (etapa === 'novo' || etapa === 'a_distribuir') { s.semAndamento = Math.round(rnd() * 8) + 1; return s; }
+  s.resp = resp;
+  s.inicio = etapa === 'distribuido' ? null : addDays(base, Math.round(rnd() * 6) + 1);
+  if (etapa === 'concluido' || etapa === 'cancelado') {
+    s.inicio = s.inicio || addDays(base, 2);
+    s.termino = etapa === 'concluido' ? addDays(s.inicio, Math.round(rnd() * 10) + 2) : null;
+    s.finalizadoPor = etapa === 'concluido' ? resp : null;
+  } else s.semAndamento = Math.round(rnd() * 12) + 1;
+  // Nada no futuro: o wireframe é visto em 14/10/2026.
+  if (s.termino && s.termino > addDays(TODAY, -1)) s.termino = addDays(TODAY, -1);
+  if (s.inicio && s.inicio > (s.termino || TODAY)) s.inicio = addDays(s.termino || TODAY, -2);
+  return s;
+}
+
+const OS = [];
+function nova(o) {
+  const venda = o.venda || addDays(TODAY, -Math.round(rnd() * 60 + 8));
+  const valor = o.valor || Math.round((rnd() * 18000 + 900) / 10) * 10;
+  const tipo = o.tipo || (rnd() < .45 ? 'parcelado' : 'a_vista');
+  const parcelas = tipo === 'parcelado' ? pick([2, 3, 6, 10, 12, 24]) : null;
+  const vencDias = rnd() < .3 ? 21 : null;
+  const venc = vencDias ? null : (o.venc || addDays(TODAY, Math.round(rnd() * 50 - 10)));
+  const cats = o.cats || [pick(CAT), pick(CAT)].filter((c, i, a) => a.indexOf(c) === i);
+  const etapas = o.etapas || cats.map(() => 'concluido');
+  const servicos = cats.map((c, i) => servico(c, etapas[i], venda));
+  const concl = servicos.filter((s) => s.etapa === 'concluido').sort((a, b) => b.termino - a.termino);
+  const liberacao = o.liberacao || 'conclusao';
+  let situacao = o.situacao;
+  let liberadaEm = null, liberadaPor = null;
+  if (situacao !== 'exec') {
+    if (liberacao === 'imediata') { liberadaEm = venda; liberadaPor = o.vendedor || pick(VENDEDORES); }
+    else { liberadaEm = concl[0] ? concl[0].termino : addDays(TODAY, -2); liberadaPor = concl[0] ? concl[0].finalizadoPor : null; }
+  }
+  if (o.liberadaHa != null) liberadaEm = addDays(TODAY, -o.liberadaHa);
+  const fat = situacao === 'faturada';
+  const r = {
+    id: o.id, cliente: o.cliente || pick(CLIENTES), venda, valor, tipo, parcelas, venc, vencDias,
+    demais: tipo === 'parcelado' && rnd() < .3 ? 10 : null,
+    forma: pick(FORMAS), vendedor: o.vendedor || pick(VENDEDORES), servicos, liberacao, situacao, liberadaEm, liberadaPor,
+    ref: fat ? `NF ${4200 + Math.floor(rnd() * 400)}` : null,
+    faturadaEm: fat ? (o.faturadaEm || addDays(TODAY, -Math.round(rnd() * 25))) : null,
+    faturadaPor: fat ? pick(FIN) : null,
+    contato: ['Rosana Medeiros', 'rosana.medeiros@cliente.com.br'],
+    obs: o.obs || null, pend: o.pend || [],
+  };
+  if (r.faturadaEm && r.liberadaEm && r.faturadaEm < r.liberadaEm) r.faturadaEm = addDays(r.liberadaEm, 2);
+  OS.push(r);
+  return r;
+}
+
+// Casos escritos à mão: cada um ilustra uma verificação da conferência.
+nova({ id: 1312, cliente: 'Metalúrgica Paraná Ltda', situacao: 'fat', liberacao: 'imediata', vendedor: 'Ana Martins', venda: addDays(TODAY, -4), valor: 9500, tipo: 'parcelado', cats: [CAT[0], CAT[1], CAT[3]], etapas: ['concluido', 'em_execucao', 'distribuido'], obs: 'Cliente pediu NF com o número do pedido de compra 88231 no corpo. 1ª parcela só após a entrega do PGR.', liberadaHa: 4 });
+nova({ id: 1298, cliente: 'Hospital São Lucas', situacao: 'fat', cats: [CAT[1], CAT[5]], liberadaHa: 6, pend: ['aguardando_lancamento'] });
+nova({ id: 1290, cliente: 'Usina Santa Clara', situacao: 'fat', cats: [CAT[0], CAT[2]], liberadaHa: 2, pend: ['mudou_apos_liberacao'] });
+nova({ id: 1305, cliente: 'Frigorífico Vale Verde S.A.', situacao: 'exec', cats: [CAT[0], CAT[1], CAT[2]], etapas: ['concluido', 'concluido', 'em_execucao'], pend: ['concluido_os_parada'] });
+nova({ id: 1301, cliente: 'Supermercados Bom Preço', situacao: 'exec', cats: [CAT[3], CAT[4]], etapas: ['concluido', 'concluido'], pend: ['tarefa_cancelada_trava'] });
+nova({ id: 1309, cliente: 'Transportadora Rota Sul', situacao: 'exec', cats: [CAT[1], CAT[0]], etapas: ['concluido', 'novo'], pend: ['sem_distribuir'] });
+nova({ id: 1287, cliente: 'Construtora Alfa Engenharia', situacao: 'exec', cats: [CAT[0], CAT[3]], etapas: ['em_execucao', 'distribuido'], venc: addDays(TODAY, 3), pend: ['vencimento_chegando'] });
+nova({ id: 1250, cliente: 'Laboratório Vida Análises', situacao: 'faturada', cats: [CAT[1]], faturadaEm: addDays(TODAY, -5), pend: ['mudou_apos_lancamento'] });
+// O 1301: a última tarefa do LTCAT foi cancelada e o serviço não conclui.
+OS.find((o) => o.id === 1301).servicos.push({ nome: 'LTCAT', setor: 'Segurança do Trabalho', desc: '1 tarefa concluída, 1 cancelada', etapa: 'em_execucao', resp: 'Thiago Moura', inicio: addDays(TODAY, -30), termino: null, finalizadoPor: null, semAndamento: 21, trava: true });
+const OS1305 = OS.find((o) => o.id === 1305); OS1305.servicos[2].semAndamento = 18;
+for (let i = 0; i < 34; i++) {
+  const r = rnd();
+  const situacao = r < .3 ? 'fat' : r < .62 ? 'exec' : 'faturada';
+  const n = rnd() < .5 ? 2 : rnd() < .5 ? 1 : 3;
+  const cats = [CAT[(i) % 6], CAT[(i + 2) % 6], CAT[(i + 4) % 6]].slice(0, n);
+  const etapas = situacao === 'exec' ? cats.map((_, k) => k === 0 ? pick(['concluido', 'em_execucao']) : pick(['em_execucao', 'distribuido', 'a_distribuir', 'concluido'])) : cats.map(() => 'concluido');
+  if (situacao === 'exec' && etapas.every((e) => e === 'concluido')) etapas[etapas.length - 1] = 'em_execucao';
+  nova({ id: 1280 - i * 3, situacao, cats, etapas, liberacao: situacao !== 'exec' && rnd() < .2 ? 'imediata' : 'conclusao', liberadaHa: situacao === 'fat' ? Math.round(rnd() * 2) : null });
+}
+
+const SIT = {
+  exec: { label: 'Em execução', sub: 'previsão', icon: 'circle-dashed' },
+  fat: { label: 'Para faturar', sub: 'liberadas', icon: 'clock' },
+  faturada: { label: 'Faturadas', sub: 'lançadas', icon: 'circle-check' },
+};
+const PEND = {
+  sync_conclusao: { t: 'Toda OS com os serviços concluídos está liberada', g: true, ex: 'Se aparecer algo aqui, é defeito do sistema: use “Corrigir agora”.' },
+  sync_venda: { t: 'Toda OS com liberação na venda está liberada', g: true, ex: 'Liberação imediata: a OS nasce liberada.' },
+  sync_servico: { t: 'Todo serviço com as tarefas concluídas está concluído', g: true, ex: 'Pega atualizações que pularam a sincronização (ex.: importação de dados).' },
+  tarefa_cancelada_trava: { t: 'Serviço travado por tarefa cancelada', sit: 'exec', ex: 'As tarefas estão concluídas ou canceladas, mas o serviço não conclui porque a cancelada conta como pendente. A OS nunca libera.' },
+  concluido_os_parada: { t: 'Trabalho concluído, OS sem liberar', sit: 'exec', ex: 'Há serviço concluído há 15 dias ou mais e o que falta está sem andamento há 7 dias ou mais. Talvez alguém não tenha concluído no sistema.' },
+  sem_distribuir: { t: 'Serviço sem distribuir há 3 dias ou mais', sit: 'exec', ex: 'Ninguém do setor assumiu o serviço; a OS não anda.' },
+  vencimento_chegando: { t: 'Vencimento chegando sem liberação', sit: 'exec', ex: 'O vencimento combinado é em até 7 dias (ou já passou) e a OS ainda está em execução.' },
+  aguardando_lancamento: { t: 'Liberada há 3 dias ou mais sem faturar', sit: 'fat', ex: 'Está na fila do financeiro.' },
+  mudou_apos_liberacao: { t: 'Mudou depois da liberação', sit: 'fat', ex: 'Serviço acrescentado ou cancelado, ou valor/condição alterados depois que a OS foi liberada. Confira antes de faturar.' },
+  mudou_apos_lancamento: { t: 'Mudou depois de faturada', sit: 'faturada', ex: 'Algo mudou depois do lançamento: ajuste no sistema financeiro.' },
+};
+
+/* ---------- estado ---------- */
+const S = { screen: 'lista', tab: 'fat', atencao: null, q: '', mes: 0, resumo: 1312, hist: 'fin', modal: null, theme: 'light', open: {} };
+const SCREENS = { lista: 'Cobranças', resumo: 'Resumo para faturar', conf: 'Conferência' };
+
+/* ---------- campos derivados ---------- */
+const vencTxt = (o) => o.vencDias ? `${o.vencDias} dias após a nota` : fd(o.venc);
+const vencPerto = (o) => o.situacao !== 'faturada' && o.venc && (o.venc - TODAY) / DAY <= 7;
+const condTxt = (o) => o.tipo === 'parcelado' ? `Parcelado ${o.parcelas}x` : 'À vista';
+const condLongo = (o) => o.tipo === 'parcelado'
+  ? `Parcelado em ${o.parcelas}x de ${brl(o.valor / o.parcelas)} (mensais), 1ª parcela ${vencTxt(o)}${o.demais ? `, demais todo dia ${o.demais}` : ''}`
+  : `À vista, vence ${vencTxt(o)}`;
+const ativos = (o) => o.servicos.filter((s) => s.etapa !== 'cancelado');
+const concluidos = (o) => ativos(o).filter((s) => s.etapa === 'concluido').length;
+const pendentes = (o) => ativos(o).filter((s) => s.etapa !== 'concluido');
+const semAndamento = (o) => Math.max(0, ...pendentes(o).map((s) => s.semAndamento));
+const aguardando = (o) => o.liberadaEm ? dias(o.liberadaEm) : 0;
+const ETAPA = { novo: ['Novo', 'b-info'], a_distribuir: ['A distribuir', 'b-info'], distribuido: ['Distribuído', 'b-neutral'], em_execucao: ['Em execução', 'b-warning'], concluido: ['Concluído', 'b-success'], cancelado: ['Cancelado', 'b-neutral'] };
+const badge = (k) => `<span class="badge ${ETAPA[k][1]}">${ETAPA[k][0]}</span>`;
+const andamento = (o) => {
+  const t = ativos(o).length, c = concluidos(o);
+  return `<span style="display:inline-flex;align-items:center;gap:8px"><span style="display:inline-flex;gap:2px">${ativos(o).map((s) => `<b style="width:14px;height:6px;border-radius:2px;background:hsl(var(${s.etapa === 'concluido' ? '--success-strong' : '--border'}))"></b>`).join('')}</span><span class="num">${c} de ${t}</span></span>`;
+};
+const pendBadges = (o) => o.pend.filter((p) => !PEND[p].g).map((p) => `<span class="pend" title="${esc(PEND[p].ex)}">${I('alert-triangle')}${PEND[p].t.split(' ').slice(0, 3).join(' ')}…</span>`).join('');
+
+/* ---------- casca ---------- */
+function renderWf() {
+  const sc = document.getElementById('wf-screen');
+  sc.innerHTML = Object.entries(SCREENS).map(([k, v]) => `<button class="${S.screen === k ? 'on' : ''}" data-s="${k}">${v}</button>`).join('');
+  sc.querySelectorAll('button').forEach((b) => (b.onclick = () => { S.screen = b.dataset.s; render(); }));
+  const th = document.getElementById('wf-theme');
+  th.innerHTML = ['light', 'dark'].map((t) => `<button class="${S.theme === t ? 'on' : ''}" data-t="${t}">${t === 'light' ? 'Claro' : 'Escuro'}</button>`).join('');
+  th.querySelectorAll('button').forEach((b) => (b.onclick = () => { S.theme = b.dataset.t; document.documentElement.dataset.theme = S.theme; render(); }));
+}
+function renderSidebar() {
+  const NAV = [['Trabalho', [['Vendas', 'handshake'], ['Visão geral', 'layout-dashboard']]], ['Financeiro', [['Cobranças', 'receipt', 1], ['Análise financeira', 'chart-line']]], ['Cadastros', [['Clientes', 'building-2'], ['Catálogo', 'book-open']]]];
+  document.getElementById('sb').innerHTML = `
+    <div class="sb-top"><div class="logo"><div class="logo-mark">E</div><span>ERGO<span class="g">GROUP</span></span></div></div>
+    <nav class="nav">${NAV.map(([g, it]) => `<div class="grp">${g}</div>` + it.map(([l, ic, on]) => `<a class="it ${on ? 'on' : ''}" data-nav="${on ? 1 : ''}">${I(ic)}<span>${l}</span></a>`).join('')).join('')}</nav>
+    <div class="sb-foot"><div class="me"><div class="av">FR</div><div class="who"><div class="n">Fernanda Reis</div><div class="r">Financeiro</div></div></div></div>`;
+  document.querySelectorAll('[data-nav]').forEach((a) => (a.onclick = () => { if (a.dataset.nav) { S.screen = 'lista'; render(); } else toast('Fora do escopo deste wireframe'); }));
+}
+function renderHeader() {
+  const c = S.screen === 'lista' ? ['Financeiro', 'Cobranças'] : S.screen === 'conf' ? ['Cobranças', 'Conferência'] : ['Cobranças', `OS ${S.resumo}`];
+  document.getElementById('hd').innerHTML = `<div class="crumb">${c.slice(0, -1).map((x) => `<span>${x}</span>${I('chevron-right')}`).join('')}<b>${c[c.length - 1]}</b></div>
+    <div class="gsearch">${I('search')}<span>Buscar…</span><span class="kbd">Ctrl K</span></div>`;
+}
+
+/* ---------- conferência (cálculo) ---------- */
+function conferencia() {
+  return Object.entries(PEND).map(([k, v]) => ({ k, ...v, ordens: OS.filter((o) => o.pend.includes(k)) }));
+}
+function faixaConferencia() {
+  const n = conferencia().filter((c) => !c.g).reduce((s, c) => s + c.ordens.length, 0);
+  return n
+    ? `<div class="conf warn">${I('shield-alert')}<div class="t"><b>Conferência do faturamento: ${n} pontos para olhar</b> <span>· verificado hoje às 07:00 · as 3 garantias estão em dia</span></div><button class="btn sm" data-go="conf">Abrir conferência</button></div>`
+    : `<div class="conf ok">${I('shield-check')}<div class="t"><b>Tudo conferido</b> <span>· todo serviço concluído está numa OS liberada ou em execução · verificado hoje às 07:00</span></div><button class="btn sm" data-go="conf">Ver conferência</button></div>`;
+}
+
+/* ---------- lista ---------- */
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+function linhasDaAba(tab) {
+  let r = OS.filter((o) => o.situacao === tab);
+  if (tab === 'faturada' && S.mes !== null) {
+    const ref = new Date(TODAY.getFullYear(), TODAY.getMonth() + S.mes, 1);
+    r = r.filter((o) => o.faturadaEm.getMonth() === ref.getMonth() && o.faturadaEm.getFullYear() === ref.getFullYear());
+  }
+  return r;
+}
+function colunas(tab) {
+  const os = { h: 'OS', w: 70, c: (o) => `<b class="num">${o.id}</b>` };
+  const cli = { h: 'Cliente', c: (o) => `<span>${o.cliente}</span>${pendBadges(o)}` };
+  const val = { h: 'Valor', r: 1, c: (o) => `<span class="money">${brl(o.valor)}</span>` };
+  const cond = { h: 'Condição', c: (o) => `<span class="badge ${o.tipo === 'parcelado' ? 'b-info' : 'b-neutral'}" title="${esc(condLongo(o))}">${condTxt(o)}</span>` };
+  const venc = { h: 'Vencimento', c: (o) => `<span class="num ${vencPerto(o) ? 'amarelo' : ''}">${vencTxt(o)}</span>` };
+  const acoes = (extra) => ({ h: 'Ações', r: 1, w: 150, c: (o) => `<div class="acts">${extra ? extra(o) : ''}<button class="act" style="opacity:1" title="Abrir resumo para faturar" data-open="${o.id}">${I('more-horizontal')}</button></div>` });
+  if (tab === 'exec') return [os, cli, val, cond, venc,
+    { h: 'Andamento', c: andamento },
+    { h: 'Falta', c: (o) => { const p = pendentes(o); return p.length ? `<span class="svc">${p[0].nome}</span>${p.length > 1 ? ` <span class="pend">+${p.length - 1}</span>` : ''}<div class="svc-s">${p[0].setor}</div>` : '<span class="muted">—</span>'; } },
+    { h: 'Com quem', c: (o) => { const p = pendentes(o)[0]; return !p ? '—' : p.resp ? p.resp : '<span class="amarelo">Sem distribuir</span>'; } },
+    { h: 'Sem andamento há', c: (o) => { const d = semAndamento(o); return `<span class="num ${d >= 7 ? 'amarelo' : 'muted'}">${d} dia${d === 1 ? '' : 's'}</span>`; } },
+    acoes()];
+  if (tab === 'fat') return [os, cli, val, cond, venc,
+    { h: 'Liberada em', c: (o) => `<span class="num">${fd(o.liberadaEm)}</span>` },
+    { h: 'Liberação', c: (o) => o.liberacao === 'imediata' ? `<span class="badge b-warning">${I('zap')}Imediata</span>` : `<span class="badge b-success">${I('check-check')}Serviços concluídos</span>` },
+    { h: 'Aguardando', c: (o) => { const d = aguardando(o); return d >= 3 ? `<span class="badge b-warning">${I('alarm-clock')}${d} dias</span>` : `<span class="muted num">${d === 0 ? 'Liberada hoje' : `${d} dia${d === 1 ? '' : 's'}`}</span>`; } },
+    acoes((o) => `<button class="btn out" data-faturar="${o.id}">${I('receipt')}Faturar</button>`)];
+  return [os, cli, val, cond,
+    { h: 'Referência', c: (o) => o.ref },
+    { h: 'Faturada em', c: (o) => `<span class="num">${fd(o.faturadaEm)}</span>` },
+    { h: 'Faturada por', c: (o) => o.faturadaPor },
+    acoes()];
+}
+const ATENCAO = Object.fromEntries(Object.entries(PEND).filter(([, v]) => !v.g).map(([k, v]) => [k, v]));
+
+function renderLista() {
+  const tabs = ['exec', 'fat', 'faturada'];
+  const cont = (t) => { const r = linhasDaAba(t); return [r.length, r.reduce((s, o) => s + o.valor, 0)]; };
+  let rows = linhasDaAba(S.tab);
+  if (S.atencao) rows = rows.filter((o) => o.pend.includes(S.atencao));
+  if (S.q) rows = rows.filter((o) => (o.cliente + o.id + (o.ref || '')).toLowerCase().includes(S.q.toLowerCase()));
+  if (S.tab === 'fat') rows.sort((a, b) => a.liberadaEm - b.liberadaEm);
+  if (S.tab === 'faturada') rows.sort((a, b) => b.faturadaEm - a.faturadaEm);
+  if (S.tab === 'exec') rows.sort((a, b) => concluidos(b) / ativos(b).length - concluidos(a) / ativos(a).length);
+  const cols = colunas(S.tab);
+  const ref = new Date(TODAY.getFullYear(), TODAY.getMonth() + (S.mes || 0), 1);
+  const opcoesAtencao = Object.entries(ATENCAO).filter(([, v]) => v.sit === S.tab);
+  const total = rows.reduce((s, o) => s + o.valor, 0);
+  const dataFiltro = { exec: 'Venda / Vencimento', fat: 'Liberação / Vencimento' }[S.tab];
+  document.getElementById('page').innerHTML = `
+    <div class="ph"><div><h1>Cobranças</h1><p>O que ainda está em execução, o que já pode ser faturado e o que já foi lançado no sistema financeiro.</p></div></div>
+    ${faixaConferencia()}
+    <div class="tabs">${tabs.map((t, i) => { const [n, v] = cont(t); return `${i ? `<span class="arrow">${I('chevron-right')}</span>` : ''}<button class="${S.tab === t ? 'on' : ''}" data-tab="${t}">${SIT[t].label}<span class="c">${n}</span><span class="v">${t === 'faturada' ? `${MESES[ref.getMonth()].toLowerCase()} · ` : `${SIT[t].sub} · `}${brl(v)}</span></button>`; }).join('')}</div>
+    <div class="frame">
+      <div class="tb">
+        <label class="tsearch">${I('search')}<input id="q" placeholder="Buscar cliente, OS ou referência…" value="${esc(S.q)}"></label>
+        ${opcoesAtencao.length ? `<button class="btn sm dash ${S.atencao ? 'act' : ''}" id="atencao">${I('alert-triangle')}Precisa de atenção${S.atencao ? ` · ${OS.filter((o) => o.situacao === S.tab && o.pend.includes(S.atencao)).length}` : ''}</button>` : ''}
+        <button class="btn sm dash" data-todo>${I('building-2')}Cliente</button>
+        <button class="btn sm dash" data-todo>${I('layers')}Condição</button>
+        <button class="btn sm dash" data-todo>${I('user')}Vendido por</button>
+        ${S.tab === 'fat' ? `<button class="btn sm dash" data-todo>${I('zap')}Liberação</button>` : ''}
+        ${S.tab === 'faturada'
+          ? `<span class="mes"><button id="mprev">${I('chevron-left')}</button>${S.mes === null ? 'Todo o período' : `${MESES[ref.getMonth()]} de ${ref.getFullYear()}`}<button id="mnext">${I('chevron-right')}</button></span><button class="link" id="mtodo">${S.mes === null ? 'Voltar ao mês' : 'Ver todo o período'}</button>`
+          : `<button class="btn sm dash" data-todo>${I('calendar')}${dataFiltro}</button>`}
+        <span class="sp"></span>
+        <button class="btn sm" data-todo>${I('columns-3')}Colunas</button>
+      </div>
+      ${S.atencao ? `<div class="chips"><span class="chip">${PEND[S.atencao].t}<button id="rmchip">${I('x')}</button></span><span class="muted">${PEND[S.atencao].ex}</span></div>` : ''}
+      <div class="scroll"><table>
+        <thead><tr>${cols.map((c) => `<th class="${c.r ? 'r' : ''} sortable" ${c.w ? `style="width:${c.w}px"` : ''}><span class="h">${c.h}${c.h !== 'Ações' ? I('chevrons-up-down') : ''}</span></th>`).join('')}</tr></thead>
+        <tbody>${rows.length ? rows.map((o) => `<tr tabindex="0" data-row="${o.id}">${cols.map((c) => `<td class="${c.r ? 'r' : ''}">${c.c(o)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}"><div class="empty">${I(S.tab === 'fat' ? 'party-popper' : 'search-x')}<h3>${S.tab === 'fat' && !S.atencao ? 'Nada para faturar' : 'Nenhuma venda aqui'}</h3><p>${S.tab === 'fat' && !S.atencao ? 'Tudo o que foi liberado já foi lançado.' : 'Mude os filtros ou o mês.'}</p></div></td></tr>`}</tbody>
+      </table></div>
+      <div class="ft"><span><span class="total">${rows.length} OS</span> · <span class="total">${brl(total)}</span> no filtro</span><span class="sp"></span><span>Linhas por página <select><option>25</option></select></span><div class="pg"><button disabled>${I('chevron-left')}</button><button class="on">1</button><button disabled>${I('chevron-right')}</button></div></div>
+    </div>
+    <div class="note"><b>Proposta:</b> abas na ordem do caminho da OS (em execução → para faturar → faturadas), com “Para faturar” como padrão. Cada OS está numa aba só. Os cards indicadores e a faixa amarela saem; a contagem e o valor ficam na aba, e os alertas viram o filtro “Precisa de atenção”, cruzando com a conferência. Clique numa linha para ver o resumo.</div>`;
+
+  document.querySelectorAll('[data-tab]').forEach((b) => (b.onclick = () => { S.tab = b.dataset.tab; S.atencao = null; render(); }));
+  document.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => { S.screen = b.dataset.go; render(); }));
+  document.querySelectorAll('[data-todo]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); toast('Filtro facetado, como nas outras listagens'); }));
+  document.querySelectorAll('[data-row]').forEach((tr) => (tr.onclick = () => { S.resumo = +tr.dataset.row; S.screen = 'resumo'; render(); }));
+  document.querySelectorAll('[data-open]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); S.resumo = +b.dataset.open; S.screen = 'resumo'; render(); }));
+  document.querySelectorAll('[data-faturar]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); S.modal = { id: +b.dataset.faturar, step: 1 }; renderModal(); }));
+  const q = document.getElementById('q');
+  q.oninput = () => { S.q = q.value; const p = q.selectionStart; renderLista(); icons(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(p, p); };
+  document.getElementById('rmchip')?.addEventListener('click', () => { S.atencao = null; render(); });
+  document.getElementById('mprev')?.addEventListener('click', () => { S.mes = (S.mes || 0) - 1; render(); });
+  document.getElementById('mnext')?.addEventListener('click', () => { S.mes = Math.min(0, (S.mes || 0) + 1); render(); });
+  document.getElementById('mtodo')?.addEventListener('click', () => { S.mes = S.mes === null ? 0 : null; render(); });
+  const at = document.getElementById('atencao');
+  if (at) at.onclick = (e) => {
+    e.stopPropagation();
+    popover(at, `<div class="h">Precisa de atenção</div>` + opcoesAtencao.map(([k, v]) => `<label><input type="radio" name="at" value="${k}" ${S.atencao === k ? 'checked' : ''}>${v.t}<span class="c">${OS.filter((o) => o.situacao === S.tab && o.pend.includes(k)).length}</span></label>`).join(''), (p) => {
+      p.querySelectorAll('input').forEach((i) => (i.onchange = () => { S.atencao = i.value; closePop(); render(); }));
+    });
+  };
+}
+
+/* ---------- resumo para faturar ---------- */
+function renderResumo() {
+  const o = OS.find((x) => x.id === S.resumo) || OS[0];
+  const p = pendentes(o);
+  const ult = ativos(o).filter((s) => s.etapa === 'concluido').sort((a, b) => b.termino - a.termino)[0];
+  let faixa;
+  if (o.situacao === 'exec') {
+    const f = p[0];
+    faixa = `<div class="faixa b-neutral">${I('circle-dashed')}<div><b>Ainda não liberada.</b> Libera quando os ${ativos(o).length} serviços terminarem: ${concluidos(o)} de ${ativos(o).length} concluídos.
+      <span class="sub">Falta ${p.length === 1 ? '' : `${p.length}, entre eles `}${f.nome} (${f.setor}, ${f.resp ? `com ${f.resp}` : 'sem distribuir'}, sem andamento há ${f.semAndamento} dias).</span></div></div>`;
+  } else if (o.liberacao === 'imediata') {
+    faixa = `<div class="faixa b-warning">${I('zap')}<div><b>Liberação imediata:</b> liberada na venda em ${fd(o.liberadaEm)} por ${o.liberadaPor}. Pode faturar antes de os serviços terminarem.
+      <span class="sub">Andamento da execução: ${concluidos(o)} de ${ativos(o).length} serviços concluídos${p.length ? ` · falta ${p.map((s) => s.nome).join(', ')}` : ''}.</span></div></div>`;
+  } else {
+    faixa = `<div class="faixa b-success">${I('check-check')}<div><b>Liberada em ${fd(o.liberadaEm)}</b>, quando o último serviço foi concluído${ult ? ` (${ult.nome}, por ${ult.finalizadoPor})` : ''}.
+      <span class="sub">Todos os ${ativos(o).length} serviços concluídos.</span></div></div>`;
+  }
+  const alertas = o.pend.filter((k) => !PEND[k].g).map((k) => `<div class="faixa b-danger">${I('alert-triangle')}<div><b>${PEND[k].t}</b><span class="sub">${PEND[k].ex}</span></div></div>`).join('');
+  const linhaDl = (l, v, copiar = true) => `<dt>${l}</dt><dd>${v}</dd><dd>${copiar ? `<button class="copy" title="Copiar" data-copy="${esc(String(v).replace(/<[^>]+>/g, ''))}">${I('copy')}</button>` : ''}</dd>`;
+  const eventos = [
+    ['fin', 'shopping-cart', 'b-info', `Venda registrada por ${o.vendedor}: ${condLongo(o)}`, o.venda],
+    ...(o.liberacao === 'imediata' && o.liberadaEm ? [['fin', 'zap', 'b-warning', 'Liberada para faturar na venda (liberação imediata)', o.liberadaEm]] : []),
+    ...o.servicos.filter((s) => s.inicio).map((s) => ['exec', 'play', 'b-neutral', `${s.nome}: ${s.resp} iniciou`, s.inicio]),
+    ...o.servicos.filter((s) => s.termino).map((s) => ['exec', 'circle-check', 'b-success', `${s.nome} concluído por ${s.finalizadoPor}`, s.termino]),
+    ...(o.liberacao !== 'imediata' && o.liberadaEm ? [['fin', 'unlock', 'b-warning', 'Liberada para faturar (serviços concluídos)', o.liberadaEm]] : []),
+    ...(o.pend.includes('mudou_apos_liberacao') ? [['fin', 'pencil', 'b-danger', 'Valor alterado de R$ 7.800,00 para R$ 8.400,00 por Ana Martins', addDays(TODAY, -1)]] : []),
+    ...(o.faturadaEm ? [['fin', 'receipt', 'b-success', `Faturada por ${o.faturadaPor} (ref. ${o.ref})`, o.faturadaEm]] : []),
+  ].filter((e) => S.hist === 'tudo' || e[0] === 'fin').sort((a, b) => b[4] - a[4]);
+
+  document.getElementById('page').innerHTML = `
+    <div class="ph"><div>
+      <h1><button class="icon-btn" data-back title="Voltar">${I('arrow-left')}</button>${o.cliente}</h1>
+      <p>OS ${o.id} · vendida em ${fd(o.venda)} por ${o.vendedor} &nbsp;<span class="badge ${o.situacao === 'fat' ? 'b-warning' : o.situacao === 'faturada' ? 'b-success' : 'b-neutral'}">${SIT[o.situacao].label}</span></p>
+    </div><div style="display:flex;gap:8px">
+      <button class="btn" data-todo>${I('handshake')}Resumo da venda</button>
+      <button class="btn" data-todo>${I('printer')}Imprimir</button>
+      ${o.situacao === 'fat' ? `<button class="btn pri" data-faturar="${o.id}">${I('receipt')}Faturar</button>` : ''}
+    </div></div>
+    ${faixa}${alertas}
+    <div class="grid2">
+      <div style="display:grid;gap:16px;align-content:start">
+        <section class="card"><h2>${I('file-text')}Para lançar no sistema financeiro<span class="sp"></span><button class="btn sm" data-todo>${I('clipboard-copy')}Copiar tudo</button></h2>
+          <div class="destaque"><div class="l">Condição combinada</div><div class="v">${condLongo(o)}</div></div>
+          <dl class="dl">
+            ${linhaDl('Valor total', `<b class="money">${brl(o.valor)}</b>`)}
+            ${o.tipo === 'parcelado' ? linhaDl('Parcelas', `${o.parcelas} × ${brl(o.valor / o.parcelas)} (mensais)`) : ''}
+            ${linhaDl(o.tipo === 'parcelado' ? 'Vencimento da 1ª' : 'Vencimento', vencTxt(o))}
+            ${o.tipo === 'parcelado' ? linhaDl('Demais parcelas', o.demais ? `Todo dia ${o.demais}` : 'No mesmo dia do mês da 1ª', false) : ''}
+            ${linhaDl('Forma', o.forma, false)}
+            ${linhaDl('Enviar NF para', o.contato[0])}
+            ${linhaDl('E-mail da NF', o.contato[1])}
+          </dl>
+          ${o.obs ? `<div class="obs"><div class="l">Observações de pagamento e faturamento</div>${o.obs}</div>` : ''}
+        </section>
+        <section class="card"><h2>${I('list-checks')}Serviços realizados<span class="sp"></span>${andamento(o)}</h2>
+          <div class="scroll"><table class="dense">
+            <thead><tr><th>Serviço</th><th>Setor</th><th>Executado por</th><th>Início</th><th>Término</th><th>Finalizado por</th><th>Etapa</th></tr></thead>
+            <tbody>${o.servicos.map((s) => `<tr class="${s.etapa === 'cancelado' ? 'cancel' : ''}" style="cursor:default">
+              <td><div class="svc">${s.nome}</div><div class="svc-s">${s.desc}</div></td>
+              <td>${s.setor}</td>
+              <td>${s.resp || '<span class="amarelo">Sem distribuir</span>'}</td>
+              <td class="num">${fd(s.inicio)}</td><td class="num">${fd(s.termino)}</td>
+              <td>${s.finalizadoPor || '<span class="muted">—</span>'}</td>
+              <td>${s.trava ? '<span class="badge b-danger">Travado</span>' : badge(s.etapa)}</td></tr>`).join('')}</tbody>
+          </table></div>
+        </section>
+      </div>
+      <div style="display:grid;gap:16px;align-content:start">
+        <section class="card"><h2>${I('history')}Histórico<span class="sp"></span><span class="seg sm" id="hist"><button class="${S.hist === 'fin' ? 'on' : ''}" data-h="fin">Financeiro</button><button class="${S.hist === 'tudo' ? 'on' : ''}" data-h="tudo">Tudo</button></span></h2>
+          <ol class="tl">${eventos.map((e) => `<li><span class="ic ${e[2]}">${I(e[1])}</span><span><span>${e[3]}</span><span class="q" style="display:block">${fd(e[4])}</span></span></li>`).join('')}</ol>
+        </section>
+        <section class="card"><h2>${I('receipt')}Lançamento</h2>
+          ${o.faturadaEm ? `<dl class="dl">${linhaDl('Referência', o.ref)}${linhaDl('Data', fd(o.faturadaEm), false)}${linhaDl('Por', o.faturadaPor, false)}${linhaDl('Origem', 'Manual', false)}</dl>` : `<p class="muted">${o.liberadaEm ? 'Liberada, aguardando o lançamento.' : 'Só pode ser lançada depois de liberada.'}</p>`}
+        </section>
+      </div>
+    </div>
+    <div class="note"><b>Proposta:</b> a faixa da liberação fica sempre no topo e diz por que a OS está ou não liberada; a liberação imediata ganha destaque. Os serviços trazem setor, quem executou, início, término e quem finalizou, e cada dado do lançamento tem um botão de copiar. Troque de OS: <button class="link" data-ex="1312">liberação imediata</button> · <button class="link" data-ex="1298">na conclusão</button> · <button class="link" data-ex="1305">em execução</button> · <button class="link" data-ex="1301">travada</button> · <button class="link" data-ex="1290">mudou depois</button></div>`;
+  document.querySelector('[data-back]').onclick = () => { S.screen = 'lista'; render(); };
+  document.querySelectorAll('[data-todo]').forEach((b) => (b.onclick = () => toast('Fora do escopo deste wireframe')));
+  document.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = () => toast(`Copiado: ${b.dataset.copy}`)));
+  document.querySelectorAll('[data-h]').forEach((b) => (b.onclick = () => { S.hist = b.dataset.h; render(); }));
+  document.querySelectorAll('[data-ex]').forEach((b) => (b.onclick = () => { S.resumo = +b.dataset.ex; render(); }));
+  document.querySelectorAll('[data-faturar]').forEach((b) => (b.onclick = () => { S.modal = { id: +b.dataset.faturar, step: 1 }; renderModal(); }));
+}
+
+/* ---------- conferência ---------- */
+function renderConf() {
+  const lista = conferencia();
+  const bloco = (c) => {
+    const n = c.ordens.length;
+    const ok = n === 0;
+    const aberto = S.open[c.k];
+    return `<div class="chk"><div class="chk-h" data-k="${c.k}">
+      <span class="chk-i ${ok ? 'b-success' : c.g ? 'b-danger' : 'b-warning'}">${I(ok ? 'check' : 'alert-triangle')}</span>
+      <span class="chk-t"><b>${c.t}</b><span>${c.ex}</span></span>
+      <span class="chk-n ${ok ? '' : 'amarelo'}">${n}</span>${n ? I(aberto ? 'chevron-up' : 'chevron-down') : `<span style="width:16px"></span>`}
+    </div>${aberto && n ? `<div class="chk-b"><table class="dense"><thead><tr><th>OS</th><th>Cliente</th><th>Serviço</th><th>Setor</th><th>Com quem</th><th>Detalhe</th><th class="r">Ações</th></tr></thead><tbody>${c.ordens.map((o) => {
+      const s = c.k === 'tarefa_cancelada_trava' ? o.servicos.find((x) => x.trava) : pendentes(o)[0] || o.servicos[0];
+      const det = { tarefa_cancelada_trava: '1 tarefa cancelada conta como pendente', concluido_os_parada: `${concluidos(o)} de ${ativos(o).length} concluídos · sem andamento há ${s.semAndamento} dias`, sem_distribuir: `Chegou ao setor há ${s.semAndamento} dias`, vencimento_chegando: `Vence ${vencTxt(o)}`, aguardando_lancamento: `Liberada há ${aguardando(o)} dias`, mudou_apos_liberacao: 'Valor alterado ontem', mudou_apos_lancamento: 'Serviço acrescentado depois do lançamento' }[c.k];
+      const setorial = ['tarefa_cancelada_trava', 'concluido_os_parada', 'sem_distribuir', 'vencimento_chegando'].includes(c.k);
+      return `<tr data-row="${o.id}"><td><b class="num">${o.id}</b></td><td>${o.cliente}</td><td><span class="svc">${s.nome}</span></td><td>${s.setor}</td><td>${s.resp || '<span class="amarelo">Sem distribuir</span>'}</td><td class="muted">${det}</td>
+        <td class="r"><div class="acts">${setorial ? `<button class="btn out" data-avisar="${s.setor}">${I('mail')}Avisar o setor</button>` : ''}<button class="btn out" data-abrir="${o.id}">Abrir</button></div></td></tr>`;
+    }).join('')}</tbody></table></div>` : ''}</div>`;
+  };
+  document.getElementById('page').innerHTML = `
+    <div class="ph"><div><h1><button class="icon-btn" data-back>${I('arrow-left')}</button>Conferência do faturamento</h1><p>O que o sistema verifica para garantir que nada concluído fique sem cobrança. Verificado hoje às 07:00.</p></div>
+      <div style="display:flex;gap:8px"><button class="btn" id="corrigir">${I('refresh-cw')}Corrigir agora</button></div></div>
+    <div class="secao">Garantias do sistema · devem ser sempre 0</div>
+    ${lista.filter((c) => c.g).map(bloco).join('')}
+    <div class="secao">Em execução · pode travar a liberação</div>
+    ${lista.filter((c) => c.sit === 'exec').map(bloco).join('')}
+    <div class="secao">Para faturar e faturadas</div>
+    ${lista.filter((c) => c.sit && c.sit !== 'exec').map(bloco).join('')}
+    <div class="note"><b>Proposta:</b> as garantias mostram o “0” de forma explícita: a confiança vem de ver a regra sendo checada, não do silêncio. As atenções dizem com quem está e permitem avisar o setor (pede confirmação, e o aviso fica no histórico da OS). A conferência roda todo dia às 07:00 (comando <code>conferir_faturamento</code>); “Corrigir agora” refaz a sincronização das OS não liberadas e registra na auditoria.</div>`;
+  document.querySelector('[data-back]').onclick = () => { S.screen = 'lista'; render(); };
+  document.querySelectorAll('[data-k]').forEach((h) => (h.onclick = () => { S.open[h.dataset.k] = !S.open[h.dataset.k]; render(); }));
+  document.querySelectorAll('[data-abrir]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); S.resumo = +b.dataset.abrir; S.screen = 'resumo'; render(); }));
+  document.querySelectorAll('[data-avisar]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); toast(`Confirmar: enviar e-mail aos organizadores de ${b.dataset.avisar}?`); }));
+  document.getElementById('corrigir').onclick = () => toast('Sincronização refeita: 0 OS alteradas (registrado na auditoria)');
+}
+
+/* ---------- modal Faturar (2 etapas) ---------- */
+function renderModal() {
+  const m = S.modal; const el = document.getElementById('modal');
+  if (!m) { el.innerHTML = ''; return; }
+  const o = OS.find((x) => x.id === m.id);
+  const avisos = o.pend.filter((k) => ['mudou_apos_liberacao'].includes(k)).map((k) => `<div class="faixa b-danger" style="margin:12px 0 0">${I('alert-triangle')}<div><b>${PEND[k].t}</b><span class="sub">${PEND[k].ex}</span></div></div>`).join('')
+    + (o.liberacao === 'imediata' ? `<div class="faixa b-warning" style="margin:12px 0 0">${I('zap')}<div><b>Liberação imediata</b><span class="sub">${concluidos(o)} de ${ativos(o).length} serviços concluídos até agora.</span></div></div>` : '');
+  el.innerHTML = `<div class="ov"><div class="modal" role="dialog" aria-modal="true">
+    <div class="mh"><h3>Faturar a OS ${o.id} · ${o.cliente}</h3><div class="steps"><span class="${m.step === 1 ? 'on' : ''}">1. Conferir</span><span>›</span><span class="${m.step === 2 ? 'on' : ''}">2. Registrar o lançamento</span></div></div>
+    <div class="mb">${m.step === 1 ? `
+      <dl class="dl" style="grid-template-columns:140px 1fr auto">
+        <dt>Valor total</dt><dd><b class="money">${brl(o.valor)}</b></dd><dd></dd>
+        <dt>Condição</dt><dd>${condLongo(o)}</dd><dd></dd>
+        <dt>Forma</dt><dd>${o.forma}</dd><dd></dd>
+        <dt>Enviar NF para</dt><dd>${o.contato[0]} · ${o.contato[1]}</dd><dd></dd>
+      </dl>${o.obs ? `<div class="obs"><div class="l">Observações de pagamento</div>${o.obs}</div>` : ''}${avisos}` : `
+      <div class="field"><label>Referência do lançamento</label><input placeholder="Ex.: NF 4567 ou nº no sistema financeiro"><span class="h">O número que o sistema financeiro gerou. Opcional.</span></div>
+      <div class="field"><label>Data do lançamento</label><input value="${fd(TODAY)}"></div>`}
+    </div>
+    <div class="mf">${m.step === 1 ? `<button class="btn" data-x>Cancelar</button><button class="btn pri" data-next>Está certo, continuar</button>` : `<button class="btn" data-prev>Voltar</button><button class="btn pri" data-ok>${I('receipt')}Registrar lançamento</button>`}</div>
+  </div></div>`;
+  icons();
+  el.querySelector('[data-x]')?.addEventListener('click', () => { S.modal = null; renderModal(); });
+  el.querySelector('[data-next]')?.addEventListener('click', () => { m.step = 2; renderModal(); });
+  el.querySelector('[data-prev]')?.addEventListener('click', () => { m.step = 1; renderModal(); });
+  el.querySelector('[data-ok]')?.addEventListener('click', () => { S.modal = null; renderModal(); toast(`OS ${o.id} faturada (wireframe: nada é gravado)`); });
+  el.querySelector('.ov').onclick = (e) => { if (e.target.classList.contains('ov')) { S.modal = null; renderModal(); } };
+}
+
+/* ---------- infra ---------- */
+function popover(anchor, html, onBind) {
+  closePop();
+  const p = document.createElement('div'); p.className = 'pop'; p.id = 'pop'; p.innerHTML = html;
+  document.body.appendChild(p);
+  const r = anchor.getBoundingClientRect();
+  p.style.top = `${r.bottom + window.scrollY + 4}px`;
+  p.style.left = `${Math.min(r.left + window.scrollX, window.innerWidth - p.offsetWidth - 12)}px`;
+  p.onclick = (e) => e.stopPropagation();
+  onBind(p);
+}
+function closePop() { document.getElementById('pop')?.remove(); }
+document.addEventListener('click', closePop);
+let tt;
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2400); }
+function icons() { window.lucide && lucide.createIcons(); }
+function render() {
+  closePop(); renderWf(); renderSidebar(); renderHeader();
+  ({ lista: renderLista, resumo: renderResumo, conf: renderConf })[S.screen]();
+  icons(); window.scrollTo(0, 0);
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.modal) { S.modal = null; renderModal(); } });
+render();
+</script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  corrigirConferencia,
   getCobrancas,
+  getConferencia,
   getIndicadoresFinanceiros,
   getSituacaoFinanceira,
   registrarLancamento,
@@ -13,6 +15,7 @@ export const financeiroKeys = {
   cobrancas: (filtros: FiltrosDeCobrancas) => ['financeiro', 'cobrancas', filtros] as const,
   situacao: (ordemId: number) => ['financeiro', 'situacao', ordemId] as const,
   indicadores: ['financeiro', 'indicadores'] as const,
+  conferencia: ['financeiro', 'conferencia'] as const,
 };
 
 export const useCobrancas = (filtros: FiltrosDeCobrancas = {}, habilitado = true) =>
@@ -47,6 +50,27 @@ export const useRegistrarLancamento = () => {
     onSuccess: () =>
       Promise.all(
         [financeiroKeys.todos, ['vendas'], ['linha-do-tempo']].map((queryKey) => qc.invalidateQueries({ queryKey })),
+      ),
+  });
+};
+
+/** Conferência do faturamento: calculada na hora no backend. */
+export const useConferencia = (habilitado = true) =>
+  useQuery({
+    queryKey: financeiroKeys.conferencia,
+    queryFn: getConferencia,
+    enabled: habilitado,
+    staleTime: 60_000,
+  });
+
+/** Corrigir a sincronização muda cobranças, a conferência, as vendas e a execução. */
+export const useCorrigirConferencia = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: corrigirConferencia,
+    onSuccess: () =>
+      Promise.all(
+        [financeiroKeys.todos, ['vendas'], ['execucao'], ['linha-do-tempo']].map((queryKey) => qc.invalidateQueries({ queryKey })),
       ),
   });
 };

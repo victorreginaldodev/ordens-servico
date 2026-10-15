@@ -1,324 +1,359 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlarmClock, AlertTriangle, Building2, CircleCheck, CircleDashed, Clock, CreditCard, Layers, PartyPopper, Receipt, SearchX } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { AlarmClock, CheckCheck, Handshake, PartyPopper, Receipt, ShieldAlert, ShieldCheck, SquareArrowOutUpRight, Zap } from 'lucide-react';
 import {
-  AndamentoServicos,
-  BarraDeFiltros,
-  ChipsDeFiltros,
-  EmptyState,
-  EspacoDeFiltros,
-  FiltroDePeriodo,
-  FiltroDropdown,
-  Indicadores,
-  OpcaoDeFiltro,
-  PageHeader,
-  TipoCondicaoBadge,
-  TituloDoFiltro,
-  type Indicador,
-} from '@/components/kit';
+  CellTexto,
+  DataTable,
+  col,
+  type DataTableColumn,
+  type DataTableFacet,
+  type DataTablePeriodFilter,
+  type DataTableRowAction,
+  type DataTableView,
+} from '@/components/data-table';
+import { AndamentoServicos, PageHeader, PessoaChip, TIPO_CONDICAO_DEFS, TipoCondicaoBadge } from '@/components/kit';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { TabelaAgrupada, type Coluna } from '@/features/execucao/components/TabelaAgrupada';
-import { FORMA_PAGAMENTO_LABEL, LIBERAR_EM_LABEL, TIPO_CONDICAO_LABEL } from '@/features/vendas/condicao';
-import type { FormaPagamento, TipoCondicao } from '@/features/vendas/services';
-import { useClients } from '@/features/clientes/hooks';
+import { AcaoComIcone } from '@/features/execucao/components/AcaoComIcone';
+import { NavegacaoDoMes } from '@/features/execucao/components/NavegacaoDoMes';
+import { intervaloDoMes, useMesDosConcluidos } from '@/features/execucao/mesDosConcluidos';
+import { FORMA_PAGAMENTO_LABEL } from '@/features/vendas/condicao';
 import { usePermissoes } from '@/hooks/usePermissoes';
-import { formatCurrency, formatDate } from '@/lib/format';
-import { intervaloDoPeriodo, rotuloDoPeriodo, type Periodo } from '@/lib/periodo';
+import { formatCurrency, parseDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { RegistrarLancamentoModal, type OrdemParaLancar } from '../components/RegistrarLancamentoModal';
-import { useCobrancas } from '../hooks';
-import type { FiltrosDeCobrancas, LinhaDeCobranca, SituacaoDeCobranca } from '../services';
+import { FaturarModal } from '../components/FaturarModal';
+import { PENDENCIA } from '../conferencia';
+import { useCobrancas, useConferencia } from '../hooks';
+import type { LinhaDeCobranca, SituacaoDeCobranca } from '../services';
 
 /**
- * Cobranças (`/cobrancas`, fluxos-e-navegacao.md §6.7; wireframe do lote 3): as três situações como
- * indicadores (quantidade e valor), o aviso das liberadas sem lançamento e o "Registrar lançamento"
- * na própria linha. Os filtros vão para o backend e os contadores respeitam os filtros.
+ * Cobranças (`/cobrancas`, faturamento/04, wireframe do lote 5 aprovado em 14/10/2026): no padrão de listagem
+ * (`DataTable`, como Vendas e o Painel do setor). Abas = situações, sem sobreposição: **Para faturar** (padrão, a
+ * fila do financeiro) · **Em execução** (a previsão) · **Faturadas** (por mês). Cada aba tem as suas colunas, uma
+ * informação por coluna. "Precisa de atenção" usa as verificações da conferência do faturamento, que aparece
+ * resumida no topo.
  */
 
-const SITUACOES: SituacaoDeCobranca[] = ['a_faturar', 'previsao', 'faturadas'];
-const DIAS_ALERTA = 3; // DIAS_ALERTA_SEM_LANCAMENTO no backend
-const dataHora = (v: string | null | undefined) => (v ? formatDate(new Date(v)) : null);
+type Visao = SituacaoDeCobranca;
+const VISAO_PADRAO: Visao = 'a_faturar';
+const VISOES: Visao[] = ['a_faturar', 'previsao', 'faturadas'];
+const DIAS_VENCIMENTO_PERTO = 7;
+
+const diasAte = (data: string | null | undefined) => {
+  const d = parseDate(data);
+  if (!d) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - hoje.getTime()) / 86_400_000);
+};
+const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
+
+const COLUNAS_DA_VISAO: Record<Visao, string[]> = {
+  a_faturar: ['os', 'cliente', 'valor', 'condicao', 'vencimento', 'liberada_em', 'liberacao', 'aguardando', 'vendedor', 'forma'],
+  previsao: ['os', 'cliente', 'valor', 'condicao', 'vencimento', 'andamento', 'falta', 'com_quem', 'sem_andamento', 'vendedor'],
+  faturadas: ['os', 'cliente', 'valor', 'condicao', 'referencia', 'faturada_em', 'faturada_por', 'vendedor'],
+};
+const ORDEM_DA_VISAO: Record<Visao, { id: string; desc?: boolean }> = {
+  a_faturar: { id: 'liberada_em' },
+  previsao: { id: 'andamento', desc: true },
+  faturadas: { id: 'faturada_em', desc: true },
+};
+const VENCIMENTO: DataTablePeriodFilter<LinhaDeCobranca> = {
+  id: 'vencimento',
+  label: 'Vencimento',
+  getDate: (o) => o.data_acordada_cobranca,
+  presets: ['prox7', 'semana', 'mes', 'mes_passado', 'personalizado'],
+};
+const PERIODO_DA_VISAO: Record<Visao, DataTablePeriodFilter<LinhaDeCobranca>[]> = {
+  a_faturar: [{ id: 'liberada', label: 'Liberada em', getDate: (o) => o.liberada_para_cobranca_em }, VENCIMENTO],
+  previsao: [{ id: 'venda', label: 'Venda', getDate: (o) => o.data_venda }, VENCIMENTO],
+  // Nas faturadas, o período é o mês (ou o período todo) escolhido na barra.
+  faturadas: [],
+};
 
 export default function CobrancasPage() {
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const { pode } = usePermissoes();
-  const clientesQ = useClients();
-  const [pop, setPop] = useState<string | null>(null);
-  const [lancar, setLancar] = useState<OrdemParaLancar | null>(null);
+  const [params] = useSearchParams();
+  const { podeAlguma } = usePermissoes();
+  const veVendas = podeAlguma(['os.gerenciar', 'os.ver_todas']);
+  const [faturar, setFaturar] = useState<number | null>(null);
 
-  // Situação e filtros na URL: dá para mandar o link de "a faturar em alerta" para alguém.
-  const sitParam = params.get('situacao') as SituacaoDeCobranca | null;
-  const situacao: SituacaoDeCobranca = sitParam && SITUACOES.includes(sitParam) ? sitParam : 'a_faturar';
-  const cliente = Number(params.get('cliente')) || null;
-  const tipo = (params.get('tipo_condicao') as TipoCondicao | null) || null;
-  const forma = (params.get('forma_pagamento') as FormaPagamento | null) || null;
-  const emAlerta = params.get('em_alerta') === 'true';
-  const periodo: Periodo | null = params.get('periodo') ? { preset: params.get('periodo') as Periodo['preset'], de: params.get('de') ?? undefined, ate: params.get('ate') ?? undefined } : null;
-  const intervalo = periodo ? intervaloDoPeriodo(periodo) : null;
-  const de = intervalo?.de;
-  const ate = intervalo?.ate;
+  const visaoParam = params.get('view') as Visao | null;
+  const visao: Visao = visaoParam && VISOES.includes(visaoParam) ? visaoParam : VISAO_PADRAO;
 
-  const mudar = (p: Record<string, string | null>) => {
-    setParams(
-      (atual) => {
-        const n = new URLSearchParams(atual);
-        Object.entries(p).forEach(([k, v]) => (v == null ? n.delete(k) : n.set(k, v)));
-        return n;
-      },
-      { replace: true },
-    );
-    setPop(null);
-  };
+  // Faturadas por mês (`?mes=2026-10` ou `?mes=todo`), como os concluídos da execução: a lista não cresce sem fim.
+  const { mes, mudarMes, rotulo } = useMesDosConcluidos();
+  const intervalo = useMemo(() => intervaloDoMes(mes), [mes]);
+  const cobrancasQ = useCobrancas({ situacao: 'todas', faturada_de: intervalo.de, faturada_ate: intervalo.ate });
+  const conferenciaQ = useConferencia();
+  const linhas = cobrancasQ.data?.ordens;
+  const diasAlerta = cobrancasQ.data?.dias_alerta_sem_lancamento ?? 3;
 
-  const filtros: FiltrosDeCobrancas = useMemo(
-    () => ({
-      situacao,
-      ...(cliente ? { cliente } : {}),
-      ...(tipo ? { tipo_condicao: tipo } : {}),
-      ...(forma ? { forma_pagamento: forma } : {}),
-      ...(emAlerta && situacao === 'a_faturar' ? { em_alerta: 'true' as const } : {}),
-      ...(de && ate ? { de, ate } : {}),
-    }),
-    [situacao, cliente, tipo, forma, emAlerta, de, ate],
+  const views = useMemo<DataTableView<LinhaDeCobranca>[]>(
+    () => [
+      { id: 'a_faturar', label: 'Para faturar', filter: (o) => o.situacao === 'a_faturar' },
+      { id: 'previsao', label: 'Em execução', filter: (o) => o.situacao === 'previsao' },
+      { id: 'faturadas', label: rotulo('Faturadas'), filter: (o) => o.situacao === 'faturadas' },
+    ],
+    [rotulo],
   );
-  const cobrancasQ = useCobrancas(filtros);
-  const dados = cobrancasQ.data;
-  const c = dados?.contadores;
 
-  const indicadores: Indicador<SituacaoDeCobranca>[] = [
-    { id: 'a_faturar', rotulo: 'A faturar', icone: Clock, tom: 'warning', valor: c ? c.a_faturar.quantidade : null, detalhe: c ? formatCurrency(c.a_faturar.valor) : null, dica: 'Liberadas para faturar e ainda sem lançamento. As liberadas há mais tempo primeiro.' },
-    { id: 'previsao', rotulo: 'Previsão', icone: CircleDashed, tom: 'neutral', valor: c ? c.previsao.quantidade : null, detalhe: c ? formatCurrency(c.previsao.valor) : null, dica: 'Ainda não liberadas. As mais perto de liberar primeiro; canceladas não entram.' },
-    { id: 'faturadas', rotulo: 'Faturadas', icone: CircleCheck, tom: 'success', valor: c ? c.faturadas.quantidade : null, detalhe: c ? formatCurrency(c.faturadas.valor) : null, dica: 'Já lançadas no sistema financeiro. As mais recentes primeiro.' },
-  ];
-
-  const nomeCliente = (clientesQ.data ?? []).find((x) => Number(x.id) === cliente)?.name ?? (dados?.ordens.find((o) => o.cliente_id === cliente)?.cliente_nome ?? `#${cliente}`);
-  const chips = [
-    ...(cliente ? [{ id: 'cliente', texto: `Cliente: ${nomeCliente}` }] : []),
-    ...(periodo ? [{ id: 'periodo', texto: `Venda: ${rotuloDoPeriodo(periodo)}` }] : []),
-    ...(tipo ? [{ id: 'tipo_condicao', texto: `Condição: ${TIPO_CONDICAO_LABEL[tipo]}` }] : []),
-    ...(forma ? [{ id: 'forma_pagamento', texto: `Forma: ${FORMA_PAGAMENTO_LABEL[forma]}` }] : []),
-    ...(emAlerta && situacao === 'a_faturar' ? [{ id: 'em_alerta', texto: 'Só em alerta' }] : []),
-  ];
-  const removerChip = (id: string) => mudar(id === 'periodo' ? { periodo: null, de: null, ate: null } : { [id]: null });
-
-  const liberacao = (o: LinhaDeCobranca) =>
-    o.liberada_para_cobranca_em ? (
-      <span className="flex flex-col">
-        <span className="tabular-nums">{dataHora(o.liberada_para_cobranca_em)}</span>
-        <span className="text-xs text-muted-foreground">
-          {o.liberar_em === 'venda' ? 'na venda' : 'serviços concluídos'}
-          {o.liberada_para_cobranca_por_nome ? ` · ${o.liberada_para_cobranca_por_nome}` : ''}
-        </span>
-      </span>
-    ) : (
-      <span className="text-muted-foreground">—</span>
-    );
-
-  const colunas: Coluna<LinhaDeCobranca>[] = [
-    { id: 'os', titulo: 'OS', className: 'w-20', celula: (o) => <span className="font-semibold tabular-nums">{o.ordem_servico_id}</span> },
-    { id: 'cliente', titulo: 'Cliente', celula: (o) => <span className="block min-w-[10rem]">{o.cliente_nome}</span> },
-    { id: 'venda', titulo: 'Venda', className: 'w-28', celula: (o) => <span className="tabular-nums">{formatDate(o.data_venda)}</span> },
-    {
-      id: 'valor',
-      titulo: 'Valor',
-      className: 'w-32 text-right',
-      celula: (o) => (
-        <span className="tabular-nums">
-          {formatCurrency(o.valor)}
-          {o.valor_mensal ? <span className="block text-xs text-muted-foreground">{formatCurrency(o.valor_mensal)}/mês</span> : null}
-        </span>
-      ),
-    },
-    {
-      id: 'condicao',
-      titulo: 'Condição',
-      celula: (o) => (
-        <span className="flex max-w-[16rem] flex-col items-start gap-1">
-          <TipoCondicaoBadge value={o.tipo_condicao} />
-          <span className="text-xs text-muted-foreground">
-            {o.condicao_resumo} · {FORMA_PAGAMENTO_LABEL[o.forma_pagamento]}
+  /* ── Colunas: uma informação por coluna ── */
+  const todasAsColunas = useMemo<DataTableColumn<LinhaDeCobranca>[]>(
+    () => [
+      col.custom<LinhaDeCobranca>('os', 'OS', {
+        accessor: (o) => o.ordem_servico_id,
+        width: '80px',
+        cell: (o) => <span className="font-semibold tabular-nums">{o.ordem_servico_id}</span>,
+      }),
+      col.custom<LinhaDeCobranca>('cliente', 'Cliente', {
+        accessor: (o) => o.cliente_nome,
+        sortingFn: 'textPtBr',
+        cell: (o) => <CellTexto value={o.cliente_nome} className="max-w-[24rem] font-medium text-foreground" />,
+      }),
+      col.moeda<LinhaDeCobranca>('valor', 'Valor', (o) => o.valor, { width: '130px' }),
+      {
+        ...col.texto<LinhaDeCobranca>('condicao', 'Condição', (o) => o.tipo_condicao, { width: '150px' }),
+        meta: {
+          label: 'Condição',
+          width: '150px',
+          facetValue: (o: LinhaDeCobranca) => o.tipo_condicao,
+          facetOptions: Object.entries(TIPO_CONDICAO_DEFS).map(([value, d]) => ({ value, label: d.label })),
+        },
+        // Só o tipo (e as parcelas); o texto completo da condição fica no title e no resumo.
+        cell: ({ row }) => (
+          <span className="inline-flex items-center gap-1.5" title={row.original.condicao_resumo}>
+            <TipoCondicaoBadge value={row.original.tipo_condicao} />
+            {row.original.tipo_condicao === 'parcelado' && row.original.quantidade_parcelas ? (
+              <span className="text-xs tabular-nums text-muted-foreground">{row.original.quantidade_parcelas}x</span>
+            ) : null}
           </span>
-        </span>
-      ),
-    },
-    {
-      id: 'nf',
-      titulo: 'NF para',
-      celula: (o) =>
-        o.contato_envio_nf || o.nome_contato_envio_nf ? (
-          <span className="flex flex-col">
-            <span>{o.nome_contato_envio_nf || '—'}</span>
-            <span className="text-xs text-muted-foreground">{o.contato_envio_nf}</span>
-          </span>
-        ) : (
-          <span className="text-muted-foreground">Não informado</span>
         ),
-    },
-    ...(situacao === 'a_faturar'
-      ? ([
-          { id: 'liberada', titulo: 'Liberada', className: 'w-40', celula: liberacao },
-          {
-            id: 'aguardando',
-            titulo: 'Aguardando',
-            className: 'w-32',
-            celula: (o) => {
-              const d = o.dias_aguardando_lancamento ?? 0;
-              return o.em_alerta ? (
-                <span className="inline-flex h-6 items-center gap-1 rounded-md bg-warning-subtle px-1.5 text-xs font-medium text-warning-strong">
-                  <AlarmClock className="size-3.5" aria-hidden /> {d} dia{d === 1 ? '' : 's'}
-                </span>
-              ) : (
-                <span className="tabular-nums text-muted-foreground">{d === 0 ? 'Liberada hoje' : `${d} dia${d === 1 ? '' : 's'}`}</span>
-              );
-            },
-          },
-          {
-            id: 'acao',
-            titulo: '',
-            acao: true,
-            className: 'w-32',
-            celula: (o) => (
-              <Button size="sm" title="Registrar lançamento" aria-label={`Registrar lançamento da OS ${o.ordem_servico_id}`} onClick={() => setLancar(o)}>
-                <Receipt className="size-4" /> Registrar
-              </Button>
-            ),
-          },
-        ] satisfies Coluna<LinhaDeCobranca>[])
-      : situacao === 'previsao'
-        ? ([
-            { id: 'andamento', titulo: 'Andamento', className: 'w-40', celula: (o) => <AndamentoServicos andamento={o.andamento} /> },
-            { id: 'libera', titulo: 'Libera', className: 'w-44', celula: (o) => <span className="text-sm">{LIBERAR_EM_LABEL[o.liberar_em]}</span> },
-          ] satisfies Coluna<LinhaDeCobranca>[])
-        : ([
-            {
-              id: 'lancamento',
-              titulo: 'Lançamento',
-              celula: (o) => (
-                <span className="flex flex-col">
-                  <span>{o.referencia_lancamento || 'Sem referência'}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(o.data_cobranca)}
-                    {o.cobranca_realizada_por_nome ? ` · ${o.cobranca_realizada_por_nome}` : ''}
-                    {o.origem_lancamento === 'integracao' ? ' · integração' : ' · manual'}
-                  </span>
-                </span>
-              ),
-            },
-            { id: 'liberada', titulo: 'Liberada', className: 'w-40', celula: liberacao },
-          ] satisfies Coluna<LinhaDeCobranca>[])),
+      },
+      col.custom<LinhaDeCobranca>('vencimento', 'Vencimento', {
+        accessor: (o) => o.data_acordada_cobranca ?? (o.vencimento_dias_apos_nota ? `9999-${o.vencimento_dias_apos_nota}` : undefined),
+        width: '170px',
+        cell: (o) => {
+          const dias = diasAte(o.data_acordada_cobranca);
+          const perto = o.situacao !== 'faturadas' && dias !== null && dias <= DIAS_VENCIMENTO_PERTO;
+          const dica = dias === null ? undefined : dias < 0 ? `Venceu há ${plural(-dias, 'dia', 'dias')}` : dias === 0 ? 'Vence hoje' : `Vence em ${plural(dias, 'dia', 'dias')}`;
+          return o.vencimento_resumo ? (
+            <span className={cn('tabular-nums', perto && 'font-medium text-warning-strong')} title={dica}>
+              {o.vencimento_resumo}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Não informado</span>
+          );
+        },
+      }),
+      col.data<LinhaDeCobranca>('liberada_em', 'Liberada em', (o) => o.liberada_para_cobranca_em, { width: '120px' }),
+      col.custom<LinhaDeCobranca>('liberacao', 'Liberação', {
+        accessor: (o) => o.liberar_em,
+        width: '190px',
+        // Pela regra: liberação na venda = imediata; na conclusão = quando o último serviço terminou.
+        cell: (o) =>
+          o.liberar_em === 'venda' ? (
+            <span className="inline-flex h-6 items-center gap-1 rounded-full bg-warning-subtle px-2.5 text-xs font-medium text-warning-strong" title="Liberada na venda: pode faturar antes de os serviços terminarem.">
+              <Zap className="size-3.5" aria-hidden /> Na venda
+            </span>
+          ) : (
+            <span className="inline-flex h-6 items-center gap-1 rounded-full bg-success-subtle px-2.5 text-xs font-medium text-success-strong" title="Liberada quando o último serviço foi concluído.">
+              <CheckCheck className="size-3.5" aria-hidden /> Serviços concluídos
+            </span>
+          ),
+      }),
+      col.custom<LinhaDeCobranca>('aguardando', 'Aguardando', {
+        accessor: (o) => o.dias_aguardando_lancamento ?? undefined,
+        width: '130px',
+        cell: (o) => {
+          const d = o.dias_aguardando_lancamento ?? 0;
+          return o.em_alerta ? (
+            <span className="inline-flex h-6 items-center gap-1 rounded-full bg-warning-subtle px-2.5 text-xs font-medium text-warning-strong">
+              <AlarmClock className="size-3.5" aria-hidden /> {plural(d, 'dia', 'dias')}
+            </span>
+          ) : (
+            <span className="tabular-nums text-muted-foreground">{d === 0 ? 'Liberada hoje' : plural(d, 'dia', 'dias')}</span>
+          );
+        },
+      }),
+      col.custom<LinhaDeCobranca>('andamento', 'Andamento', {
+        accessor: (o) => (o.andamento.total ? o.andamento.concluido / o.andamento.total : undefined),
+        width: '170px',
+        cell: (o) => <AndamentoServicos andamento={o.andamento} />,
+      }),
+      col.custom<LinhaDeCobranca>('falta', 'Falta', {
+        accessor: (o) => o.pendentes[0]?.servico_nome,
+        sortingFn: 'textPtBr',
+        // O serviço que falta (o mais parado), com o setor; com mais de um, "+N" (todos no title).
+        cell: (o) => {
+          const [primeiro, ...outros] = o.pendentes;
+          if (!primeiro) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span className="grid max-w-64" title={o.pendentes.map((p) => `${p.servico_nome}${p.setor_nome ? ` (${p.setor_nome})` : ''}`).join('\n')}>
+              <span className="flex items-center gap-1.5">
+                <span className="truncate font-semibold uppercase">{primeiro.servico_nome}</span>
+                {outros.length ? <span className="shrink-0 rounded bg-muted px-1.5 text-xs tabular-nums">+{outros.length}</span> : null}
+              </span>
+              {primeiro.setor_nome ? <span className="truncate text-xs text-muted-foreground">{primeiro.setor_nome}</span> : null}
+            </span>
+          );
+        },
+      }),
+      col.custom<LinhaDeCobranca>('com_quem', 'Com quem', {
+        accessor: (o) => o.pendentes[0]?.responsaveis[0] ?? (o.pendentes.length ? '' : undefined),
+        sortingFn: 'textPtBr',
+        width: '200px',
+        cell: (o) => {
+          const primeiro = o.pendentes[0];
+          if (!primeiro) return <span className="text-muted-foreground">—</span>;
+          if (!primeiro.responsaveis.length) return <span className="whitespace-nowrap font-medium text-warning-strong">Sem distribuir</span>;
+          return (
+            <span className="flex max-w-52 items-center gap-1.5" title={primeiro.responsaveis.join(', ')}>
+              <PessoaChip nome={primeiro.responsaveis[0]} variant="full" className="min-w-0 truncate" />
+              {primeiro.responsaveis.length > 1 ? <span className="shrink-0 rounded bg-muted px-1.5 text-xs tabular-nums">+{primeiro.responsaveis.length - 1}</span> : null}
+            </span>
+          );
+        },
+      }),
+      col.custom<LinhaDeCobranca>('sem_andamento', 'Sem andamento há', {
+        accessor: (o) => o.pendentes[0]?.dias_sem_movimentacao ?? undefined,
+        width: '150px',
+        cell: (o) => {
+          const d = o.pendentes[0]?.dias_sem_movimentacao;
+          if (d === null || d === undefined) return <span className="text-muted-foreground">—</span>;
+          return <span className={cn('tabular-nums', d >= 7 ? 'font-medium text-warning-strong' : 'text-muted-foreground')}>{d === 0 ? 'Mexeu hoje' : plural(d, 'dia', 'dias')}</span>;
+        },
+      }),
+      col.texto<LinhaDeCobranca>('referencia', 'Referência', (o) => o.referencia_lancamento, { width: '160px' }),
+      col.data<LinhaDeCobranca>('faturada_em', 'Faturada em', (o) => o.data_cobranca, { width: '120px' }),
+      {
+        ...col.pessoa<LinhaDeCobranca>('faturada_por', 'Faturada por', (o) => o.cobranca_realizada_por_nome, { width: '200px' }),
+        cell: ({ row }) => <PessoaChip nome={row.original.cobranca_realizada_por_nome} variant="full" />,
+      },
+      {
+        ...col.pessoa<LinhaDeCobranca>('vendedor', 'Vendido por', (o) => o.vendido_por_nome, { width: '200px', priority: 3 }),
+        cell: ({ row }) => <PessoaChip nome={row.original.vendido_por_nome} variant="full" />,
+      },
+      col.custom<LinhaDeCobranca>('forma', 'Forma', {
+        accessor: (o) => FORMA_PAGAMENTO_LABEL[o.forma_pagamento],
+        sortingFn: 'textPtBr',
+        width: '130px',
+        priority: 3,
+        cell: (o) => FORMA_PAGAMENTO_LABEL[o.forma_pagamento],
+      }),
+    ],
+    [],
+  );
+  const colunas = useMemo(() => COLUNAS_DA_VISAO[visao].map((id) => todasAsColunas.find((c) => c.id === id)!), [visao, todasAsColunas]);
+
+  /* ── Filtros: "Precisa de atenção" vem da conferência ── */
+  const facets = useMemo<DataTableFacet<LinhaDeCobranca>[]>(() => {
+    const atencao = (Object.entries(PENDENCIA) as [keyof typeof PENDENCIA, (typeof PENDENCIA)[keyof typeof PENDENCIA]][])
+      .filter(([, p]) => p.situacao === visao)
+      .map(([value, p]) => ({ value, label: p.rotulo }));
+    return [
+      ...(atencao.length ? [{ columnId: 'atencao', label: 'Precisa de atenção', getValue: (o: LinhaDeCobranca) => o.pendencias, options: atencao }] : []),
+      { columnId: 'cliente', label: 'Cliente', getValue: (o) => o.cliente_nome, searchable: true },
+      { columnId: 'condicao', label: 'Condição' },
+      { columnId: 'vendedor', label: 'Vendido por', getValue: (o) => o.vendido_por_nome, searchable: true },
+      ...(visao === 'a_faturar'
+        ? [{ columnId: 'liberacao', label: 'Liberação', getValue: (o: LinhaDeCobranca) => o.liberar_em, options: [{ value: 'venda', label: 'Na venda' }, { value: 'conclusao', label: 'Serviços concluídos' }] }]
+        : []),
+    ];
+  }, [visao]);
+
+  /* ── Ações ── */
+  const acaoDaLinha = (o: LinhaDeCobranca) =>
+    o.situacao === 'a_faturar' ? <AcaoComIcone rotulo={`Faturar a OS ${o.ordem_servico_id}`} icone={Receipt} onClick={() => setFaturar(o.ordem_servico_id)} /> : null;
+  const acoesDoMenu = (o: LinhaDeCobranca): DataTableRowAction<LinhaDeCobranca>[] => [
+    { label: 'Abrir o resumo para faturar', icon: SquareArrowOutUpRight, onSelect: () => navigate(`/cobrancas/${o.ordem_servico_id}`) },
+    ...(veVendas ? [{ label: 'Abrir a venda', icon: Handshake, onSelect: () => navigate(`/vendas/${o.ordem_servico_id}`) }] : []),
   ];
 
-  const ordens = dados?.ordens ?? [];
-  const filtrosAtivos = chips.length > 0;
-  const ordem = { a_faturar: 'As liberadas há mais tempo primeiro.', previsao: 'As mais perto de liberar primeiro. Vendas canceladas não entram.', faturadas: 'As lançadas mais recentemente primeiro.' }[situacao];
+  // O total (quantidade e valor) da aba, ao lado das abas: os contadores do backend, que valem para o mês nas faturadas.
+  const contador = cobrancasQ.data?.contadores[visao];
+  const totalDaAba = contador ? (
+    <span className="text-sm text-muted-foreground">
+      {plural(contador.quantidade, 'venda', 'vendas')} · <span className="font-medium tabular-nums text-foreground">{formatCurrency(contador.valor)}</span>
+    </span>
+  ) : null;
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Cobranças" description="O que pode ser faturado, o que vai liberar e o que já foi lançado no sistema financeiro." />
-      <Indicadores
-        titulo="Situação das vendas"
-        subtitulo="Os números respeitam os filtros. Clique para ver cada situação."
-        itens={indicadores}
-        ativo={situacao}
-        onEscolher={(s) => mudar({ situacao: s === 'a_faturar' ? null : s })}
+      <PageHeader title="Cobranças" description="O que já pode ser faturado, o que ainda está em execução e o que já foi lançado no sistema financeiro." />
+
+      <FaixaDaConferencia carregando={conferenciaQ.isLoading} conferencia={conferenciaQ.data} />
+
+      <DataTable
+        id="cobrancas"
+        data={linhas}
+        columns={colunas}
+        getRowId={(o) => String(o.ordem_servico_id)}
+        getRowHref={(o) => `/cobrancas/${o.ordem_servico_id}`}
+        views={views}
+        defaultView={VISAO_PADRAO}
+        search={{ placeholder: 'Buscar cliente, OS ou referência', fields: (o) => [o.cliente_nome, o.ordem_servico_id, `OS ${o.ordem_servico_id}`, o.referencia_lancamento] }}
+        facets={facets}
+        periodFilter={PERIODO_DA_VISAO[visao]}
+        defaultSort={ORDEM_DA_VISAO[visao]}
+        renderRowAction={acaoDaLinha}
+        rowActions={acoesDoMenu}
+        actionsColumn={{ header: 'Ações', width: '96px' }}
+        toolbarActions={visao === 'faturadas' ? <NavegacaoDoMes mes={mes} onMudar={mudarMes} /> : null}
+        viewsActions={totalDaAba}
+        isLoading={cobrancasQ.isLoading}
+        isFetching={cobrancasQ.isFetching && !cobrancasQ.isLoading}
+        isError={cobrancasQ.isError}
+        onRetry={() => cobrancasQ.refetch()}
+        emptyStates={{
+          noData: { icon: PartyPopper, title: 'Nada por aqui', description: 'As vendas aparecem aqui assim que são registradas.' },
+        }}
       />
+      <p className="mt-3 text-xs text-muted-foreground">
+        “Aguardando” fica em destaque a partir de {plural(diasAlerta, 'dia', 'dias')} da liberação; o vencimento, a partir de {DIAS_VENCIMENTO_PERTO} dias antes.
+      </p>
 
-      {dados && dados.em_alerta > 0 ? (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-warning/40 bg-warning-subtle px-4 py-3 text-warning-strong">
-          <AlarmClock className="size-5 shrink-0" aria-hidden />
-          <span className="min-w-0 flex-1 text-sm">
-            <b>
-              {dados.em_alerta} venda{dados.em_alerta === 1 ? ' liberada' : 's liberadas'} há {DIAS_ALERTA} dias ou mais sem lançamento
-            </b>
-            <span className="block text-warning-strong/80">Aparecem primeiro em “A faturar”, com o tempo de espera destacado.</span>
-          </span>
-          <Button size="sm" variant="outline" className="bg-card" onClick={() => mudar({ situacao: null, em_alerta: emAlerta ? null : 'true' })}>
-            {emAlerta ? 'Ver todas' : 'Ver só essas'}
-          </Button>
-        </div>
-      ) : null}
+      <FaturarModal ordemId={faturar} onClose={() => setFaturar(null)} />
+    </div>
+  );
+}
 
-      <BarraDeFiltros>
-        <FiltroDropdown icone={Building2} rotulo="Cliente" valor={cliente ? nomeCliente.split(' ').slice(0, 2).join(' ') : null} aberto={pop === 'cliente'} onAberto={(o) => setPop(o ? 'cliente' : null)} largura="w-72">
-          <TituloDoFiltro>Cliente</TituloDoFiltro>
-          <OpcaoDeFiltro marcado={!cliente} onClick={() => mudar({ cliente: null })}>
-            Todos os clientes
-          </OpcaoDeFiltro>
-          {(clientesQ.data ?? []).map((x) => (
-            <OpcaoDeFiltro key={x.id} marcado={cliente === Number(x.id)} onClick={() => mudar({ cliente: String(x.id) })}>
-              {x.name}
-            </OpcaoDeFiltro>
-          ))}
-        </FiltroDropdown>
-        <FiltroDePeriodo
-          campos={{ venda: 'Venda' }}
-          campo="venda"
-          periodo={periodo}
-          onChange={(_, p) => setParams((atual) => {
-            const n = new URLSearchParams(atual);
-            ['periodo', 'de', 'ate'].forEach((k) => n.delete(k));
-            if (p) {
-              n.set('periodo', p.preset);
-              if (p.de) n.set('de', p.de);
-              if (p.ate) n.set('ate', p.ate);
-            }
-            return n;
-          }, { replace: true })}
-          aberto={pop === 'data'}
-          onAberto={(o) => setPop(o ? 'data' : null)}
-        />
-        <FiltroDropdown icone={Layers} rotulo="Condição" valor={tipo ? TIPO_CONDICAO_LABEL[tipo] : null} aberto={pop === 'tipo'} onAberto={(o) => setPop(o ? 'tipo' : null)} largura="w-52">
-          <TituloDoFiltro>Tipo de condição</TituloDoFiltro>
-          <OpcaoDeFiltro marcado={!tipo} onClick={() => mudar({ tipo_condicao: null })}>
-            Todas
-          </OpcaoDeFiltro>
-          {(Object.keys(TIPO_CONDICAO_LABEL) as TipoCondicao[]).map((t) => (
-            <OpcaoDeFiltro key={t} marcado={tipo === t} onClick={() => mudar({ tipo_condicao: t })}>
-              {TIPO_CONDICAO_LABEL[t]}
-            </OpcaoDeFiltro>
-          ))}
-        </FiltroDropdown>
-        <FiltroDropdown icone={CreditCard} rotulo="Forma" valor={forma ? FORMA_PAGAMENTO_LABEL[forma] : null} aberto={pop === 'forma'} onAberto={(o) => setPop(o ? 'forma' : null)} largura="w-52">
-          <TituloDoFiltro>Forma de pagamento</TituloDoFiltro>
-          <OpcaoDeFiltro marcado={!forma} onClick={() => mudar({ forma_pagamento: null })}>
-            Todas
-          </OpcaoDeFiltro>
-          {(Object.keys(FORMA_PAGAMENTO_LABEL) as FormaPagamento[]).map((f) => (
-            <OpcaoDeFiltro key={f} marcado={forma === f} onClick={() => mudar({ forma_pagamento: f })}>
-              {FORMA_PAGAMENTO_LABEL[f]}
-            </OpcaoDeFiltro>
-          ))}
-        </FiltroDropdown>
-        <EspacoDeFiltros />
-        <span className="text-xs text-muted-foreground">{ordem}</span>
-      </BarraDeFiltros>
-      <ChipsDeFiltros itens={chips} onRemover={removerChip} onLimpar={() => mudar({ cliente: null, tipo_condicao: null, forma_pagamento: null, em_alerta: null, periodo: null, de: null, ate: null })} />
-
-      {cobrancasQ.isLoading ? (
-        <Skeleton className="h-64 rounded-lg" />
-      ) : cobrancasQ.isError ? (
-        <EmptyState icon={AlertTriangle} title="Não foi possível carregar as cobranças" description="Verifique a conexão e tente de novo." />
-      ) : ordens.length ? (
-        <div className={cn('[&_tbody_tr]:align-top')}>
-          <TabelaAgrupada
-            rotulo={`Cobranças: ${situacao}`}
-            colunas={colunas}
-            grupos={[{ chave: situacao, linhas: ordens }]}
-            chaveDaLinha={(o) => o.ordem_servico_id}
-            onAbrir={pode('financeiro.ver_valores') ? (o) => navigate(`/cobrancas/${o.ordem_servico_id}`) : undefined}
-          />
-        </div>
-      ) : (
-        <EmptyState
-          icon={situacao === 'a_faturar' && !filtrosAtivos ? PartyPopper : SearchX}
-          title={situacao === 'a_faturar' && !filtrosAtivos ? 'Nada para faturar' : 'Nenhuma venda nesta situação'}
-          description={situacao === 'a_faturar' && !filtrosAtivos ? 'Tudo o que foi liberado já foi lançado.' : 'Mude os filtros para ver outras vendas.'}
-        />
+/** Resumo da conferência do faturamento no topo de Cobranças: o que o sistema verificou e o que precisa de atenção. */
+function FaixaDaConferencia({ carregando, conferencia }: { carregando: boolean; conferencia: ReturnType<typeof useConferencia>['data'] }) {
+  if (carregando || !conferencia) return null;
+  const atencoes = conferencia.verificacoes.filter((v) => v.tipo === 'atencao' && v.quantidade > 0);
+  const garantiasComFalha = conferencia.verificacoes.filter((v) => v.tipo === 'garantia' && v.quantidade > 0);
+  const pontos = atencoes.reduce((s, v) => s + v.quantidade, 0);
+  const hora = new Date(conferencia.verificado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const ok = !pontos && !garantiasComFalha.length;
+  return (
+    <div
+      className={cn(
+        'mb-4 flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3',
+        garantiasComFalha.length
+          ? 'border-danger/40 bg-danger-subtle text-danger-strong'
+          : ok
+            ? 'border-success/40 bg-success-subtle text-success-strong'
+            : 'border-warning/40 bg-warning-subtle text-warning-strong',
       )}
-
-      <RegistrarLancamentoModal ordem={lancar} onClose={() => setLancar(null)} />
+    >
+      {ok ? <ShieldCheck className="size-5 shrink-0" aria-hidden /> : <ShieldAlert className="size-5 shrink-0" aria-hidden />}
+      <span className="min-w-0 flex-1 text-sm">
+        <b>
+          {garantiasComFalha.length
+            ? `Conferência do faturamento: ${plural(garantiasComFalha.reduce((s, v) => s + v.quantidade, 0), 'item', 'itens')} fora de sincronia`
+            : ok
+              ? 'Tudo conferido'
+              : `Conferência do faturamento: ${plural(pontos, 'ponto', 'pontos')} para olhar`}
+        </b>
+        <span className="opacity-80">
+          {' '}
+          · verificado às {hora}
+          {garantiasComFalha.length ? ' · corrija na conferência' : ' · todo serviço concluído está numa venda liberada ou em execução'}
+        </span>
+      </span>
+      <Button size="sm" variant="outline" className="bg-card text-foreground" asChild>
+        <Link to="/cobrancas/conferencia">{ok ? 'Ver conferência' : 'Abrir conferência'}</Link>
+      </Button>
     </div>
   );
 }

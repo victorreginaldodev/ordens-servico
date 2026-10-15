@@ -49,6 +49,7 @@ import TimePage from '@/features/time/pages/TimePage';
 // Financeiro (R6)
 import CobrancasPage from '@/features/financeiro/pages/CobrancasPage';
 import SituacaoFinanceiraPage from '@/features/financeiro/pages/SituacaoFinanceiraPage';
+import ConferenciaPage from '@/features/financeiro/pages/ConferenciaPage';
 
 // Operational Orders
 import OperationalOrderListPage from '@/features/ordens/pages/OperationalOrderListPage';
@@ -97,7 +98,7 @@ const AppRoutes = () => (
     <Route path="/analise/operacional" element={w(<OperacionalPage />)} />
     <Route path="/analise/financeiro" element={g(<AnaliseFinanceiroPage />, ['financeiro.ver_valores'])} />
 
-    {/* Meu trabalho (R4) */}
+    {/* Execução (R4) */}
     <Route path="/meus-servicos" element={w(<MeusServicosPage />)} />
     <Route path="/visao-geral" element={g(<PainelDoSetorPage geral />, ['setores.todos'])} />
     {['/setor', '/setor/:setorId'].map((path) => (
@@ -141,10 +142,11 @@ const AppRoutes = () => (
 
     {/* Cobranças */}
     <Route path="/cobrancas" element={g(<CobrancasPage />, ['financeiro.registrar_cobranca'])} />
+    <Route path="/cobrancas/conferencia" element={g(<ConferenciaPage />, ['financeiro.registrar_cobranca'])} />
     <Route path="/cobrancas/:id" element={g(<SituacaoFinanceiraPage />, ['financeiro.ver_valores'])} />
 
     {/* Organização e time */}
-    <Route path="/time" element={w(<TimePage />)} />
+    <Route path="/time" element={g(<TimePage />, ['organizacao.configurar', 'usuarios.gerenciar'])} />
     <Route path="/time/eu" element={w(<MeuPerfilPage />)} />
     <Route path="/organizacao/setores" element={w(<SetoresPage />)} />
     <Route path="/organizacao/funcoes" element={g(<FuncoesPage />, ['organizacao.configurar', 'usuarios.gerenciar'])} />
