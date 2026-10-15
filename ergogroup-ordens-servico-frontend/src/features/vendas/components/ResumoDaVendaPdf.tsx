@@ -56,9 +56,8 @@ export function ResumoDaVendaPdf({ venda, geradoPor }: { venda: ResumoDaVenda; g
             <View style={s.celula}><Text style={s.rotulo}>Status</Text><Text>{venda.status === 'concluida' ? 'Concluída' : venda.status === 'em_andamento' ? 'Em andamento' : venda.status === 'cancelada' ? 'Cancelada' : 'Aberta'}</Text></View>
             <View style={s.celula}><Text style={s.rotulo}>Prioridade</Text><Text>{{ baixa: 'Baixa', media: 'Média', alta: 'Alta' }[venda.prioridade]}</Text></View>
             <View style={s.celula}><Text style={s.rotulo}>Andamento</Text><Text>{a.concluido} de {a.total - a.cancelado} concluídos</Text></View>
-            <View style={s.celula}><Text style={s.rotulo}>Na fila</Text><Text>{a.na_fila}</Text></View>
+            <View style={s.celula}><Text style={s.rotulo}>Para distribuir</Text><Text>{a.novo + a.a_distribuir}</Text></View>
           </View>
-          {venda.observacao ? <Text style={{ marginTop: 6 }}>{venda.observacao}</Text> : null}
         </View>
 
         {c ? (
@@ -66,11 +65,12 @@ export function ResumoDaVendaPdf({ venda, geradoPor }: { venda: ResumoDaVenda; g
             <Text style={s.secaoTitulo}>Condição de pagamento</Text>
             <View style={s.grade}>
               <View style={{ ...s.celula, width: '50%' }}><Text style={s.rotulo}>Condição</Text><Text>{c.condicao_resumo}</Text></View>
-              <View style={s.celula}><Text style={s.rotulo}>Valor</Text><Text style={s.negrito}>{formatCurrency(c.valor)}</Text>{c.valor_mensal ? <Text style={s.suave}>{formatCurrency(c.valor_mensal)}/mês</Text> : null}</View>
+              <View style={s.celula}><Text style={s.rotulo}>Valor</Text><Text style={s.negrito}>{formatCurrency(c.valor)}</Text></View>
               <View style={s.celula}><Text style={s.rotulo}>Forma</Text><Text>{FORMA_PAGAMENTO_LABEL[c.forma_pagamento]}</Text></View>
               <View style={{ ...s.celula, width: '50%' }}><Text style={s.rotulo}>Libera para o financeiro</Text><Text>{LIBERAR_EM_LABEL[c.liberar_em]}</Text></View>
               <View style={{ ...s.celula, width: '50%' }}><Text style={s.rotulo}>Contato da NF</Text><Text>{[c.nome_contato_envio_nf, c.contato_envio_nf].filter(Boolean).join(' · ') || '—'}</Text></View>
             </View>
+            {c.observacao ? <Text style={{ marginTop: 6 }}>Observações de pagamento: {c.observacao}</Text> : null}
             {f ? (
               <Text style={{ marginTop: 6, color: cor.suave }}>
                 {f.liberada_para_cobranca ? `Liberada em ${formatDate(f.liberada_para_cobranca_em)}${f.liberada_para_cobranca_por_nome ? ` por ${f.liberada_para_cobranca_por_nome}` : ''}` : 'Ainda não liberada para o financeiro'}

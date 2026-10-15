@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useCatalogos } from '@/features/catalogo/hooks';
 import { useToast } from '@/hooks/use-toast';
 import { mensagemDeErro } from '@/lib/api-errors';
+import { toastComAvisos } from '@/lib/avisos';
 import { useAcrescentarServico } from '../hooks';
 import type { Prioridade } from '../services';
 import { SeletorBusca } from './SeletorBusca';
@@ -40,8 +41,11 @@ export function AcrescentarServicoModal({ venda, onClose }: { venda: { id: numbe
     acrescentar.mutate(
       { ordem_servico: venda.id, catalogo, descricao: descricao.trim(), ...(prioridade ? { prioridade } : {}) },
       {
-        onSuccess: () => {
-          toast({ title: `${escolhido?.nome ?? 'Serviço'} acrescentado`, description: escolhido?.setorNome ? `${escolhido.setorNome} recebeu o serviço na fila.` : undefined });
+        onSuccess: (s) => {
+          toast({
+            title: `${escolhido?.nome ?? 'Serviço'} acrescentado${s.avisos?.length ? ', com um aviso' : ''}`,
+            ...toastComAvisos(s.avisos, escolhido?.setorNome ? `${escolhido.setorNome} recebeu o serviço na fila.` : undefined),
+          });
           onClose();
         },
         onError: (e) => setErro(mensagemDeErro(e, 'Não foi possível acrescentar. Tente de novo.')),
@@ -51,7 +55,7 @@ export function AcrescentarServicoModal({ venda, onClose }: { venda: { id: numbe
 
   return (
     <Dialog open={!!venda} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Acrescentar serviço</DialogTitle>
           <DialogDescription>

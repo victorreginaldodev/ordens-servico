@@ -24,7 +24,7 @@ import { mensagemDeErro, statusDoErro } from '@/lib/api-errors';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { AcrescentarServicoModal } from '../components/AcrescentarServicoModal';
-import { FORMA_PAGAMENTO_LABEL, LIBERAR_EM_LABEL } from '../condicao';
+import { FORMA_PAGAMENTO_LABEL, LIBERAR_EM_LABEL, rotuloDoVencimento } from '../condicao';
 import { useExcluirVenda, useResumoDaVenda } from '../hooks';
 import type { ResumoDaVenda } from '../services';
 
@@ -188,7 +188,6 @@ export default function ResumoDaVendaPage() {
           </Campo>
           <Campo rotulo="Registrada em">{dataHora(v.criada_em)}</Campo>
         </dl>
-        {v.observacao ? <p className="mt-3 whitespace-pre-line rounded-lg bg-muted px-3 py-2 text-sm">{v.observacao}</p> : null}
       </section>
 
       <Bloco titulo="Serviços" className="mb-4" acao={<span className="text-xs text-muted-foreground">{v.servicos.length} serviço{v.servicos.length === 1 ? '' : 's'}</span>}>
@@ -233,7 +232,7 @@ export default function ResumoDaVendaPage() {
                           ))}
                         </ul>
                       ) : (
-                        <span className="text-muted-foreground">{s.etapa === 'na_fila' ? 'Na fila do setor' : '—'}</span>
+                        <span className="text-muted-foreground">{s.etapa === 'novo' ? 'Chegou ao setor' : s.etapa === 'a_distribuir' ? 'Recebido, a distribuir' : '—'}</span>
                       )}
                     </td>
                     <td className="border-l border-border/70 px-3 py-2.5 tabular-nums">{formatDate(s.prazo) ?? <span className="text-muted-foreground">Sem prazo</span>}</td>
@@ -266,11 +265,20 @@ export default function ResumoDaVendaPage() {
                 <Campo rotulo="Valor total">
                   <span className="font-semibold tabular-nums">{formatCurrency(c.valor)}</span>
                 </Campo>
-                {c.valor_mensal ? <Campo rotulo="Valor mensal">{formatCurrency(c.valor_mensal)}</Campo> : null}
+                <Campo rotulo={c.tipo_condicao === 'parcelado' ? 'Vencimento da 1ª' : 'Vencimento'}>{rotuloDoVencimento(c) ?? '—'}</Campo>
+                {c.tipo_condicao === 'parcelado' ? (
+                  <Campo rotulo="Demais parcelas">{c.dia_vencimento_demais ? `Todo dia ${c.dia_vencimento_demais}` : 'No mesmo dia do mês da 1ª'}</Campo>
+                ) : null}
                 <Campo rotulo="Forma">{FORMA_PAGAMENTO_LABEL[c.forma_pagamento]}</Campo>
                 <Campo rotulo="Libera para o financeiro">{LIBERAR_EM_LABEL[c.liberar_em]}</Campo>
                 <Campo rotulo="Contato da NF">{[c.nome_contato_envio_nf, c.contato_envio_nf].filter(Boolean).join(' · ') || '—'}</Campo>
               </dl>
+              {c.observacao ? (
+                <div className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">Observações de pagamento e faturamento</p>
+                  <p className="whitespace-pre-line">{c.observacao}</p>
+                </div>
+              ) : null}
             </Bloco>
           ) : null}
           {f ? (

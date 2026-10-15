@@ -7,8 +7,10 @@ import { cn } from '@/lib/utils';
 export interface OpcaoDeBusca {
   valor: number;
   rotulo: string;
-  /** Texto à direita (ex.: o setor do catálogo). */
+  /** Texto à direita (ex.: o documento do cliente). */
   detalhe?: string;
+  /** Etiqueta antes do rótulo, numa coluna de largura fixa para os nomes alinharem (ex.: o setor do catálogo). */
+  prefixo?: string;
   grupo?: string;
 }
 
@@ -24,6 +26,7 @@ export function SeletorBusca({
   vazio,
   invalido,
   carregando,
+  caixaAlta,
 }: {
   id?: string;
   opcoes: OpcaoDeBusca[];
@@ -33,13 +36,16 @@ export function SeletorBusca({
   vazio: string;
   invalido?: boolean;
   carregando?: boolean;
+  /** Mostra rótulos e prefixos em caixa alta (só a exibição; o dado não muda). */
+  caixaAlta?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const [busca, setBusca] = useState('');
   const escolhida = opcoes.find((o) => o.valor === valor);
   const termo = normalizar(busca.trim());
-  const filtradas = termo ? opcoes.filter((o) => normalizar(`${o.rotulo} ${o.detalhe ?? ''}`).includes(termo)) : opcoes;
+  const filtradas = termo ? opcoes.filter((o) => normalizar(`${o.rotulo} ${o.detalhe ?? ''} ${o.prefixo ?? ''}`).includes(termo)) : opcoes;
   const grupos = [...new Set(filtradas.map((o) => o.grupo ?? ''))];
+  const comPrefixo = opcoes.some((o) => o.prefixo);
 
   return (
     <Popover open={aberto} onOpenChange={(o) => { setAberto(o); if (!o) setBusca(''); }}>
@@ -56,14 +62,21 @@ export function SeletorBusca({
             invalido && 'border-danger',
           )}
         >
-          <span className={cn('min-w-0 flex-1 truncate', !escolhida && 'text-muted-foreground')}>
+          {escolhida?.prefixo ? (
+            <span className="shrink-0 rounded bg-info-subtle px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-info-strong">{escolhida.prefixo}</span>
+          ) : null}
+          <span className={cn('min-w-0 flex-1 truncate', !escolhida && 'text-muted-foreground', escolhida && caixaAlta && 'uppercase')}>
             {escolhida ? escolhida.rotulo : carregando ? 'Carregando…' : placeholder}
           </span>
           {escolhida?.detalhe ? <span className="shrink-0 text-xs text-muted-foreground">{escolhida.detalhe}</span> : null}
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-72 p-0" align="start">
+      {/* Com o setor na frente, a lista fica mais larga que o campo para os nomes não cortarem. */}
+      <PopoverContent
+        className={cn('p-0', comPrefixo ? 'w-[min(38rem,calc(100vw-2rem))]' : 'w-[var(--radix-popover-trigger-width)] min-w-72')}
+        align="start"
+      >
         <Command shouldFilter={false}>
           <CommandInput value={busca} onValueChange={setBusca} placeholder="Buscar…" />
           <CommandList className="max-h-72">
@@ -84,7 +97,12 @@ export function SeletorBusca({
                       className="gap-2"
                     >
                       <Check className={cn('size-4 shrink-0', o.valor === valor ? 'opacity-100' : 'opacity-0')} />
-                      <span className="min-w-0 flex-1 truncate">{o.rotulo}</span>
+                      {o.prefixo ? (
+                        <span className="w-40 shrink-0 truncate text-2xs font-semibold uppercase tracking-wide text-muted-foreground" title={o.prefixo}>
+                          {o.prefixo}
+                        </span>
+                      ) : null}
+                      <span className={cn('min-w-0 flex-1 truncate', caixaAlta && 'uppercase')}>{o.rotulo}</span>
                       {o.detalhe && !o.grupo ? <span className="shrink-0 text-xs text-muted-foreground">{o.detalhe}</span> : null}
                     </CommandItem>
                   ))}

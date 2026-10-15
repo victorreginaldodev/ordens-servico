@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wireframe Nova venda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Wireframe do lote 4 (proposta de 13/10/2026): nova venda em página única, com resumo lateral,
+   serviços num modal em duas etapas e a condição de pagamento revisada (à vista ou parcelado).
+   Tokens de docs/ui/design-system.md §2, os mesmos dos lotes 1 a 3. */
+:root{
+  --canvas:220 20% 96.5%;--background:0 0% 100%;--foreground:222 47% 11%;--card:0 0% 100%;
+  --muted:210 40% 96%;--muted-foreground:215 20% 42%;--border:214 32% 91%;--border-strong:214 24% 84%;
+  --accent:215 25% 93%;--primary:173 58% 31%;--primary-foreground:0 0% 100%;
+  --success:142 71% 40%;--success-subtle:138 76% 96%;--success-strong:142 72% 26%;
+  --warning:38 92% 50%;--warning-subtle:48 96% 94%;--warning-strong:26 90% 33%;
+  --danger:0 72% 51%;--danger-subtle:0 86% 96%;--danger-strong:0 70% 40%;
+  --info:221 83% 53%;--info-subtle:214 95% 96%;--info-strong:224 70% 42%;
+  --shadow:0 1px 2px hsl(222 47% 11%/.06),0 1px 1px hsl(222 47% 11%/.04);
+  --shadow-lg:0 12px 32px hsl(222 47% 11%/.16);
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:222 47% 4.5%;--background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 15%;--muted-foreground:215 20% 62%;--border:222 30% 16%;--border-strong:222 25% 24%;
+  --accent:222 30% 13%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --success:142 60% 45%;--success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning:38 92% 55%;--warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger:0 72% 55%;--danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info:217 91% 60%;--info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+  --shadow:0 1px 2px hsl(0 0% 0%/.4);--shadow-lg:0 12px 32px hsl(0 0% 0%/.5);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:222 47% 4.5%;--background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 15%;--muted-foreground:215 20% 62%;--border:222 30% 16%;--border-strong:222 25% 24%;
+  --accent:222 30% 13%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --success:142 60% 45%;--success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning:38 92% 55%;--warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger:0 72% 55%;--danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info:217 91% 60%;--info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+  --shadow:0 1px 2px hsl(0 0% 0%/.4);--shadow-lg:0 12px 32px hsl(0 0% 0%/.5);color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:var(--font);background:hsl(var(--canvas));color:hsl(var(--foreground));font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid hsl(var(--primary));outline-offset:2px}
+svg.lucide{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+h1,h2,h3,p{margin:0}
+h1{font-size:20px;line-height:28px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:15px;line-height:22px;font-weight:700}
+.muted{color:hsl(var(--muted-foreground))}
+.num{font-variant-numeric:tabular-nums}
+.sm{font-size:12px;line-height:16px}
+
+/* ── barra do wireframe (fora do produto) ── */
+.wf{position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 16px;background:hsl(222 47% 11%);color:hsl(210 40% 96%);font-size:12px}
+.wf b{font-weight:700}
+.wf .grp{display:flex;align-items:center;gap:4px}
+.wf button{border:1px solid hsl(215 20% 35%);background:transparent;border-radius:6px;padding:3px 8px;color:inherit}
+.wf button[aria-pressed="true"]{background:hsl(173 55% 45%);border-color:transparent;color:hsl(222 47% 6%);font-weight:600}
+.wf .sp{flex:1}
+
+/* ── casca do app ── */
+.app{display:flex;min-height:calc(100vh - 38px)}
+.side{width:224px;flex-shrink:0;padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;align-items:center;gap:8px;padding:2px 8px 14px;font-weight:700}
+.brand .sym{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,hsl(213 60% 45%),hsl(215 15% 55%))}
+.side .g{font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));padding:10px 10px 4px}
+.side .it{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:8px;color:hsl(var(--muted-foreground));font-weight:500}
+.side .it.on{background:hsl(var(--card));color:hsl(var(--foreground));font-weight:600;box-shadow:var(--shadow);outline:1px solid hsl(var(--border))}
+.side .it.on svg{color:hsl(var(--primary))}
+.panel{flex:1;min-width:0;margin:8px 8px 8px 0;background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow)}
+.main{max-width:1180px;margin:0 auto;padding:20px 24px 96px}
+@media (max-width:1023px){.side{display:none}.panel{margin:0;border-radius:0;border:0}.main{padding:16px 16px 120px}}
+
+/* ── cabeçalho da página ── */
+.crumb{display:flex;align-items:center;gap:4px;font-size:12px;color:hsl(var(--muted-foreground));margin-bottom:10px}
+.crumb a{color:inherit;text-decoration:none}.crumb a:hover{color:hsl(var(--foreground));text-decoration:underline}
+.ph{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px}
+.ph .t{flex:1;min-width:0}
+.ph p{margin-top:2px;color:hsl(var(--muted-foreground))}
+
+/* ── botões e campos ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:8px;border:1px solid hsl(var(--border));background:hsl(var(--card));font-weight:600;font-size:14px;white-space:nowrap}
+.btn:hover{background:hsl(var(--muted))}
+.btn.pri{background:hsl(var(--primary));border-color:transparent;color:hsl(var(--primary-foreground))}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.pri:disabled{opacity:.5;cursor:not-allowed;filter:none}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:hsl(var(--muted))}
+.btn.sm{height:30px;padding:0 10px;font-size:13px}
+.btn.icon{width:32px;padding:0}
+.btn.wide{width:100%}
+.lbl{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.lbl .opt{font-weight:400;color:hsl(var(--muted-foreground))}
+.hint{display:block;margin-top:6px;font-size:12px;line-height:16px;color:hsl(var(--muted-foreground))}
+.err{display:block;margin-top:6px;font-size:12px;color:hsl(var(--danger-strong));font-weight:500}
+.inp{width:100%;height:40px;border:1px solid hsl(var(--border-strong));border-radius:8px;background:hsl(var(--background));padding:0 12px}
+textarea.inp{height:auto;min-height:84px;padding:10px 12px;resize:vertical}
+.inp:focus{outline:none;border-color:hsl(var(--primary));box-shadow:0 0 0 3px hsl(var(--primary)/.18)}
+.inp.bad{border-color:hsl(var(--danger))}
+.f{min-width:0}
+.f.flash .inp,.f.flash .opts{animation:flash 1.2s}
+@keyframes flash{0%,60%{box-shadow:0 0 0 4px hsl(var(--warning)/.45)}100%{box-shadow:none}}
+.row{display:grid;gap:16px}
+@media (min-width:640px){.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:repeat(3,1fr)}}
+.seg{display:inline-flex;gap:6px}
+.seg button{height:36px;padding:0 14px;border-radius:8px;border:1px solid hsl(var(--border-strong));background:hsl(var(--background));font-weight:500}
+.seg button[aria-checked="true"]{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:transparent;font-weight:600}
+
+/* cartões de escolha (tipo, vencimento, liberação) */
+.opts{display:grid;gap:8px;border-radius:10px}
+@media (min-width:640px){.opts.c2{grid-template-columns:1fr 1fr}}
+.opt-card{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:12px;border-radius:10px;border:1px solid hsl(var(--border-strong));background:hsl(var(--background))}
+.opt-card:hover{background:hsl(var(--muted)/.6)}
+.opt-card[aria-checked="true"]{border-color:hsl(var(--primary));background:hsl(var(--primary)/.06);box-shadow:0 0 0 1px hsl(var(--primary)/.45)}
+.opt-card svg{color:hsl(var(--primary));margin-top:2px}
+.opt-card b{display:block;font-size:14px}
+.opt-card span{display:block;font-size:12px;line-height:16px;color:hsl(var(--muted-foreground));margin-top:2px}
+.opt-card em{display:block;font-style:normal;font-size:12px;line-height:16px;margin-top:6px}
+.radio{width:16px;height:16px;border-radius:50%;border:1.5px solid hsl(var(--border-strong));margin-top:2px;flex-shrink:0;display:grid;place-items:center}
+.opt-card[aria-checked="true"] .radio{border-color:hsl(var(--primary));background:hsl(var(--primary))}
+.opt-card[aria-checked="true"] .radio::after{content:"";width:6px;height:6px;border-radius:50%;background:hsl(var(--primary-foreground))}
+
+/* ── layout: seções + resumo ── */
+.grid{display:grid;gap:20px;align-items:start}
+@media (min-width:1024px){.grid{grid-template-columns:minmax(0,1fr) 320px}}
+.sec{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card));box-shadow:var(--shadow);margin-bottom:16px;scroll-margin-top:60px}
+.sec-h{display:flex;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid hsl(var(--border))}
+.sec-h .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:hsl(var(--muted));flex-shrink:0}
+.sec-h .n.ok{background:hsl(var(--success));color:#fff}
+.sec-h p{margin-top:2px;font-size:13px;color:hsl(var(--muted-foreground))}
+.sec-b{padding:20px;display:grid;gap:20px}
+.ctx{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;padding:8px 10px;border-radius:8px;background:hsl(var(--muted));font-size:12px}
+.ctx b{font-weight:600}
+.note{display:flex;gap:8px;padding:10px 12px;border-radius:8px;font-size:13px}
+.note.warn{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong));border:1px solid hsl(var(--warning)/.35)}
+.note.info{background:hsl(var(--muted))}
+.note svg{margin-top:2px}
+
+/* combobox de cliente */
+.combo{position:relative}
+.combo .list{position:absolute;z-index:20;left:0;right:0;top:44px;max-height:260px;overflow:auto;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:10px;box-shadow:var(--shadow-lg);padding:4px}
+.combo .list button{display:flex;width:100%;text-align:left;justify-content:space-between;gap:10px;padding:8px 10px;border:0;background:transparent;border-radius:6px}
+.combo .list button:hover{background:hsl(var(--muted))}
+
+/* tabela de serviços */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl-wrap{border:1px solid hsl(var(--border));border-radius:10px;overflow:hidden}
+.tbl th{height:38px;padding:0 12px;text-align:left;background:hsl(var(--muted));font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(--muted-foreground))}
+.tbl td{padding:10px 12px;border-top:1px solid hsl(var(--border));vertical-align:top}
+.tbl td+td,.tbl th+th{border-left:1px solid hsl(var(--border)/.7)}
+.tbl td.act,.tbl th.act{width:48px;border-left:0;text-align:right}
+.tbl .desc{color:hsl(var(--muted-foreground));max-width:320px}
+.tbl .desc.miss{color:hsl(var(--danger-strong));font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;background:hsl(var(--info-subtle));color:hsl(var(--info-strong));white-space:nowrap}
+.chip.neu{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.menu{position:absolute;z-index:30;right:8px;margin-top:4px;min-width:150px;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:10px;box-shadow:var(--shadow-lg);padding:4px}
+.menu button{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;background:transparent;border-radius:6px;text-align:left}
+.menu button:hover{background:hsl(var(--muted))}
+.menu .del{color:hsl(var(--danger-strong))}
+.empty{display:grid;place-items:center;text-align:center;gap:8px;padding:28px 16px;border:1.5px dashed hsl(var(--border-strong));border-radius:10px}
+.empty .ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:hsl(var(--muted))}
+@media (max-width:719px){.tbl .c-setor,.tbl .c-pri{display:none}}
+
+/* resumo lateral */
+.sum{position:sticky;top:54px;border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card));box-shadow:var(--shadow)}
+.sum h3{font-size:14px;font-weight:700;padding:14px 16px;border-bottom:1px solid hsl(var(--border))}
+.sum .blk{padding:12px 16px;border-bottom:1px solid hsl(var(--border));display:grid;gap:4px}
+.sum .blk .k{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(--muted-foreground))}
+.sum .line{display:flex;justify-content:space-between;gap:8px}
+.sum .big{font-size:18px;font-weight:700}
+.pend{display:grid;gap:4px}
+.pend button{display:flex;align-items:center;gap:6px;border:0;background:transparent;padding:2px 0;text-align:left;color:hsl(var(--warning-strong));font-size:13px;font-weight:500}
+.pend button:hover{text-decoration:underline}
+.sum .foot{padding:14px 16px;display:grid;gap:8px}
+@media (max-width:1023px){
+  .sum{display:none}
+  .bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:hsl(var(--card));border-top:1px solid hsl(var(--border));box-shadow:0 -6px 20px hsl(222 47% 11%/.08)}
+}
+@media (min-width:1024px){.bar{display:none}}
+.bar .info{flex:1;min-width:0}
+
+/* modal */
+.ov{position:fixed;inset:0;z-index:50;background:hsl(222 47% 11%/.45);display:grid;place-items:center;padding:16px}
+.dlg{width:min(640px,100%);max-height:min(720px,calc(100vh - 32px));display:flex;flex-direction:column;background:hsl(var(--card));border-radius:14px;box-shadow:var(--shadow-lg);border:1px solid hsl(var(--border))}
+.dlg-h{padding:16px 20px;border-bottom:1px solid hsl(var(--border))}
+.steps{display:flex;gap:6px;margin-top:10px;font-size:12px}
+.steps span{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 4px;border-radius:999px;background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.steps span i{font-style:normal;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:hsl(var(--background));font-weight:700}
+.steps span.on{background:hsl(var(--primary)/.12);color:hsl(var(--foreground));font-weight:600}
+.steps span.on i{background:hsl(var(--primary));color:hsl(var(--primary-foreground))}
+.dlg-b{padding:16px 20px;overflow:auto;display:grid;gap:14px}
+.dlg-f{padding:12px 20px;border-top:1px solid hsl(var(--border));display:flex;align-items:center;gap:8px}
+.dlg-f .sp{flex:1}
+.cat-g h4{margin:0 0 6px;font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));display:flex;align-items:center;gap:6px}
+.cat-i{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid transparent}
+.cat-i:hover{background:hsl(var(--muted))}
+.cat-i.on{background:hsl(var(--primary)/.06);border-color:hsl(var(--primary)/.35)}
+.cat-i input{width:16px;height:16px;accent-color:hsl(var(--primary))}
+.cat-i .x{margin-left:auto;font-size:12px}
+.svc{border:1px solid hsl(var(--border));border-radius:10px;padding:14px;display:grid;gap:12px}
+.svc-h{display:flex;align-items:center;gap:8px;font-weight:700}
+.toast{position:fixed;z-index:60;right:16px;bottom:16px;max-width:360px;padding:12px 14px;border-radius:10px;background:hsl(var(--card));border:1px solid hsl(var(--border));box-shadow:var(--shadow-lg);display:flex;gap:10px}
+.toast svg{color:hsl(var(--success));margin-top:2px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="wf" role="toolbar" aria-label="Controles do wireframe">
+  <b>Wireframe · Nova venda (proposta, 13/10/2026)</b>
+  <div class="grp">Tela:
+    <button data-modo="nova" aria-pressed="true">Nova venda</button>
+    <button data-modo="editar" aria-pressed="false">Editar venda</button>
+  </div>
+  <div class="grp">Tema:
+    <button data-tema="light" aria-pressed="false">Claro</button>
+    <button data-tema="dark" aria-pressed="false">Escuro</button>
+  </div>
+  <span class="sp"></span>
+  <button id="wf-exemplo">Preencher exemplo</button>
+  <button id="wf-limpar">Limpar</button>
+</div>
+
+<div class="app">
+  <aside class="side" aria-label="Menu (ilustrativo)">
+    <div class="brand"><span class="sym"></span>ERGOGROUP</div>
+    <div class="g">Vendas</div>
+    <div class="it"><i data-lucide="handshake"></i>Vendas</div>
+    <div class="it on" id="side-nova"><i data-lucide="circle-plus"></i>Nova venda</div>
+    <div class="g">Execução</div>
+    <div class="it"><i data-lucide="list-checks"></i>Meus serviços</div>
+    <div class="it"><i data-lucide="layout-grid"></i>Visão geral</div>
+    <div class="g">Financeiro</div>
+    <div class="it"><i data-lucide="receipt"></i>Cobranças</div>
+  </aside>
+
+  <div class="panel">
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script>
+/* ───────────────────────── Dados de exemplo (fictícios) ───────────────────────── */
+const CLIENTES = [
+  { id: 1, nome: 'Metalúrgica Paraná Ltda', doc: 'CNPJ 12.345.678/0001-90', rep: 'Ana Luiza Ferreira', email: 'ana.ferreira@metalparana.com.br' },
+  { id: 2, nome: 'Transportes Boa Viagem Ltda', doc: 'CNPJ 23.456.789/0001-01', rep: 'Carlos Eduardo Souza', email: 'financeiro@boaviagem.com.br' },
+  { id: 3, nome: 'Construtora Horizonte S.A.', doc: 'CNPJ 34.567.890/0001-12', rep: 'Mariana Silva Costa', email: 'mariana.costa@horizonte.com.br' },
+  { id: 4, nome: 'Laticínios Serra Azul Ltda', doc: 'CNPJ 45.678.901/0001-23', rep: 'Roberto Almeida', email: 'roberto@serraazul.com.br' },
+  { id: 5, nome: 'Clínica Vida Plena Ltda', doc: 'CNPJ 56.789.012/0001-34', rep: '', email: 'contato@vidaplena.com.br' },
+];
+const CATALOGO = [
+  { id: 11, nome: 'PGR — Programa de Gerenciamento de Riscos', setor: 'Segurança do Trabalho' },
+  { id: 12, nome: 'PCMSO', setor: 'Segurança do Trabalho' },
+  { id: 13, nome: 'LTCAT', setor: 'Segurança do Trabalho' },
+  { id: 14, nome: 'Laudo de insalubridade e periculosidade', setor: 'Segurança do Trabalho' },
+  { id: 15, nome: 'Treinamento NR-35', setor: 'Segurança do Trabalho' },
+  { id: 21, nome: 'AET — Análise Ergonômica do Trabalho', setor: 'Ergonomia' },
+  { id: 22, nome: 'AEP — Avaliação Ergonômica Preliminar', setor: 'Ergonomia' },
+  { id: 23, nome: 'Psicossocial', setor: 'Ergonomia' },
+  { id: 31, nome: 'Medição de ruído', setor: 'Higiene Ocupacional' },
+  { id: 32, nome: 'Fit test', setor: 'Higiene Ocupacional' },
+];
+const PRIORIDADES = { baixa: 'Baixa', media: 'Média', alta: 'Alta' };
+const FORMAS = { boleto: 'Boleto', pix: 'PIX', transferencia: 'Transferência', credito: 'Crédito', debito: 'Débito', dinheiro: 'Dinheiro', outro: 'Outro' };
+const HOJE = '2026-10-13';
+
+/* ───────────────────────── Estado ───────────────────────── */
+const vazio = () => ({
+  modo: 'nova',
+  cliente: null, buscaCliente: '', listaCliente: false,
+  data: HOJE, prioridade: 'media',
+  servicos: [], // { chave, catalogo, descricao, prioridade }
+  tipo: 'a_vista', valor: '', parcelas: '', forma: 'boleto',
+  modoVenc: 'data', dataVenc: '', diasVenc: '',
+  liberar: 'conclusao', nfNome: '', nfEmail: '', obs: '',
+  menu: null,
+});
+let S = vazio();
+let chave = 1;
+
+/* ───────────────────────── Utilidades ───────────────────────── */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const I = (n) => `<i data-lucide="${n}"></i>`;
+const icons = () => window.lucide && lucide.createIcons();
+const reais = (n) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dec = (v) => { const l = String(v).replace(/[^\d,.-]/g, ''); if (!l) return 0; const n = Number(l.includes(',') ? l.replace(/\./g, '').replace(',', '.') : l); return isNaN(n) ? 0 : n; };
+const dataBR = (iso) => iso ? iso.split('-').reverse().join('/') : '—';
+const cat = (id) => CATALOGO.find((c) => c.id === id);
+const cli = () => CLIENTES.find((c) => c.id === S.cliente);
+const norm = (t) => t.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+const parcelado = () => S.tipo === 'parcelado';
+const valorParcela = () => { const n = Number(S.parcelas); const v = dec(S.valor); return parcelado() && n >= 2 && v > 0 ? v / n : null; };
+const vencTexto = () => S.modoVenc === 'data' ? (S.dataVenc ? dataBR(S.dataVenc) : null) : (Number(S.diasVenc) ? `${Number(S.diasVenc)} dia${Number(S.diasVenc) > 1 ? 's' : ''} após a nota` : null);
+function datasParcelas() {
+  if (!parcelado() || S.modoVenc !== 'data' || !S.dataVenc) return [];
+  const [a, m, d] = S.dataVenc.split('-').map(Number); const n = Math.min(Number(S.parcelas) || 0, 60);
+  return Array.from({ length: n }, (_, i) => { const ult = new Date(a, m - 1 + i + 1, 0).getDate(); const x = new Date(a, m - 1 + i, Math.min(d, ult)); return x.toLocaleDateString('pt-BR'); });
+}
+function resumoCondicao() {
+  const v = vencTexto();
+  if (parcelado()) { const p = valorParcela(); const t = `Parcelado em ${S.parcelas || '?'}x${p ? ` de ${reais(p)}` : ''} (mensais)`; return v ? `${t}, 1ª parcela ${v}` : t; }
+  return v ? `À vista, vence ${v}` : 'À vista';
+}
+const porSetor = () => S.servicos.reduce((m, s) => { const c = cat(s.catalogo); m[c.setor] = (m[c.setor] || 0) + 1; return m; }, {});
+
+/** O que falta para registrar: cada item leva ao campo. */
+function pendencias() {
+  const p = [];
+  if (!S.cliente) p.push(['f-cliente', 'Escolher o cliente']);
+  if (!S.data) p.push(['f-data', 'Informar a data da venda']);
+  if (S.modo === 'nova') {
+    if (!S.servicos.length) p.push(['f-servicos', 'Adicionar ao menos um serviço']);
+    S.servicos.filter((s) => !s.descricao.trim()).forEach((s) => p.push(['f-servicos', `Descrever “${cat(s.catalogo).nome.split(' — ')[0]}”`]));
+  }
+  if (!(dec(S.valor) > 0)) p.push(['f-valor', 'Informar o valor total']);
+  if (parcelado() && !(Number(S.parcelas) >= 2)) p.push(['f-parcelas', 'Informar o número de parcelas (mínimo 2)']);
+  if (!vencTexto()) p.push(['f-venc', parcelado() ? 'Informar quando vence a 1ª parcela' : 'Informar quando vence']);
+  return p;
+}
+function avisos() {
+  const a = [];
+  if (S.liberar === 'conclusao' && S.modoVenc === 'data' && S.dataVenc) a.push(`O vencimento é uma data fixa (${dataBR(S.dataVenc)}), mas o financeiro só fica sabendo da venda quando todos os serviços terminarem. Se o serviço não terminar antes disso, a cobrança atrasa: escolha “Na venda” ou combine o vencimento em dias após a nota.`);
+  if (S.liberar === 'venda' && S.modoVenc === 'apos_nota') a.push('A nota é emitida logo depois da venda, então o prazo em dias começa a contar já na venda.');
+  return a;
+}
+
+/* ───────────────────────── Página ───────────────────────── */
+function render() {
+  const editar = S.modo === 'editar';
+  $('#side-nova').classList.toggle('on', !editar);
+  const n = editar ? { pag: 2 } : { pag: 3 };
+  $('#main').innerHTML = `
+    <nav class="crumb" aria-label="Você está em"><a href="#">Vendas</a>${I('chevron-right')}${editar ? '<a href="#">OS 682</a>' + I('chevron-right') + '<span>Editar</span>' : '<span>Nova venda</span>'}</nav>
+    <div class="ph">
+      <div class="t">
+        <h1>${editar ? 'Editar venda · OS 682' : 'Nova venda'}</h1>
+        <p>${editar ? 'Dados da venda e pagamento. Serviços novos são acrescentados no resumo da venda.' : 'Registre o que foi vendido e como o cliente vai pagar. Cada setor recebe os seus serviços ao salvar.'}</p>
+      </div>
+      <button class="btn ghost" id="cancelar">Cancelar</button>
+    </div>
+    <div class="grid">
+      <div>
+        ${secCliente()}
+        ${editar ? '' : secServicos()}
+        ${secPagamento(n.pag)}
+      </div>
+      <aside class="sum" id="sum" aria-label="Resumo da venda"></aside>
+    </div>
+    <div class="bar" id="bar"></div>`;
+  bind();
+  renderServicos(); renderPagamentoDinamico(); renderResumo();
+  icons();
+}
+
+function secHead(num, ok, titulo, texto, id) {
+  return `<div class="sec-h"><span class="n ${ok ? 'ok' : ''}" id="${id}">${ok ? I('check') : num}</span><div><h2>${titulo}</h2><p>${texto}</p></div></div>`;
+}
+
+function secCliente() {
+  const c = cli();
+  return `<section class="sec" id="s-cliente">
+    ${secHead(1, false, 'Cliente e venda', 'Para quem foi a venda e quando.', 'n-cliente')}
+    <div class="sec-b">
+      <div class="f" id="f-cliente">
+        <label class="lbl" for="in-cliente">Cliente</label>
+        <div class="combo">
+          <input class="inp" id="in-cliente" autocomplete="off" placeholder="Busque pelo nome ou CNPJ" value="${esc(c ? c.nome : S.buscaCliente)}">
+          <div class="list ${S.listaCliente ? '' : 'hide'}" id="lista-cliente"></div>
+        </div>
+        <div id="ctx-cliente"></div>
+      </div>
+      <div class="row c2">
+        <div class="f" id="f-data">
+          <label class="lbl" for="in-data">Data da venda</label>
+          <input class="inp" id="in-data" type="date" value="${S.data}">
+          <span class="hint">O dia em que o cliente fechou a compra.</span>
+        </div>
+        <div class="f">
+          <span class="lbl">Prioridade</span>
+          <div class="seg" role="radiogroup" aria-label="Prioridade">
+            ${Object.entries(PRIORIDADES).map(([k, v]) => `<button type="button" role="radio" data-pri="${k}" aria-checked="${S.prioridade === k}">${v}</button>`).join('')}
+          </div>
+          <span class="hint">Ajuda os setores a decidir o que fazer primeiro. Cada serviço usa esta, a não ser que tenha uma própria.</span>
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function secServicos() {
+  return `<section class="sec" id="s-servicos">
+    ${secHead(2, false, 'Serviços vendidos', 'Cada serviço vai para o setor que executa. Quem organiza o setor recebe um e-mail ao salvar.', 'n-servicos')}
+    <div class="sec-b"><div class="f" id="f-servicos"><div id="servicos"></div></div></div>
+  </section>`;
+}
+
+function secPagamento(num) {
+  return `<section class="sec" id="s-pagamento">
+    ${secHead(num, false, 'Pagamento', 'O que foi combinado com o cliente. O financeiro usa isto para emitir a nota e lançar a cobrança. Depois de salvo, só quem vê valores enxerga.', 'n-pag')}
+    <div class="sec-b">
+      <div class="f">
+        <span class="lbl">Como o cliente vai pagar</span>
+        <div class="opts c2" role="radiogroup" aria-label="Como o cliente vai pagar">
+          ${optCard('tipo', 'a_vista', S.tipo, 'banknote', 'À vista', 'O cliente paga tudo de uma vez.')}
+          ${optCard('tipo', 'parcelado', S.tipo, 'layers', 'Parcelado', 'Parcelas mensais, sempre no mesmo dia do mês. Serve também para contratos mensais (ex.: gestão em 24x).')}
+        </div>
+      </div>
+      <div class="row c3" id="linha-valores"></div>
+      <div class="f" id="f-venc"></div>
+      <div class="f">
+        <span class="lbl">Quando o financeiro pode faturar</span>
+        <div class="opts c2" role="radiogroup" aria-label="Quando o financeiro pode faturar">
+          ${optCard('liberar', 'venda', S.liberar, null, 'Na venda', 'Assim que você registrar, o financeiro recebe um e-mail e a venda aparece em Cobranças, em “A faturar”.', 'Use quando a nota sai antes ou durante o serviço: pagamento antecipado, entrada, contrato mensal.')}
+          ${optCard('liberar', 'conclusao', S.liberar, null, 'Quando todos os serviços terminarem', 'O financeiro só é avisado quando o último serviço da venda for concluído, de qualquer setor.', 'Use quando a nota sai depois da entrega do serviço.')}
+        </div>
+        <span class="hint">Acontece uma vez só.</span>
+      </div>
+      <div id="avisos"></div>
+      <div class="row c2">
+        <div class="f"><label class="lbl" for="in-nfnome">Para quem enviar a nota <span class="opt">(opcional)</span></label>
+          <input class="inp" id="in-nfnome" value="${esc(S.nfNome)}"><span class="hint">Nome de quem recebe a nota no cliente.</span></div>
+        <div class="f"><label class="lbl" for="in-nfemail">E-mail da nota <span class="opt">(opcional)</span></label>
+          <input class="inp" id="in-nfemail" type="email" value="${esc(S.nfEmail)}"><span class="hint" id="hint-nf">Sugerido a partir do representante do cliente.</span></div>
+      </div>
+      <div class="f"><label class="lbl" for="in-obs">Observações de pagamento e faturamento <span class="opt">(opcional)</span></label>
+        <textarea class="inp" id="in-obs" rows="3" placeholder="Ex.: sinal de 30% já pago via PIX; enviar a nota também para compras@cliente.com.br; pedido de compra 240650.">${esc(S.obs)}</textarea>
+        <span class="hint">O que não cabe nos campos acima: pagamento já recebido, outro e-mail para a nota, nº do pedido de compra do cliente, preço por vida… Só o financeiro e quem vê valores enxergam.</span></div>
+    </div>
+  </section>`;
+}
+
+function optCard(grupo, valor, atual, icone, titulo, texto, extra) {
+  return `<button type="button" class="opt-card" role="radio" data-${grupo}="${valor}" aria-checked="${atual === valor}">
+    ${icone ? I(icone) : '<span class="radio"></span>'}
+    <div><b>${titulo}</b>${texto ? `<span>${texto}</span>` : ''}${extra ? `<em>${extra}</em>` : ''}</div></button>`;
+}
+
+/* ── partes que mudam sem redesenhar a página (para não perder o foco) ── */
+function renderContextoCliente() {
+  const c = cli(); const el = $('#ctx-cliente'); if (!el) return;
+  el.innerHTML = c ? `<div class="ctx">${I('building-2')}<span><b>${esc(c.doc)}</b></span><span>Representante: ${c.rep ? esc(c.rep) : '<span class="muted">não informado</span>'}</span><span class="muted">${esc(c.email)}</span></div>`
+    : '<span class="hint">Depois de escolher, confira o CNPJ e o representante.</span>';
+  icons();
+}
+function renderListaCliente() {
+  const el = $('#lista-cliente'); if (!el) return;
+  const q = norm(S.buscaCliente.trim());
+  const itens = CLIENTES.filter((c) => !q || norm(c.nome + ' ' + c.doc).includes(q));
+  el.innerHTML = itens.length ? itens.map((c) => `<button type="button" data-cli="${c.id}"><span>${esc(c.nome)}</span><span class="muted sm">${esc(c.doc)}</span></button>`).join('') : '<p class="muted sm" style="padding:10px">Nenhum cliente com esse nome.</p>';
+  el.classList.toggle('hide', !S.listaCliente);
+}
+
+function renderServicos() {
+  const el = $('#servicos'); if (!el) return;
+  if (!S.servicos.length) {
+    el.innerHTML = `<div class="empty"><span class="ic">${I('package-plus')}</span><b>Nenhum serviço ainda</b>
+      <span class="muted sm">Escolha no catálogo o que foi vendido. Dá para escolher vários de uma vez.</span>
+      <button class="btn pri" data-add>${I('plus')}Adicionar serviços</button></div>`;
+  } else {
+    el.innerHTML = `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Serviço</th><th class="c-setor">Setor que executa</th><th>O que será feito</th><th class="c-pri">Prioridade</th><th class="act"></th></tr></thead><tbody>
+      ${S.servicos.map((s) => { const c = cat(s.catalogo); return `<tr>
+        <td><b>${esc(c.nome)}</b></td>
+        <td class="c-setor"><span class="chip">${esc(c.setor)}</span></td>
+        <td class="desc ${s.descricao.trim() ? '' : 'miss'}">${s.descricao.trim() ? esc(s.descricao) : 'Falta descrever'}</td>
+        <td class="c-pri">${s.prioridade ? PRIORIDADES[s.prioridade] : `<span class="muted">Da venda (${PRIORIDADES[S.prioridade]})</span>`}</td>
+        <td class="act" style="position:relative"><button class="btn ghost icon" data-menu="${s.chave}" aria-label="Ações do serviço">${I('ellipsis')}</button>
+          ${S.menu === s.chave ? `<div class="menu"><button data-editar="${s.chave}">${I('pencil')}Editar</button><button class="del" data-remover="${s.chave}">${I('trash-2')}Remover</button></div>` : ''}</td>
+      </tr>`; }).join('')}
+      </tbody></table></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn" data-add>${I('plus')}Adicionar serviços</button>
+        <span class="muted sm">${S.servicos.length} serviço${S.servicos.length > 1 ? 's' : ''} · ${Object.keys(porSetor()).length} setor${Object.keys(porSetor()).length > 1 ? 'es' : ''}</span>
+      </div>`;
+  }
+  icons();
+}
+
+function renderPagamentoDinamico() {
+  const lv = $('#linha-valores'); if (!lv) return;
+  const p = valorParcela();
+  lv.innerHTML = `
+    <div class="f" id="f-valor"><label class="lbl" for="in-valor">Valor total (R$)</label>
+      <input class="inp" id="in-valor" inputmode="decimal" placeholder="0,00" value="${esc(S.valor)}">
+      <span class="hint">${parcelado() ? 'A soma de todas as parcelas.' : 'Quanto o cliente paga pela venda.'}</span></div>
+    ${parcelado() ? `<div class="f" id="f-parcelas"><label class="lbl" for="in-parcelas">Número de parcelas</label>
+      <input class="inp" id="in-parcelas" type="number" min="2" value="${esc(S.parcelas)}">
+      <span class="hint" id="hint-parcelas">${p ? `${S.parcelas} parcelas de ${reais(p)}, uma por mês.` : 'Quantas vezes o cliente paga, uma por mês (mínimo 2).'}</span></div>` : ''}
+    <div class="f"><label class="lbl" for="in-forma">Forma de pagamento</label>
+      <select class="inp" id="in-forma">${Object.entries(FORMAS).map(([k, v]) => `<option value="${k}" ${S.forma === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <span class="hint">Como o cliente paga.</span></div>`;
+  const fv = $('#f-venc');
+  fv.innerHTML = `<span class="lbl">${parcelado() ? 'Quando vence a 1ª parcela' : 'Quando vence'}</span>
+    <div class="opts c2" role="radiogroup" aria-label="Vencimento">
+      ${optCard('venc', 'data', S.modoVenc, 'calendar-days', 'Numa data combinada', parcelado() ? 'O dia exato da 1ª parcela. As outras vencem no mesmo dia dos meses seguintes.' : 'O dia exato em que o cliente paga.')}
+      ${optCard('venc', 'apos_nota', S.modoVenc, 'hourglass', 'Dias após a nota', 'Para quando a data depende da entrega: o prazo conta a partir da emissão da nota fiscal. Ex.: “NF após o relatório, vence em 21 dias”.')}
+    </div>
+    <div style="margin-top:10px;max-width:260px">
+      ${S.modoVenc === 'data'
+        ? `<input class="inp" id="in-dvenc" type="date" aria-label="Data do vencimento" value="${S.dataVenc}">`
+        : `<div style="display:flex;align-items:center;gap:8px"><input class="inp" id="in-dias" type="number" min="1" max="365" style="width:96px" aria-label="Dias após a nota" value="${esc(S.diasVenc)}"><span class="muted">dias após a nota</span></div>`}
+    </div>
+    <div id="datas-parcelas"></div>`;
+  renderDatasParcelas(); renderAvisos(); bindPagamento(); icons();
+}
+function renderDatasParcelas() {
+  const el = $('#datas-parcelas'); if (!el) return;
+  const d = datasParcelas();
+  el.innerHTML = d.length ? `<div class="note info" style="margin-top:10px">${I('calendar-range')}<div><b class="sm">Parcelas</b><div class="sm num">${d.slice(0, 6).join(' · ')}${d.length > 6 ? ` · e mais ${d.length - 6} até ${d[d.length - 1]}` : ''}</div><div class="sm muted">Só para conferir: quem controla as parcelas é o sistema financeiro.</div></div></div>` : '';
+  icons();
+}
+function renderAvisos() {
+  const el = $('#avisos'); if (!el) return;
+  el.innerHTML = avisos().map((a) => `<div class="note warn">${I('triangle-alert')}<span>${a}</span></div>`).join('');
+  el.style.display = el.innerHTML ? 'grid' : 'none'; el.style.gap = '8px';
+  icons();
+}
+
+function renderResumo() {
+  const c = cli(); const pend = pendencias(); const editar = S.modo === 'editar'; const v = dec(S.valor);
+  const setores = Object.entries(porSetor());
+  const html = `
+    <h3>Resumo da venda</h3>
+    <div class="blk"><span class="k">Cliente</span><b>${c ? esc(c.nome) : '<span class="muted">—</span>'}</b>
+      <span class="muted sm">${dataBR(S.data)} · prioridade ${PRIORIDADES[S.prioridade].toLowerCase()}</span></div>
+    ${editar ? '' : `<div class="blk"><span class="k">Serviços (${S.servicos.length})</span>
+      ${setores.length ? setores.map(([s, n]) => `<div class="line"><span>${esc(s)}</span><span class="num">${n}</span></div>`).join('') : '<span class="muted sm">Nenhum ainda</span>'}</div>`}
+    <div class="blk"><span class="k">Pagamento</span>
+      <span class="big num">${v ? reais(v) : '—'}</span>
+      <span class="sm">${resumoCondicao()}</span>
+      <span class="muted sm">${FORMAS[S.forma]} · ${S.liberar === 'venda' ? 'libera na venda' : 'libera quando os serviços terminarem'}</span></div>
+    ${pend.length ? `<div class="blk"><span class="k">Falta</span><div class="pend">${pend.map(([id, t]) => `<button data-ir="${id}">${I('circle-alert')}${t}</button>`).join('')}</div></div>` : ''}
+    <div class="foot">
+      <button class="btn pri wide" id="registrar" ${pend.length ? 'disabled' : ''}>${I('check')}${editar ? 'Salvar alterações' : 'Registrar venda'}</button>
+      ${editar ? '' : `<span class="muted sm" style="display:flex;gap:6px">${I('mail')}Cada setor recebe um e-mail com os seus serviços.</span>`}
+    </div>`;
+  $('#sum').innerHTML = html;
+  $('#bar').innerHTML = `<div class="info"><b class="num">${v ? reais(v) : 'Sem valor'}</b><div class="sm ${pend.length ? '' : 'muted'}" style="${pend.length ? 'color:hsl(var(--warning-strong))' : ''}">${pend.length ? `Falta: ${pend[0][1].charAt(0).toLowerCase() + pend[0][1].slice(1)}${pend.length > 1 ? ` e mais ${pend.length - 1}` : ''}` : (editar ? 'Pronto para salvar' : `${S.servicos.length} serviço(s) · pronto para registrar`)}</div></div>
+    <button class="btn pri" id="registrar-bar" ${pend.length ? '' : ''}>${editar ? 'Salvar' : 'Registrar'}</button>`;
+  // Números das seções: viram ✓ quando a parte está completa.
+  const ok = { 'n-cliente': !!S.cliente && !!S.data, 'n-servicos': S.servicos.length && S.servicos.every((s) => s.descricao.trim()), 'n-pag': v > 0 && !!vencTexto() && (!parcelado() || Number(S.parcelas) >= 2) };
+  Object.entries(ok).forEach(([id, bom]) => { const el = $('#' + id); if (!el) return; el.classList.toggle('ok', !!bom); el.innerHTML = bom ? I('check') : (id === 'n-cliente' ? 1 : id === 'n-servicos' ? 2 : (S.modo === 'editar' ? 2 : 3)); });
+  icons();
+}
+
+/* ───────────────────────── Eventos ───────────────────────── */
+function bind() {
+  const inC = $('#in-cliente');
+  inC.addEventListener('focus', () => { S.listaCliente = true; renderListaCliente(); });
+  inC.addEventListener('input', (e) => { S.cliente = null; S.buscaCliente = e.target.value; S.listaCliente = true; renderListaCliente(); renderContextoCliente(); renderResumo(); });
+  $('#lista-cliente').addEventListener('mousedown', (e) => {
+    const b = e.target.closest('[data-cli]'); if (!b) return;
+    S.cliente = Number(b.dataset.cli); S.listaCliente = false; const c = cli();
+    inC.value = c.nome;
+    if (!S.nfNome) S.nfNome = c.rep; if (!S.nfEmail) S.nfEmail = c.email;
+    $('#in-nfnome').value = S.nfNome; $('#in-nfemail').value = S.nfEmail;
+    renderListaCliente(); renderContextoCliente(); renderResumo();
+  });
+  inC.addEventListener('blur', () => setTimeout(() => { S.listaCliente = false; renderListaCliente(); }, 120));
+  renderListaCliente(); renderContextoCliente();
+
+  $('#in-data').addEventListener('input', (e) => { S.data = e.target.value; renderResumo(); });
+  document.querySelectorAll('[data-pri]').forEach((b) => b.addEventListener('click', () => {
+    S.prioridade = b.dataset.pri; document.querySelectorAll('[data-pri]').forEach((x) => x.setAttribute('aria-checked', x === b)); renderServicos(); renderResumo();
+  }));
+  document.querySelectorAll('[data-tipo]').forEach((b) => b.addEventListener('click', () => {
+    S.tipo = b.dataset.tipo; document.querySelectorAll('[data-tipo]').forEach((x) => x.setAttribute('aria-checked', x === b)); renderPagamentoDinamico(); renderResumo();
+  }));
+  document.querySelectorAll('[data-liberar]').forEach((b) => b.addEventListener('click', () => {
+    S.liberar = b.dataset.liberar; document.querySelectorAll('[data-liberar]').forEach((x) => x.setAttribute('aria-checked', x === b)); renderAvisos(); renderResumo();
+  }));
+  $('#in-nfnome').addEventListener('input', (e) => { S.nfNome = e.target.value; });
+  $('#in-nfemail').addEventListener('input', (e) => { S.nfEmail = e.target.value; });
+  $('#in-obs').addEventListener('input', (e) => { S.obs = e.target.value; });
+  $('#cancelar').addEventListener('click', () => toast('Cancelar volta para a lista de Vendas (sem salvar).', 'info'));
+}
+function bindPagamento() {
+  $('#in-valor').addEventListener('input', (e) => { S.valor = e.target.value; atualizaParcela(); renderResumo(); });
+  const p = $('#in-parcelas'); if (p) p.addEventListener('input', (e) => { S.parcelas = e.target.value; atualizaParcela(); renderDatasParcelas(); renderResumo(); });
+  $('#in-forma').addEventListener('change', (e) => { S.forma = e.target.value; renderResumo(); });
+  document.querySelectorAll('[data-venc]').forEach((b) => b.addEventListener('click', () => { S.modoVenc = b.dataset.venc; renderPagamentoDinamico(); renderResumo(); }));
+  const dv = $('#in-dvenc'); if (dv) dv.addEventListener('input', (e) => { S.dataVenc = e.target.value; renderDatasParcelas(); renderAvisos(); renderResumo(); });
+  const di = $('#in-dias'); if (di) di.addEventListener('input', (e) => { S.diasVenc = e.target.value; renderResumo(); });
+}
+function atualizaParcela() {
+  const h = $('#hint-parcelas'); if (!h) return; const p = valorParcela();
+  h.textContent = p ? `${S.parcelas} parcelas de ${reais(p)}, uma por mês.` : 'Quantas vezes o cliente paga, uma por mês (mínimo 2).';
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.closest('[data-add]')) { abrirModal(); return; }
+  const m = t.closest('[data-menu]'); if (m) { const k = Number(m.dataset.menu); S.menu = S.menu === k ? null : k; renderServicos(); return; }
+  const ed = t.closest('[data-editar]'); if (ed) { S.menu = null; renderServicos(); abrirModal(Number(ed.dataset.editar)); return; }
+  const rm = t.closest('[data-remover]'); if (rm) { S.servicos = S.servicos.filter((s) => s.chave !== Number(rm.dataset.remover)); S.menu = null; renderServicos(); renderResumo(); return; }
+  if (S.menu !== null && !t.closest('.menu')) { S.menu = null; renderServicos(); }
+  const ir = t.closest('[data-ir]'); if (ir) { irPara(ir.dataset.ir); return; }
+  if (t.closest('#registrar') || t.closest('#registrar-bar')) { registrar(); return; }
+});
+
+function irPara(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  const foco = el.querySelector('input,select,textarea,button'); if (foco) setTimeout(() => foco.focus({ preventScroll: true }), 300);
+}
+function registrar() {
+  const p = pendencias();
+  if (p.length) { irPara(p[0][0]); return; }
+  toast(S.modo === 'editar' ? 'Venda atualizada · OS 682. Abre o resumo da venda.' : `Venda registrada · OS 683. ${Object.keys(porSetor()).length} setor(es) avisados por e-mail. Abre o resumo da venda.`);
+}
+
+/* ───────────────────────── Modal de serviços (2 etapas) ───────────────────────── */
+let M = null; // { etapa, busca, marcados:Set, itens:[{catalogo,descricao,prioridade}], editando }
+function abrirModal(editandoChave) {
+  if (editandoChave) {
+    const s = S.servicos.find((x) => x.chave === editandoChave);
+    M = { etapa: 2, busca: '', marcados: new Set([s.catalogo]), itens: [{ catalogo: s.catalogo, descricao: s.descricao, prioridade: s.prioridade }], editando: editandoChave, tentou: false };
+  } else {
+    M = { etapa: 1, busca: '', marcados: new Set(), itens: [], editando: null, tentou: false };
+  }
+  renderModal();
+}
+function fecharModal() { M = null; $('#modal-root').innerHTML = ''; }
+function renderModal() {
+  if (!M) return;
+  const editando = !!M.editando;
+  const setoresMarcados = new Set([...M.marcados].map((id) => cat(id).setor));
+  let corpo = '';
+  if (M.etapa === 1) {
+    const q = norm(M.busca.trim());
+    const grupos = {};
+    CATALOGO.filter((c) => !q || norm(c.nome + ' ' + c.setor).includes(q)).forEach((c) => (grupos[c.setor] = grupos[c.setor] || []).push(c));
+    const jaNaVenda = new Set(S.servicos.map((s) => s.catalogo));
+    corpo = `<label class="combo"><input class="inp" id="m-busca" placeholder="Buscar no catálogo (ex.: PGR, ruído)" value="${esc(M.busca)}" autocomplete="off"></label>
+      ${Object.keys(grupos).length ? Object.entries(grupos).map(([setor, itens]) => `<div class="cat-g"><h4>${I('network')}${esc(setor)}</h4>
+        ${itens.map((c) => `<label class="cat-i ${M.marcados.has(c.id) ? 'on' : ''}"><input type="checkbox" data-cat="${c.id}" ${M.marcados.has(c.id) ? 'checked' : ''}><span>${esc(c.nome)}</span>${jaNaVenda.has(c.id) ? '<span class="x chip neu">já na venda</span>' : ''}</label>`).join('')}</div>`).join('')
+        : '<p class="muted">Nenhum serviço ativo no catálogo com esse nome.</p>'}`;
+  } else {
+    corpo = `<p class="muted sm">Descreva o que será feito em cada serviço. É o que o setor vai ler para executar.</p>
+      ${M.itens.map((it, i) => { const c = cat(it.catalogo); const falta = M.tentou && !it.descricao.trim(); return `<div class="svc">
+        <div class="svc-h">${esc(c.nome)}<span class="chip" style="margin-left:auto">vai para ${esc(c.setor)}</span></div>
+        <div class="f"><label class="lbl" for="m-desc-${i}">O que será feito</label>
+          <textarea class="inp ${falta ? 'bad' : ''}" id="m-desc-${i}" data-desc="${i}" rows="2" placeholder="Ex.: fábrica e depósito, 40 colaboradores, visita na semana de 20/10">${esc(it.descricao)}</textarea>
+          ${falta ? '<span class="err">Descreva o serviço: local, escopo, quantidade.</span>' : '<span class="hint">Local, escopo, quantidade, contato no cliente. Não coloque valores aqui: eles vão no pagamento, que o setor não vê.</span>'}</div>
+        <div class="f" style="max-width:220px"><label class="lbl" for="m-pri-${i}">Prioridade</label>
+          <select class="inp" id="m-pri-${i}" data-pri-item="${i}"><option value="">Da venda (${PRIORIDADES[S.prioridade]})</option>${Object.entries(PRIORIDADES).map(([k, v]) => `<option value="${k}" ${it.prioridade === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      </div>`; }).join('')}`;
+  }
+  const n = M.marcados.size;
+  $('#modal-root').innerHTML = `<div class="ov" id="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="m-tit">
+    <div class="dlg-h"><div style="display:flex;align-items:center;gap:8px"><h2 id="m-tit" style="flex:1">${editando ? 'Editar serviço' : 'Adicionar serviços'}</h2><button class="btn ghost icon" id="m-fechar" aria-label="Fechar">${I('x')}</button></div>
+      ${editando ? '' : `<div class="steps"><span class="${M.etapa === 1 ? 'on' : ''}"><i>1</i>Escolher</span><span class="${M.etapa === 2 ? 'on' : ''}"><i>2</i>Descrever</span></div>`}</div>
+    <div class="dlg-b">${corpo}</div>
+    <div class="dlg-f">
+      ${M.etapa === 1
+        ? `<span class="muted sm">${n ? `${n} serviço${n > 1 ? 's' : ''} · vão para ${setoresMarcados.size} setor${setoresMarcados.size > 1 ? 'es' : ''}` : 'Marque um ou mais serviços'}</span><span class="sp"></span>
+           <button class="btn ghost" id="m-cancelar">Cancelar</button><button class="btn pri" id="m-continuar" ${n ? '' : 'disabled'}>Continuar${I('arrow-right')}</button>`
+        : `${editando ? '' : `<button class="btn" id="m-voltar">${I('arrow-left')}Voltar</button>`}<span class="sp"></span>
+           <button class="btn ghost" id="m-cancelar">Cancelar</button><button class="btn pri" id="m-concluir">${I('check')}${editando ? 'Salvar' : `Adicionar ${M.itens.length} serviço${M.itens.length > 1 ? 's' : ''}`}</button>`}
+    </div></div></div>`;
+  icons();
+  $('#ov').addEventListener('mousedown', (e) => { if (e.target.id === 'ov') fecharModal(); });
+  $('#m-fechar').addEventListener('click', fecharModal);
+  $('#m-cancelar').addEventListener('click', fecharModal);
+  if (M.etapa === 1) {
+    const b = $('#m-busca'); b.focus(); b.setSelectionRange(b.value.length, b.value.length);
+    b.addEventListener('input', (e) => { M.busca = e.target.value; renderModal(); });
+    document.querySelectorAll('[data-cat]').forEach((cb) => cb.addEventListener('change', () => { const id = Number(cb.dataset.cat); cb.checked ? M.marcados.add(id) : M.marcados.delete(id); renderModal(); }));
+    $('#m-continuar').addEventListener('click', () => {
+      const anteriores = Object.fromEntries(M.itens.map((it) => [it.catalogo, it]));
+      M.itens = [...M.marcados].map((id) => anteriores[id] || { catalogo: id, descricao: '', prioridade: '' });
+      M.etapa = 2; renderModal();
+    });
+  } else {
+    document.querySelectorAll('[data-desc]').forEach((t) => t.addEventListener('input', () => { M.itens[Number(t.dataset.desc)].descricao = t.value; }));
+    document.querySelectorAll('[data-pri-item]').forEach((s) => s.addEventListener('change', () => { M.itens[Number(s.dataset.priItem)].prioridade = s.value; }));
+    const v = $('#m-voltar'); if (v) v.addEventListener('click', () => { M.etapa = 1; renderModal(); });
+    $('#m-concluir').addEventListener('click', () => {
+      if (M.itens.some((it) => !it.descricao.trim())) { M.tentou = true; renderModal(); const f = document.querySelector('.inp.bad'); if (f) f.focus(); return; }
+      if (M.editando) {
+        const s = S.servicos.find((x) => x.chave === M.editando); Object.assign(s, M.itens[0]);
+      } else {
+        M.itens.forEach((it) => S.servicos.push({ chave: chave++, ...it }));
+      }
+      const n = M.itens.length; const ed = !!M.editando; fecharModal(); renderServicos(); renderResumo();
+      toast(ed ? 'Serviço atualizado.' : `${n} serviço${n > 1 ? 's' : ''} adicionado${n > 1 ? 's' : ''}.`);
+    });
+  }
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && M) fecharModal(); });
+
+/* ───────────────────────── Aviso ───────────────────────── */
+let tt;
+function toast(texto, tipo) {
+  clearTimeout(tt);
+  $('#toast-root').innerHTML = `<div class="toast" role="status">${I(tipo === 'info' ? 'info' : 'circle-check')}<span>${esc(texto)}</span></div>`;
+  icons(); tt = setTimeout(() => ($('#toast-root').innerHTML = ''), 3800);
+}
+
+/* ───────────────────────── Barra do wireframe ───────────────────────── */
+function exemplo(editar) {
+  S = { ...vazio(), modo: editar ? 'editar' : 'nova', cliente: 1, data: '2026-10-10', prioridade: 'alta',
+    servicos: editar ? [] : [
+      { chave: chave++, catalogo: 11, descricao: 'Fábrica e depósito, 40 colaboradores', prioridade: '' },
+      { chave: chave++, catalogo: 13, descricao: '2 GHEs, com medição de ruído', prioridade: '' },
+      { chave: chave++, catalogo: 21, descricao: '', prioridade: 'media' },
+    ],
+    tipo: 'parcelado', valor: '9.500,00', parcelas: '6', forma: 'boleto', modoVenc: 'data', dataVenc: '2026-11-10',
+    liberar: 'conclusao', nfNome: 'Ana Luiza Ferreira', nfEmail: 'ana.ferreira@metalparana.com.br',
+    obs: editar ? 'Sinal de 30% já pago via PIX em 08/10.' : '' };
+  render();
+}
+document.querySelectorAll('[data-modo]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-modo]').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  b.dataset.modo === 'editar' ? exemplo(true) : (S = vazio(), render());
+}));
+document.querySelectorAll('[data-tema]').forEach((b) => b.addEventListener('click', () => {
+  document.documentElement.dataset.theme = b.dataset.tema;
+  document.querySelectorAll('[data-tema]').forEach((x) => x.setAttribute('aria-pressed', x === b));
+}));
+$('#wf-exemplo').addEventListener('click', () => exemplo(S.modo === 'editar'));
+$('#wf-limpar').addEventListener('click', () => { const modo = S.modo; S = vazio(); S.modo = modo; render(); });
+
+render();
+</script>
+</body>
+</html>

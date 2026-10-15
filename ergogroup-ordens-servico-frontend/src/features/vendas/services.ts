@@ -1,4 +1,5 @@
 import api from '@/services/api';
+import type { ComAvisos } from '@/lib/avisos';
 import { comoLista, type ComValoresOcultaveis, type Esquemas, type FiltrosDe } from '@/api/tipos';
 
 /**
@@ -54,11 +55,11 @@ export const getResumoDaVenda = async (id: number): Promise<ResumoDaVenda> => {
 };
 
 /**
- * Validações por tipo de condição (400 por campo): parcelado exige `quantidade_parcelas` ≥ 2 e
- * `data_acordada_cobranca`; recorrente exige `quantidade_parcelas` (meses), `dia_vencimento` e `valor_mensal`.
+ * Validações da condição (400 por campo): o vencimento é obrigatório e é `data_acordada_cobranca` ou
+ * `vencimento_dias_apos_nota`, nunca os dois; o parcelado exige `quantidade_parcelas` ≥ 2.
  */
-export const criarVenda = async (payload: NovaVendaPayload): Promise<Venda> => {
-  const { data } = await api.post<Venda>(`${ORDENS}/`, payload);
+export const criarVenda = async (payload: NovaVendaPayload): Promise<ComAvisos<Venda>> => {
+  const { data } = await api.post<ComAvisos<Venda>>(`${ORDENS}/`, payload);
   return data;
 };
 
@@ -68,8 +69,8 @@ export const editarVenda = async (id: number, payload: EdicaoDaVendaPayload): Pr
 };
 
 /** Serviço acrescentado a uma venda existente: avisa só o setor dele. */
-export const acrescentarServico = async (payload: NovoServicoPayload): Promise<Esquemas['Servico']> => {
-  const { data } = await api.post<Esquemas['Servico']>('/api/ordens-servico/servicos/', payload);
+export const acrescentarServico = async (payload: NovoServicoPayload): Promise<ComAvisos<Esquemas['Servico']>> => {
+  const { data } = await api.post<ComAvisos<Esquemas['Servico']>>('/api/ordens-servico/servicos/', payload);
   return data;
 };
 
