@@ -25,3 +25,6 @@ dist-ssr
 
 .env.development
 .env.production
+
+# Cache do TypeScript (tsc -b)
+*.tsbuildinfo
