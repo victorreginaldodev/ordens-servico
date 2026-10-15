@@ -1,5 +1,5 @@
 import api from '@/services/api';
-import { isPaginatedResponse, PageResult, toPageResult } from '@/services/pagination';
+import type { Esquemas } from '@/api/tipos';
 
 const endpoint = '/api/clientes/clientes/';
 
@@ -52,9 +52,7 @@ type ClienteApi = {
   contato_representante?: string;
 };
 
-// Shape retornado pelo endpoint de LISTAGEM (`ClienteList` no schema) — bem mais
-// enxuto que o detalhe: sem tipo_inscricao, observação, cobrança de revisão,
-// data de criação e campos de representante.
+// Shape retornado pelo endpoint de LISTAGEM (`ClienteList` no schema), no que `getClients` usa.
 type ClienteListApi = {
   id: string | number;
   nome: string;
@@ -105,45 +103,21 @@ export const getClients = async (): Promise<Client[]> => {
     .sort((a, b) => a.name.localeCompare(b.name));
 };
 
-export type ClientsPageParams = {
-  page?: number;
-  pageSize?: number;
-  q?: string;
+/**
+ * Linha da listagem de clientes (`ClienteList` no schema). Desde 14/10/2026 traz tudo o que a
+ * tabela mostra (documento, representante, cobrança de revisão, data de criação): uma requisição
+ * para a tela inteira, sem buscar o detalhe de cada cliente.
+ */
+export type ClienteDaLista = Esquemas['ClienteList'];
+
+export const getClientesDaLista = async (): Promise<ClienteDaLista[]> => {
+  const { data } = await api.get<ClienteDaLista[] | { results: ClienteDaLista[] }>(endpoint);
+  return Array.isArray(data) ? data : data?.results ?? [];
 };
 
-export const getClientsPage = async (
-  params: ClientsPageParams = {},
-): Promise<PageResult<Client>> => {
-  const page = params.page ?? 1;
-  const pageSize = params.pageSize ?? 10;
-  const queryParams: Record<string, string> = {};
-  if (params.q) queryParams.q = params.q;
-
-  const { data } = await api.get(endpoint, { params: queryParams });
-
-  // O endpoint de listagem usa o serializer reduzido (`ClienteList`) e, pelo
-  // schema, devolve um array simples — sem paginação nem parâmetros page/page_size
-  // documentados. Paginamos no cliente e buscamos o detalhe de cada item da
-  // página atual para exibir corretamente campos como cobrança de revisão.
-  if (isPaginatedResponse<ClienteListApi>(data)) {
-    const pageItems = await Promise.all(data.results.map((raw) => getClient(String(raw.id))));
-    return { ...toPageResult(data, page, pageSize), items: pageItems };
-  }
-
-  const all: ClienteListApi[] = Array.isArray(data) ? data : [];
-  const start = (page - 1) * pageSize;
-  const pageStubs = all.slice(start, start + pageSize);
-  const items = await Promise.all(pageStubs.map((raw) => getClient(String(raw.id))));
-
-  return {
-    items,
-    count: all.length,
-    page,
-    pageSize,
-    totalPages: Math.max(1, Math.ceil(all.length / pageSize)),
-    next: null,
-    previous: null,
-  };
+export const mudarAtivoCliente = async (id: number, ativo: boolean): Promise<Client> => {
+  const { data } = await api.patch<ClienteApi>(`${endpoint}${id}/`, { ativo });
+  return toClient(data);
 };
 
 export const getClient = async (id: string): Promise<Client> => {

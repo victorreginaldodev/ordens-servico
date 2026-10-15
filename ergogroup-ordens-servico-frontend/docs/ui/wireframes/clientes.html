@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe — Clientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Tokens propostos em docs/ui/design-system.md §2 */
+:root{
+  --background:0 0% 100%;--foreground:222 47% 11%;--card:0 0% 100%;
+  --muted:210 40% 96%;--muted-foreground:215 20% 42%;--border:214 32% 91%;
+  --accent:210 40% 96%;--primary:173 58% 31%;--primary-foreground:0 0% 100%;
+  --sidebar:210 40% 98%;
+  --success-subtle:138 76% 96%;--success-strong:142 72% 26%;
+  --warning-subtle:48 96% 94%;--warning-strong:26 90% 33%;
+  --danger-subtle:0 86% 96%;--danger-strong:0 70% 40%;
+  --info-subtle:214 95% 96%;--info-strong:224 70% 42%;
+}
+[data-theme="dark"]{
+  --background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 18%;--muted-foreground:215 20% 62%;--border:222 30% 18%;
+  --accent:222 30% 14%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --sidebar:222 47% 7%;
+  --success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:hsl(var(--background));color:hsl(var(--foreground));font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+svg.lucide{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+.muted{color:hsl(var(--muted-foreground))}
+.num{font-variant-numeric:tabular-nums}
+
+/* Barra do wireframe (fora do produto) */
+.wf{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:8px 16px;background:repeating-linear-gradient(45deg,hsl(var(--muted)),hsl(var(--muted)) 6px,hsl(var(--background)) 6px,hsl(var(--background)) 12px);border-bottom:1px dashed hsl(var(--muted-foreground)/.5);font-size:12px}
+.wf b{font-weight:600}
+.seg{display:inline-flex;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));padding:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:hsl(var(--muted-foreground))}
+.seg button.on{background:hsl(var(--foreground));color:hsl(var(--background))}
+
+/* Shell */
+.app{display:flex;min-height:calc(100vh - 41px)}
+.sb{width:240px;flex-shrink:0;background:hsl(var(--sidebar));border-right:1px solid hsl(var(--border));display:flex;flex-direction:column;position:sticky;top:0;height:calc(100vh - 41px);transition:width .2s}
+.sb.col{width:64px}
+.sb-top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;border-bottom:1px solid hsl(var(--border))}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden}
+.logo-mark{width:28px;height:28px;border-radius:8px;background:hsl(var(--primary));color:hsl(var(--primary-foreground));display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.logo span.g{color:hsl(var(--primary))}
+.icon-btn{width:32px;height:32px;display:grid;place-items:center;border:0;background:none;border-radius:8px;cursor:pointer;color:hsl(var(--muted-foreground))}
+.icon-btn:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.nav{flex:1;overflow-y:auto;padding:8px}
+.grp{font-size:11px;line-height:16px;font-weight:600;color:hsl(var(--muted-foreground));padding:16px 8px 6px;white-space:nowrap}
+.sb.col .grp{visibility:hidden;padding:8px 0 4px;height:12px}
+.it{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:8px;color:hsl(var(--muted-foreground));font-weight:500;cursor:pointer;white-space:nowrap;overflow:hidden;text-decoration:none}
+.it:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.it.on{background:hsl(var(--card));color:hsl(var(--foreground));box-shadow:0 0 0 1px hsl(var(--border)),0 1px 2px hsl(0 0% 0%/.04)}
+.it.on svg{color:hsl(var(--primary))}
+.sb.col .it{justify-content:center;padding:0}
+.sb.col .it span,.sb.col .logo span,.sb.col .who{display:none}
+.sb.col .sb-top{justify-content:center;padding:0}
+.sb.col .sb-top .logo{display:none}
+.sb-foot{border-top:1px solid hsl(var(--border));padding:8px}
+.me{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;cursor:pointer}
+.me:hover{background:hsl(var(--accent))}
+.av{width:32px;height:32px;border-radius:50%;background:hsl(var(--primary)/.15);color:hsl(var(--primary));display:grid;place-items:center;font-size:12px;font-weight:600;flex-shrink:0}
+.who{min-width:0;flex:1;line-height:18px}
+.who .n{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .r{font-size:12px;color:hsl(var(--muted-foreground))}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.hd{height:56px;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid hsl(var(--border));background:hsl(var(--background));position:sticky;top:0;z-index:20}
+.crumb{display:flex;align-items:center;gap:6px;color:hsl(var(--muted-foreground));white-space:nowrap}
+.crumb b{color:hsl(var(--foreground));font-weight:600}
+.crumb svg{width:14px;height:14px;opacity:.6}
+.gsearch{margin-left:auto;display:flex;align-items:center;gap:8px;width:300px;height:36px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:10px;color:hsl(var(--muted-foreground));background:hsl(var(--muted)/.4);cursor:text}
+.kbd{margin-left:auto;font-size:11px;border:1px solid hsl(var(--border));border-radius:4px;padding:0 5px;background:hsl(var(--card))}
+.content{padding:24px 32px 40px}
+
+/* PageHeader */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+.ph h1{font-size:24px;line-height:32px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.count{font-size:12px;font-weight:600;line-height:16px;padding:2px 8px;border-radius:999px;background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.ph p{color:hsl(var(--muted-foreground));margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:10px;border:1px solid hsl(var(--border));background:hsl(var(--card));font-weight:500;cursor:pointer;white-space:nowrap}
+.btn:hover{background:hsl(var(--accent))}
+.btn.pri{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:transparent;box-shadow:0 1px 2px hsl(0 0% 0%/.08)}
+.btn.pri:hover{background:hsl(var(--primary)/.9)}
+.btn.sm{height:32px;padding:0 10px;font-size:13px}
+.btn.dash{border-style:dashed;color:hsl(var(--muted-foreground))}
+.btn.dash.act{border-style:solid;color:hsl(var(--foreground))}
+
+/* Tabs + visões */
+.tabs{display:flex;gap:4px;border-bottom:1px solid hsl(var(--border));margin-bottom:16px}
+.tabs button{border:0;background:none;padding:8px 12px;font-weight:500;color:hsl(var(--muted-foreground));cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:hsl(var(--foreground));border-color:hsl(var(--primary))}
+.views{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.views button{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:8px;border:0;background:none;font-weight:500;color:hsl(var(--muted-foreground));cursor:pointer}
+.views button:hover{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.views button.on{background:hsl(var(--muted));color:hsl(var(--foreground))}
+.views .c{font-size:12px;font-variant-numeric:tabular-nums;opacity:.8}
+.views button.alert .c{color:hsl(var(--danger-strong));opacity:1;font-weight:600}
+
+/* Moldura da tabela */
+.frame{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--card));overflow:hidden}
+.tb{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid hsl(var(--border));flex-wrap:wrap}
+.tsearch{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:8px;width:320px;max-width:100%}
+.tsearch input{border:0;outline:0;background:none;flex:1;min-width:0;font-size:13px}
+.tsearch:focus-within{box-shadow:0 0 0 2px hsl(var(--primary)/.35);border-color:hsl(var(--primary))}
+.tb .sp{flex:1}
+.chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid hsl(var(--border));background:hsl(var(--muted)/.25);font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 4px 0 8px;border-radius:6px;background:hsl(var(--card));border:1px solid hsl(var(--border));font-weight:500}
+.chip button{border:0;background:none;cursor:pointer;display:grid;place-items:center;color:hsl(var(--muted-foreground));border-radius:4px}
+.chip svg{width:12px;height:12px}
+.link{border:0;background:none;color:hsl(var(--primary));font-weight:500;cursor:pointer;font-size:12px}
+.pop{position:absolute;z-index:50;min-width:220px;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:10px;box-shadow:0 8px 24px hsl(0 0% 0%/.12);padding:4px}
+.pop label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}
+.pop label:hover{background:hsl(var(--accent))}
+.pop label .c{margin-left:auto;font-size:12px;color:hsl(var(--muted-foreground));font-variant-numeric:tabular-nums}
+.pop .h{font-size:11px;font-weight:600;color:hsl(var(--muted-foreground));padding:6px 8px 2px}
+.pop input{accent-color:hsl(var(--primary))}
+
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:56px;z-index:5;background:hsl(var(--muted)/.4);backdrop-filter:blur(6px);height:40px;padding:0 12px;text-align:left;font-size:12px;font-weight:500;color:hsl(var(--muted-foreground));border-bottom:1px solid hsl(var(--border));white-space:nowrap}
+[data-theme="dark"] thead th{background:hsl(222 40% 10%)}
+thead th.sortable{cursor:pointer;user-select:none}
+thead th.sortable:hover{color:hsl(var(--foreground))}
+thead th .h{display:inline-flex;align-items:center;gap:4px}
+thead th svg{width:14px;height:14px;opacity:.5}
+thead th.sorted{color:hsl(var(--foreground))}
+thead th.sorted svg{opacity:1}
+th.r,td.r{text-align:right}
+th.r .h{flex-direction:row-reverse}
+tbody tr{border-bottom:1px solid hsl(var(--border));cursor:pointer;outline:none}
+tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:hsl(var(--muted)/.5)}
+tbody tr:focus-visible{box-shadow:inset 0 0 0 2px hsl(var(--primary))}
+tbody tr.inactive{opacity:.65}
+td{padding:10px 12px;vertical-align:middle;white-space:nowrap}
+.dense td{padding-top:6px;padding-bottom:6px}
+.reg .t{font-weight:500;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.reg .s{font-size:12px;line-height:16px;color:hsl(var(--muted-foreground));font-variant-numeric:tabular-nums;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.dense .reg{display:flex;align-items:baseline;gap:10px}
+.dense .reg .t{max-width:280px}
+.badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 7px;border-radius:999px;font-size:12px;font-weight:500}
+.badge svg{width:14px;height:14px}
+.b-warning{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.b-info{background:hsl(var(--info-subtle));color:hsl(var(--info-strong))}
+.b-success{background:hsl(var(--success-subtle));color:hsl(var(--success-strong))}
+.b-danger{background:hsl(var(--danger-subtle));color:hsl(var(--danger-strong))}
+.b-neutral{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.prio{display:inline-flex;align-items:center;gap:4px}
+.prio.alta{color:hsl(var(--danger-strong));font-weight:500}
+.prio.media{color:hsl(var(--warning-strong))}
+.prio.baixa{color:hsl(var(--muted-foreground))}
+.prazo .s{font-size:12px;line-height:16px;display:flex;align-items:center;gap:4px}
+.prazo .s svg{width:12px;height:12px}
+.dense .prazo{display:flex;gap:8px;align-items:baseline}
+.late{color:hsl(var(--danger-strong));font-weight:500}
+.soon{color:hsl(var(--warning-strong))}
+.pessoa{display:inline-flex;align-items:center;gap:8px}
+.pessoa i{width:20px;height:20px;border-radius:50%;font-style:normal;font-size:10px;font-weight:600;display:grid;place-items:center;background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.bool{display:inline-flex;align-items:center;gap:4px}
+.bool svg{width:14px;height:14px;color:hsl(var(--primary))}
+.nivel{display:inline-flex;align-items:center;gap:8px}
+.nivel .bars{display:inline-flex;gap:2px}
+.nivel .bars b{width:4px;height:12px;border-radius:1px;background:hsl(var(--border))}
+.nivel .bars b.f{background:hsl(var(--foreground)/.7)}
+.money{font-weight:500;font-variant-numeric:tabular-nums}
+.act{width:28px;height:28px;display:grid;place-items:center;border:0;background:none;border-radius:6px;color:hsl(var(--muted-foreground));opacity:.5;cursor:pointer}
+tr:hover .act,tr:focus-within .act{opacity:1}
+.act:hover{background:hsl(var(--accent))}
+.dash-v{color:hsl(var(--muted-foreground))}
+
+.ft{display:flex;align-items:center;gap:16px;padding:10px 12px;border-top:1px solid hsl(var(--border));font-size:12px;color:hsl(var(--muted-foreground));flex-wrap:wrap}
+.ft .sp{flex:1}
+.ft select{height:28px;border:1px solid hsl(var(--border));border-radius:6px;background:hsl(var(--card));padding:0 6px;font-size:12px}
+.pg{display:flex;gap:2px;align-items:center}
+.pg button{min-width:28px;height:28px;border:0;background:none;border-radius:6px;cursor:pointer;font-size:12px;font-variant-numeric:tabular-nums;color:hsl(var(--foreground));display:grid;place-items:center}
+.pg button:hover:not(:disabled){background:hsl(var(--accent))}
+.pg button.on{background:hsl(var(--foreground));color:hsl(var(--background));font-weight:600}
+.pg button:disabled{opacity:.35;cursor:default}
+.total{color:hsl(var(--foreground));font-weight:600}
+.empty{padding:56px 16px;text-align:center}
+.empty svg{width:32px;height:32px;color:hsl(var(--muted-foreground));margin-bottom:12px}
+.empty h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.empty p{color:hsl(var(--muted-foreground));margin-bottom:16px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:hsl(var(--foreground));color:hsl(var(--background));padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:1279px){.p2{display:none}}
+/* Específico deste wireframe */
+.content{max-width:1440px}
+.prop{border:1px dashed hsl(var(--primary)/.6);background:hsl(var(--primary)/.04);border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:13px;line-height:20px}
+.prop h2{font-size:15px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.prop .tag{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.prop .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px 28px;margin-top:12px}
+.prop h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(--muted-foreground));margin:6px 0 4px}
+.prop ul{padding-left:18px}
+.prop li{margin:2px 0}
+.prop code{font-size:12px;background:hsl(var(--muted));padding:0 4px;border-radius:4px}
+.prop .warn{margin-top:12px;padding:10px 12px;border-radius:8px;background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+thead th{top:0;text-transform:uppercase;letter-spacing:.03em;font-weight:600;background:hsl(var(--muted)/.6)}
+td+td:not(.a),th+th:not(.a){border-left:1px solid hsl(var(--border)/.7)}
+.t-cell{display:inline-block;max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-weight:500}
+.mail{color:hsl(var(--primary));text-decoration:none}
+.mail:hover{text-decoration:underline}
+.relw{position:relative;display:inline-block}
+.menu{position:absolute;right:0;z-index:60;min-width:220px;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:10px;box-shadow:0 8px 24px hsl(0 0% 0%/.12);padding:4px;text-align:left}
+.menu button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:7px 8px;border-radius:6px;cursor:pointer;font-size:13px}
+.menu button:hover{background:hsl(var(--accent))}
+.menu button.d{color:hsl(var(--danger-strong))}
+.menu hr{border:0;border-top:1px solid hsl(var(--border));margin:4px 0}
+.ov{position:fixed;inset:0;background:hsl(0 0% 0%/.45);display:none;align-items:center;justify-content:center;z-index:100}
+.ov.show{display:flex}
+.modal{width:440px;max-width:calc(100vw - 32px);background:hsl(var(--card));border-radius:14px;box-shadow:0 20px 50px hsl(0 0% 0%/.25);padding:20px}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.modal p{color:hsl(var(--muted-foreground));margin-bottom:16px}
+.modal .step{font-size:11px;font-weight:600;color:hsl(var(--muted-foreground));margin-bottom:6px}
+.modal .row{display:flex;justify-content:flex-end;gap:8px}
+.btn.dan{background:hsl(var(--danger-strong));color:#fff;border-color:transparent}
+.scroll{overflow:visible}
+</style>
+</head>
+<body>
+
+<div class="wf">
+  <b>Wireframe · Clientes</b>
+  <span>Perfil <span class="seg" id="wf-perfil"><button class="on" data-v="g">Com clientes.gerenciar</button><button data-v="l">Sem a permissão</button></span></span>
+  <span>Densidade <span class="seg" id="wf-dens"><button class="on" data-v="c">Confortável</button><button data-v="d">Compacta</button></span></span>
+  <span class="muted">Dados fictícios · padrão: docs/ui/design-system-tabelas.md e Catálogo (CatalogListPage)</span>
+</div>
+
+<main class="content" id="page">
+
+  <section class="prop">
+    <h2>Proposta: listagem de clientes no DataTable <span class="tag">proposta, a aprovar</span></h2>
+    <div class="muted">Mesmo padrão de Vendas, Painel do setor, Meus serviços e Catálogo. O formulário de cliente (<code>/clientes/new</code> e <code>/clientes/:id/edit</code>) não muda.</div>
+    <div class="grid">
+      <div>
+        <h3>Colunas (uma informação por coluna)</h3>
+        <ul>
+          <li><b>Cliente</b>: nome como foi cadastrado, sem caixa alta forçada (P1)</li>
+          <li><b>Documento</b>: tipo + número formatado, <code>CNPJ 12.345.678/0001-90</code> (P1)</li>
+          <li><b>Tipo</b>: Gestão · Avulso · Fornecedor (P1)</li>
+          <li><b>Representante</b>: nome completo (P1)</li>
+          <li><b>E-mail do representante</b>: clicável (<code>mailto:</code>), sem abrir a linha (P2)</li>
+          <li><b>Contato do representante</b>: telefone (P3, liga pelo menu Colunas)</li>
+          <li><b>Setor do representante</b> (P3)</li>
+          <li><b>Cliente desde</b>: data (P2)</li>
+          <li><b>Cobra revisão</b>: ✓ Sim ou — (P2)</li>
+          <li><b>Situação</b>: Ativo / Inativo; linha inativa esmaecida (P1)</li>
+          <li><b>⋯</b> menu da linha</li>
+        </ul>
+        <div class="muted" style="margin-top:4px">P2 some abaixo de 1280px; P3 começa oculta. Todas ordenáveis; padrão nome A–Z. 50 linhas por página (25/50/100).</div>
+      </div>
+      <div>
+        <h3>Visões</h3>
+        <ul><li><b>Ativos</b> (padrão) · Inativos · Todos, com contagem</li></ul>
+        <h3>Filtros</h3>
+        <ul>
+          <li><b>Tipo</b> (Gestão, Avulso, Fornecedor)</li>
+          <li><b>Documento</b> (CNPJ, CPF, CEI, CNO, CAEPF)</li>
+          <li><b>Cobra revisão</b> (Sim, Não)</li>
+          <li><b>Representante</b> (Com representante, Sem representante)</li>
+          <li><b>Cliente desde</b> (período)</li>
+        </ul>
+        <h3>Busca</h3>
+        <ul><li>“Buscar por nome, documento ou representante”: nome, número do documento (com ou sem pontuação), nome e e-mail do representante. Ignora acentos e caixa; atalho <code>/</code>.</li></ul>
+        <div class="muted">Busca, visão, filtros, ordem e página ficam na URL: voltar do formulário mantém tudo.</div>
+      </div>
+      <div>
+        <h3>Clique na linha</h3>
+        <ul>
+          <li>Com <code>clientes.gerenciar</code>: abre a edição (<code>/clientes/:id/edit</code>), como hoje; Ctrl+clique abre em nova aba.</li>
+          <li>Sem a permissão: a linha não abre nada (não há tela de detalhe do cliente); fica o menu ⋯ com “Ver vendas do cliente”.</li>
+        </ul>
+        <h3>Ações por linha (menu ⋯)</h3>
+        <ul>
+          <li><b>Editar</b> (gerenciar)</li>
+          <li><b>Ver vendas do cliente</b>: abre Vendas filtrada pelo cliente (<code>/vendas?view=todas&amp;f.cliente=…</code>)</li>
+          <li><b>Desativar</b> / <b>Reativar</b> (gerenciar), direto, com aviso</li>
+          <li><b>Excluir</b> (gerenciar), agora <b>com confirmação</b> em modal. Se o cliente tem vendas (o backend recusa com 409), o mesmo modal passa à etapa “Desativar em vez de excluir”.</li>
+        </ul>
+        <h3>Cabeçalho</h3>
+        <ul><li>“Clientes” + contagem de ativos; botão <b>Novo cliente</b> só com <code>clientes.gerenciar</code>.</li></ul>
+      </div>
+    </div>
+    <div class="warn">
+      <b>Depende de uma mudança pequena no backend (aprovar junto):</b> a listagem <code>GET /api/clientes/clientes/</code> (serializer <code>ClienteList</code>) só traz nome, tipo, número do documento e ativo, e hoje a tela busca o detalhe de cada cliente da página (10 requisições por página). Com o DataTable a lista inteira fica em memória, então a proposta é acrescentar ao <code>ClienteListSerializer</code>: <code>tipo_inscricao</code>, <code>nome_representante</code>, <code>email_representante</code>, <code>contato_representante</code>, <code>setor_representante</code>, <code>cobranca_revisao_alteracao</code> e <code>data_criacao</code>. Sem migração; uma requisição para a tela inteira. Depois: atualizar <code>docs/api/api-schema.yaml</code> e rodar <code>npm run api:tipos</code>.
+      <br>Alternativa sem mexer no backend: a tabela mostra só Cliente, Documento (só o número), Tipo e Situação, e o resto fica no formulário.
+    </div>
+    <div style="margin-top:10px" class="muted"><b>O que muda em relação a hoje:</b> 10 → 50 linhas por página; ordenação por coluna; visões Ativos/Inativos/Todos; filtros; excluir pede confirmação; desativar/reativar pelo menu; nome sem caixa alta; representante e e-mail em colunas separadas. <b>Nada sai:</b> busca por nome e documento, Novo cliente, Editar, Excluir, as colunas de hoje (Tipo, Representante, Cliente desde, Ativo, Cobrança revisão) e o estado vazio com “Novo cliente” / “Limpar”.</div>
+  </section>
+
+  <div class="ph">
+    <div>
+      <h1>Clientes <span class="count num" id="hcount"></span></h1>
+      <p>Empresas e pessoas para quem a Ergogroup vende. O cliente é escolhido na nova venda.</p>
+    </div>
+    <button class="btn pri" id="btn-novo" onclick="toast('Abre /clientes/new')"><i data-lucide="plus"></i> Novo cliente</button>
+  </div>
+
+  <div class="views" id="views"></div>
+
+  <div class="frame" style="overflow:visible">
+    <div class="tb">
+      <label class="tsearch"><i data-lucide="search"></i><input id="q" placeholder="Buscar por nome, documento ou representante"><span class="kbd">/</span></label>
+      <span class="relw"><button class="btn sm dash" data-f="tipo"><i data-lucide="plus-circle"></i> Tipo</button></span>
+      <span class="relw"><button class="btn sm dash" data-f="insc"><i data-lucide="plus-circle"></i> Documento</button></span>
+      <span class="relw"><button class="btn sm dash" data-f="rev"><i data-lucide="plus-circle"></i> Cobra revisão</button></span>
+      <span class="relw"><button class="btn sm dash" data-f="rep"><i data-lucide="plus-circle"></i> Representante</button></span>
+      <span class="relw"><button class="btn sm dash" onclick="toast('Período: Este mês, Últimos 3 meses, Este ano, Personalizado…')"><i data-lucide="calendar"></i> Cliente desde</button></span>
+      <span class="sp"></span>
+      <button class="btn sm" onclick="toast('Menu Colunas: liga Contato e Setor do representante (P3)')"><i data-lucide="columns-3"></i> Colunas</button>
+    </div>
+    <div class="chips" id="chips" style="display:none"></div>
+    <div class="scroll">
+      <table id="tbl">
+        <thead><tr>
+          <th class="sortable sorted"><span class="h">Cliente <i data-lucide="arrow-up"></i></span></th>
+          <th>Documento</th>
+          <th>Tipo</th>
+          <th>Representante</th>
+          <th class="p2">E-mail do representante</th>
+          <th class="p2">Cliente desde</th>
+          <th class="p2">Cobra revisão</th>
+          <th>Situação</th>
+          <th class="a" style="width:48px"></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="ft"><span id="range"></span><span class="sp"></span>Linhas por página <select><option>25</option><option selected>50</option><option>100</option></select></div>
+  </div>
+</main>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TIPOS = { gestao: 'Gestão', avulso: 'Avulso', fornecedor: 'Fornecedor' };
+const INSC = { cnpj: 'CNPJ', cpf: 'CPF', cei: 'CEI', cno: 'CNO', caepf: 'CAEPF' };
+let seed = 11;
+const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+const dig = (k) => Array.from({ length: k }, () => Math.floor(rnd() * 10)).join('');
+const NOMES = ['Metalúrgica Paraná Ltda', 'Hospital São Lucas', 'Construtora Alfa Engenharia', 'Frigorífico Vale Verde S.A.', 'Transportadora Rota Sul', 'Indústria Têxtil Nova Era', 'Cooperativa Agroindustrial Campos', 'Supermercados Bom Preço', 'Laboratório Vida Análises', 'Usina Santa Clara', 'Escola Técnica Horizonte', 'Plásticos Iguaçu Ltda', 'Madeireira Pinhais', 'Clínica Ortopédica Movimento', 'Logística Express Curitiba', 'Química Fina Brasil', 'Panificadora Trigo de Ouro', 'Auto Peças Andrade', 'Condomínio Parque das Flores', 'Gráfica Impressão Rápida', 'João Batista de Oliveira', 'Obra Residencial Jardim Botânico', 'Fazenda Santa Rita'];
+const REPS = ['Mariana Souza Albuquerque', 'Rafael Lima Teixeira', 'Juliana Prado Martins', 'Carlos Eduardo Paiva', 'Fernanda Reis Costa', 'Thiago Moura Santos', null, null];
+const SETORES = ['RH', 'SESMT', 'Compras', 'Diretoria', 'Administrativo'];
+const CLIENTES = NOMES.map((nome, i) => {
+  const insc = i === 20 ? 'cpf' : i === 21 ? 'cno' : i === 22 ? 'caepf' : 'cnpj';
+  const doc = insc === 'cpf' ? `${dig(3)}.${dig(3)}.${dig(3)}-${dig(2)}` : insc === 'cnpj' ? `${dig(2)}.${dig(3)}.${dig(3)}/0001-${dig(2)}` : insc === 'cno' ? `${dig(2)}.${dig(3)}.${dig(5)}/${dig(2)}` : `${dig(3)}.${dig(3)}.${dig(3)}/${dig(3)}-${dig(2)}`;
+  const rep = pick(REPS);
+  const d = new Date(2022 + Math.floor(rnd() * 5), Math.floor(rnd() * 12), 1 + Math.floor(rnd() * 27));
+  const dominio = nome.split(' ')[0].toLowerCase().normalize('NFD').replace(/[^a-z]/g, '');
+  return {
+    id: 100 + i, nome, insc, doc,
+    tipo: i % 7 === 3 ? 'fornecedor' : rnd() < .55 ? 'gestao' : 'avulso',
+    rep, email: rep ? `${rep.split(' ')[0].toLowerCase()}@${dominio}.com.br` : null,
+    setor: rep ? pick(SETORES) : null,
+    desde: d > new Date(2026, 9, 14) ? new Date(2026, 2, 3) : d,
+    rev: rnd() < .35, ativo: rnd() < .82, temVendas: rnd() < .6,
+  };
+});
+
+const st = { view: 'ativos', q: '', f: { tipo: [], insc: [], rev: [], rep: [] }, perfil: 'g' };
+const VIEWS = [
+  { id: 'ativos', label: 'Ativos', fn: (c) => c.ativo },
+  { id: 'inativos', label: 'Inativos', fn: (c) => !c.ativo },
+  { id: 'todos', label: 'Todos', fn: () => true },
+];
+const FACETS = {
+  tipo: { label: 'Tipo', get: (c) => c.tipo, opts: TIPOS },
+  insc: { label: 'Documento', get: (c) => c.insc, opts: INSC },
+  rev: { label: 'Cobra revisão', get: (c) => (c.rev ? 's' : 'n'), opts: { s: 'Sim', n: 'Não' } },
+  rep: { label: 'Representante', get: (c) => (c.rep ? 'com' : 'sem'), opts: { com: 'Com representante', sem: 'Sem representante' } },
+};
+const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const fmt = (d) => d.toLocaleDateString('pt-BR');
+const pode = () => st.perfil === 'g';
+const vazio = '<span class="dash-v">—</span>';
+
+function base() {
+  const q = norm(st.q), qd = q.replace(/\D/g, '');
+  return CLIENTES.filter((c) =>
+    (!q || [c.nome, c.rep, c.email].some((v) => norm(v).includes(q)) || (qd && c.doc.replace(/\D/g, '').includes(qd))) &&
+    Object.entries(st.f).every(([k, vals]) => !vals.length || vals.includes(FACETS[k].get(c))));
+}
+
+function linha(c) {
+  const email = c.email ? `<a class="mail" href="#" onclick="event.stopPropagation();toast('mailto:${c.email}');return false">${c.email}</a>` : vazio;
+  return `<tr class="${c.ativo ? '' : 'inactive'}" tabindex="0" onclick="abrir(${c.id})" style="${pode() ? '' : 'cursor:default'}">
+    <td><span class="t-cell" title="${c.nome}">${c.nome}</span></td>
+    <td class="num">${INSC[c.insc]} ${c.doc}</td>
+    <td>${TIPOS[c.tipo]}</td>
+    <td>${c.rep ?? vazio}</td>
+    <td class="p2">${email}</td>
+    <td class="p2 num">${fmt(c.desde)}</td>
+    <td class="p2">${c.rev ? '<span class="bool"><i data-lucide="check"></i> Sim</span>' : vazio}</td>
+    <td>${c.ativo ? 'Ativo' : '<span class="muted">Inativo</span>'}</td>
+    <td class="a r"><span class="relw"><button class="act" onclick="event.stopPropagation();menu(this,${c.id})"><i data-lucide="more-horizontal"></i></button></span></td>
+  </tr>`;
+}
+
+function render() {
+  const b = base();
+  document.getElementById('hcount').textContent = CLIENTES.filter((c) => c.ativo).length;
+  document.getElementById('btn-novo').style.display = pode() ? '' : 'none';
+  document.getElementById('views').innerHTML = VIEWS.map((v) =>
+    `<button class="${st.view === v.id ? 'on' : ''}" onclick="st.view='${v.id}';render()">${v.label} <span class="c">${b.filter(v.fn).length}</span></button>`).join('');
+  const rows = b.filter(VIEWS.find((v) => v.id === st.view).fn).sort((a, z) => a.nome.localeCompare(z.nome, 'pt-BR'));
+  document.getElementById('rows').innerHTML = rows.length ? rows.map(linha).join('')
+    : `<tr><td colspan="9"><div class="empty"><i data-lucide="search-x"></i><h3>Nenhum resultado para esses filtros</h3><p>Ajuste a busca ou os filtros.</p><button class="btn" onclick="limpar()">Limpar filtros</button></div></td></tr>`;
+  document.getElementById('range').textContent = rows.length ? `1–${rows.length} de ${rows.length}` : '';
+  const chips = Object.entries(st.f).filter(([, v]) => v.length);
+  const ch = document.getElementById('chips');
+  ch.style.display = chips.length ? '' : 'none';
+  ch.innerHTML = chips.map(([k, v]) => `<span class="chip">${FACETS[k].label}: ${v.map((x) => FACETS[k].opts[x]).join(', ')}<button onclick="st.f.${k}=[];render()"><i data-lucide="x"></i></button></span>`).join('')
+    + (chips.length ? '<button class="link" onclick="limpar()">Limpar filtros</button>' : '');
+  document.querySelectorAll('[data-f]').forEach((btn) => btn.classList.toggle('act', st.f[btn.dataset.f].length > 0));
+  lucide.createIcons();
+}
+function limpar() { Object.keys(st.f).forEach((k) => (st.f[k] = [])); st.q = ''; document.getElementById('q').value = ''; render(); }
+
+let aberto = null;
+function fecharPops() { document.querySelectorAll('.pop,.menu').forEach((p) => p.remove()); aberto = null; }
+document.addEventListener('click', fecharPops);
+function abrirFiltro(btn) {
+  const k = btn.dataset.f;
+  fecharPops(); aberto = k;
+  const b = base().filter(VIEWS.find((v) => v.id === st.view).fn);
+  const pop = document.createElement('div'); pop.className = 'pop'; pop.style.top = '36px'; pop.style.left = '0';
+  pop.onclick = (ev) => ev.stopPropagation();
+  pop.innerHTML = `<div class="h">${FACETS[k].label}</div>` + Object.entries(FACETS[k].opts).map(([v, l]) =>
+    `<label><input type="checkbox" ${st.f[k].includes(v) ? 'checked' : ''} onchange="tog('${k}','${v}')"> ${l}<span class="c">${b.filter((c) => FACETS[k].get(c) === v).length}</span></label>`).join('');
+  btn.parentElement.appendChild(pop);
+}
+document.querySelectorAll('[data-f]').forEach((btn) => btn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (aberto === btn.dataset.f) return fecharPops();
+  abrirFiltro(btn);
+}));
+function tog(k, v) { const a = st.f[k]; const i = a.indexOf(v); i < 0 ? a.push(v) : a.splice(i, 1); render(); abrirFiltro(document.querySelector(`[data-f="${k}"]`)); }
+
+function menu(btn, id) {
+  fecharPops();
+  const c = CLIENTES.find((x) => x.id === id);
+  const m = document.createElement('div'); m.className = 'menu'; m.style.top = '30px';
+  m.onclick = (e) => e.stopPropagation();
+  const editar = `<button onclick="fecharPops();toast('Abre /clientes/${id}/edit')"><i data-lucide="pencil"></i> Editar</button>`;
+  const vendas = `<button onclick="fecharPops();toast('Abre /vendas?view=todas&f.cliente=${encodeURIComponent(c.nome)}')"><i data-lucide="receipt"></i> Ver vendas do cliente</button>`;
+  const ativo = c.ativo
+    ? `<button onclick="fecharPops();mudarAtivo(${id},false)"><i data-lucide="power"></i> Desativar</button>`
+    : `<button onclick="fecharPops();mudarAtivo(${id},true)"><i data-lucide="power"></i> Reativar</button>`;
+  const exc = `<hr><button class="d" onclick="fecharPops();excluir(${id})"><i data-lucide="trash-2"></i> Excluir</button>`;
+  m.innerHTML = pode() ? editar + vendas + ativo + exc : vendas;
+  btn.parentElement.appendChild(m); lucide.createIcons();
+}
+function abrir(id) { if (pode()) toast(`Abre /clientes/${id}/edit (Ctrl+clique: nova aba)`); }
+function mudarAtivo(id, ativo) { CLIENTES.find((c) => c.id === id).ativo = ativo; render(); toast(ativo ? 'Cliente reativado' : 'Cliente desativado'); }
+
+function excluir(id) {
+  const c = CLIENTES.find((x) => x.id === id);
+  modal(`<div class="step">Excluir cliente</div><h3>Excluir ${c.nome}?</h3><p>O cadastro sai do sistema. Esta ação não pode ser desfeita.</p>
+    <div class="row"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn dan" onclick="confirmarExclusao(${id})">Excluir</button></div>`);
+}
+function confirmarExclusao(id) {
+  const c = CLIENTES.find((x) => x.id === id);
+  if (!c.temVendas) { CLIENTES.splice(CLIENTES.indexOf(c), 1); fechar(); render(); return toast('Cliente excluído'); }
+  modal(`<div class="step">Excluir cliente · não foi possível</div><h3>${c.nome} tem vendas</h3><p>Um cliente com vendas não pode ser excluído (o backend responde 409). Você pode desativá-lo: ele deixa de aparecer na escolha da nova venda e continua nas vendas já feitas.</p>
+    <div class="row"><button class="btn" onclick="fechar()">Cancelar</button>${c.ativo ? `<button class="btn pri" onclick="fechar();mudarAtivo(${id},false)">Desativar</button>` : ''}</div>`);
+}
+function modal(html) { document.getElementById('modal').innerHTML = html; document.getElementById('ov').classList.add('show'); }
+function fechar() { document.getElementById('ov').classList.remove('show'); }
+
+let tt;
+function toast(t) { const el = document.getElementById('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2200); }
+document.getElementById('q').addEventListener('input', (e) => { st.q = e.target.value; render(); });
+document.addEventListener('keydown', (e) => { if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); document.getElementById('q').focus(); } });
+document.querySelectorAll('#wf-perfil button').forEach((b) => { b.onclick = () => { document.querySelectorAll('#wf-perfil button').forEach((x) => x.classList.toggle('on', x === b)); st.perfil = b.dataset.v; render(); }; });
+document.querySelectorAll('#wf-dens button').forEach((b) => { b.onclick = () => { document.querySelectorAll('#wf-dens button').forEach((x) => x.classList.toggle('on', x === b)); document.getElementById('tbl').classList.toggle('dense', b.dataset.v === 'd'); }; });
+render();
+</script>
+</body>
+</html>

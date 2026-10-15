@@ -1,3 +1,4 @@
+import type { Esquemas } from '@/api/tipos';
 import api from '@/services/api';
 
 export type Complexidade = 1 | 2 | 3;
@@ -25,6 +26,10 @@ export interface CatalogoItem {
   setorNome: string | null;
   /** Inativo: continua nos serviços já vendidos, mas não pode ser usado em serviços novos. */
   ativo: boolean;
+  /** Serviços abertos e ainda sem tarefas (novos ou a distribuir): os que podem mudar de setor junto com o catálogo. */
+  servicosEmAberto: number;
+  /** Só na resposta de editar: quantos serviços foram junto para o setor novo. */
+  servicosMovidos?: number;
   /**
    * Só na resposta de criar e editar: avisos do backend que não impedem salvar
    * (ex.: o setor ainda não tem quem organize; os serviços cairiam numa fila sem responsável).
@@ -37,6 +42,8 @@ export interface CatalogoPayload {
   descricao?: string | null;
   setor: number;
   ativo?: boolean;
+  /** Ao mudar o setor: leva junto os serviços em aberto e sem tarefas. */
+  moverServicosEmAberto?: boolean;
 }
 
 type CatalogoDTO = {
@@ -46,6 +53,8 @@ type CatalogoDTO = {
   setor: number | null;
   setor_nome?: string | null;
   ativo?: boolean;
+  servicos_em_aberto?: number;
+  servicos_movidos?: number;
   avisos?: string[];
 };
 
@@ -58,6 +67,8 @@ const catalogoToFrontend = (dto: CatalogoDTO): CatalogoItem => ({
   setor: dto.setor ?? null,
   setorNome: dto.setor_nome ?? null,
   ativo: dto.ativo ?? true,
+  servicosEmAberto: dto.servicos_em_aberto ?? 0,
+  ...(dto.servicos_movidos ? { servicosMovidos: dto.servicos_movidos } : {}),
   ...(dto.avisos?.length ? { avisos: dto.avisos } : {}),
 });
 
@@ -66,6 +77,7 @@ const catalogoToBackend = (payload: Partial<CatalogoPayload>) => ({
   ...(payload.descricao !== undefined ? { descricao: payload.descricao } : {}),
   ...(payload.setor !== undefined ? { setor: payload.setor } : {}),
   ...(payload.ativo !== undefined ? { ativo: payload.ativo } : {}),
+  ...(payload.moverServicosEmAberto ? { mover_servicos_em_aberto: true } : {}),
 });
 
 export const getCatalogos = async (params: { q?: string } = {}): Promise<CatalogoItem[]> => {
@@ -93,6 +105,14 @@ export const updateCatalogo = async (id: number, payload: Partial<CatalogoPayloa
 
 export const deleteCatalogo = async (id: number): Promise<void> => {
   await api.delete(`${CATALOGO_ENDPOINT}${id}/`);
+};
+
+export type ResultadoMudarSetor = Esquemas['ResultadoMudarSetor'];
+
+/** Passa vários catálogos para um setor (revisão de permissões, P5). */
+export const mudarSetorDosCatalogos = async (payload: Esquemas['MudarSetorDosCatalogosRequest']): Promise<ResultadoMudarSetor> => {
+  const { data } = await api.post<ResultadoMudarSetor>(`${CATALOGO_ENDPOINT}mudar-setor/`, payload);
+  return data;
 };
 
 // ── Catálogo Operacional (serviços de OS Operacional) ─────────────────────────

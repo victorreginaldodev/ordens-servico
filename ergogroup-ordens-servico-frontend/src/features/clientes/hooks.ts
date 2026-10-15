@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { PageResult } from '@/services/pagination';
 import {
   Client,
   Contact,
-  ClientsPageParams,
+  ClienteDaLista,
   ClienteUpsertPayload,
   ContactApiInput,
   getClients,
-  getClientsPage,
+  getClientesDaLista,
+  mudarAtivoCliente,
   getClient,
   upsertClient,
   deleteClient,
@@ -25,10 +25,11 @@ export const useClients = () =>
     queryFn: getClients,
   });
 
-export const useClientsPage = (params: ClientsPageParams) =>
-  useQuery<PageResult<Client>>({
-    queryKey: ['clientes-lista-paginada', params],
-    queryFn: () => getClientsPage(params),
+/** Todos os clientes com os campos da tabela (`ClienteList`), para a listagem de clientes. */
+export const useClientesDaLista = () =>
+  useQuery<ClienteDaLista[]>({
+    queryKey: ['clientes-lista-completa'],
+    queryFn: getClientesDaLista,
   });
 
 export const useClient = (id?: string) =>
@@ -43,7 +44,8 @@ export const useClient = (id?: string) =>
 
 const invalidarClientes = (qc: ReturnType<typeof useQueryClient>) => {
   qc.invalidateQueries({ queryKey: ['clientes-lista'] });
-  qc.invalidateQueries({ queryKey: ['clientes-lista-paginada'] });
+  qc.invalidateQueries({ queryKey: ['clientes-lista-completa'] });
+  qc.invalidateQueries({ queryKey: ['clientes-detalhe'] });
 };
 
 export const useUpsertClient = () => {
@@ -58,6 +60,14 @@ export const useDeleteClient = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteClient,
+    onSuccess: async () => invalidarClientes(qc),
+  });
+};
+
+export const useMudarAtivoCliente = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ativo }: { id: number; ativo: boolean }) => mudarAtivoCliente(id, ativo),
     onSuccess: async () => invalidarClientes(qc),
   });
 };

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Package, Pencil, Plus, Power, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, Package, Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import { DataTable, col, type DataTableFacet, type DataTableRowAction } from '@/components/data-table';
 import { AtivoBadge, PageHeader } from '@/components/kit';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { mensagemDeErro } from '@/lib/api-errors';
 import { CatalogoModal, type EtapaCatalogo } from '../components/CatalogoModal';
+import { MudarSetorEmLoteModal } from '../components/MudarSetorEmLoteModal';
 import { useCatalogos, useUpsertCatalogo } from '../hooks';
 import type { CatalogoItem } from '../services';
 
@@ -46,6 +47,7 @@ const CatalogListPage = () => {
         ? { tipo: 'form', id: Number(id) }
         : null;
   const [confirmacao, setConfirmacao] = useState<EtapaCatalogo | null>(null);
+  const [emLote, setEmLote] = useState(false);
   const etapa = confirmacao ?? etapaDaRota;
 
   const mudarEtapa = useCallback(
@@ -105,9 +107,14 @@ const CatalogListPage = () => {
         description="Os serviços que a empresa vende. Cada um pertence ao setor que o executa, e é na fila desse setor que ele cai quando a OS é vendida."
         actions={
           podeGerenciar && (
-            <Button onClick={novo}>
-              <Plus className="size-4" /> Novo serviço
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setEmLote(true)} disabled={!catalogos.length}>
+                <ArrowRightLeft className="size-4" /> Mudar setor em lote
+              </Button>
+              <Button onClick={novo}>
+                <Plus className="size-4" /> Novo serviço
+              </Button>
+            </>
           )
         }
       />
@@ -150,6 +157,7 @@ const CatalogListPage = () => {
       />
 
       <CatalogoModal etapa={etapa} onEtapa={mudarEtapa} catalogos={catalogos} carregando={catalogosQ.isPending} />
+      <MudarSetorEmLoteModal aberto={emLote && !etapa} onFechar={() => setEmLote(false)} catalogos={catalogos} />
     </div>
   );
 };

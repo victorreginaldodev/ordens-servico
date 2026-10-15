@@ -14,6 +14,7 @@ import {
   getCatalogos,
   getCatalogosOperacionais,
   getRepositories,
+  mudarSetorDosCatalogos,
   updateCatalogo,
   updateCatalogoOperacional,
 } from './services';
@@ -40,7 +41,21 @@ export const useUpsertCatalogo = () => {
       id === undefined ? createCatalogo(payload as CatalogoPayload) : updateCatalogo(id, payload),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['catalogos'] });
+      // O papel do setor (catálogos ativos, avisos) vem do backend.
+      qc.invalidateQueries({ queryKey: ['organizacao', 'setores'] });
       if (id !== undefined) qc.invalidateQueries({ queryKey: ['catalogo', id] });
+    },
+  });
+};
+
+export const useMudarSetorDosCatalogos = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: mudarSetorDosCatalogos,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['catalogos'] });
+      qc.invalidateQueries({ queryKey: ['catalogo'] });
+      qc.invalidateQueries({ queryKey: ['organizacao', 'setores'] });
     },
   });
 };
