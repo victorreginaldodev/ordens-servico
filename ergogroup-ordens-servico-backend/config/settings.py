@@ -18,6 +18,7 @@ else:
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
+    "http://localhost:8081",
     "https://os.sstsuite.com.br"
 ]
 
@@ -148,6 +149,14 @@ DIAS_ALERTA_SEM_MOVIMENTACAO = int(os.getenv('DIAS_ALERTA_SEM_MOVIMENTACAO', '7'
 # Dias de uma OS liberada sem lançamento para entrar em alerta no financeiro (ADR 0008, 9; proposta: 3).
 DIAS_ALERTA_SEM_LANCAMENTO = int(os.getenv('DIAS_ALERTA_SEM_LANCAMENTO', '3'))
 
+# Conferência do faturamento (faturamento/04): limites das verificações de atenção.
+# Serviço concluído há N dias numa OS que não libera porque o resto está parado.
+DIAS_CONFERENCIA_CONCLUIDO_OS_PARADA = int(os.getenv('DIAS_CONFERENCIA_CONCLUIDO_OS_PARADA', '15'))
+# Serviço que chegou ao setor há N dias e ninguém distribuiu.
+DIAS_CONFERENCIA_SEM_DISTRIBUIR = int(os.getenv('DIAS_CONFERENCIA_SEM_DISTRIBUIR', '3'))
+# Vencimento combinado em até N dias (ou já passado) com a OS ainda em execução.
+DIAS_CONFERENCIA_VENCIMENTO = int(os.getenv('DIAS_CONFERENCIA_VENCIMENTO', '7'))
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -191,5 +200,15 @@ SPECTACULAR_SETTINGS = {
         'StatusServicoEnum':   'apps.ordens_servico.models.servico.StatusServico',
         'StatusMiniOSEnum':    'apps.ordens_servico.models.ordem_servico_operacional.StatusOrdemServicoOperacional',
         'MotivoCienciaEnum':   'apps.ordens_servico.models.servico.MotivoCiencia',
+        'EtapaEnum':           'apps.ordens_servico.serializers.execucao_serializer.ETAPAS',
+        'EtapaTarefaEnum':     'apps.ordens_servico.serializers.execucao_serializer.ETAPAS_TAREFA',
+        'EtapaDaFilaEnum':     'apps.ordens_servico.serializers.execucao_serializer.ETAPAS_DA_FILA',
+        'EventoDaLinhaDoTempoTipoEnum': 'apps.ordens_servico.serializers.linha_do_tempo_serializer.TIPOS_DE_EVENTO',
+        # Financeiro (faturamento/04).
+        'SituacaoEnum':                  'apps.ordens_servico.services.financeiro.SITUACOES',
+        'SituacaoDaListaDeCobrancasEnum': 'apps.ordens_servico.services.financeiro.SITUACOES_DA_LISTA',
+        'CategoriaDoEventoEnum':         'apps.ordens_servico.services.financeiro.CATEGORIAS_DE_EVENTO',
+        'TipoDeVerificacaoEnum':         'apps.ordens_servico.services.conferencia.TIPOS_DE_VERIFICACAO',
+        'CodigoDaConferenciaEnum':       'apps.ordens_servico.services.conferencia.CODIGOS',
     },
 }

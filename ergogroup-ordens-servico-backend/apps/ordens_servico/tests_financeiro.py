@@ -44,8 +44,8 @@ class FinanceiroBase(APITestCase):
         self.faturada.registrar_lancamento('NF 4567', self.hoje, por=self.financeiro)
 
         self.previsao_quase = venda(
-            tipo_condicao=TipoCondicao.RECORRENTE, quantidade_parcelas=12, valor_mensal=Decimal('1500.00'),
-            dia_vencimento=15, valor=Decimal('18000.00'),
+            tipo_condicao=TipoCondicao.PARCELADO, quantidade_parcelas=12, data_acordada_cobranca=date(2026, 11, 15),
+            valor=Decimal('18000.00'),
         )
         # Os dois serviços antes de concluir: com um só, a OS concluiria e seria liberada (em definitivo).
         feito = Servico.objects.create(ordem_servico=self.previsao_quase, descricao='PGR', catalogo=pgr)
@@ -54,8 +54,7 @@ class FinanceiroBase(APITestCase):
         self.previsao_nada = venda()
         Servico.objects.create(ordem_servico=self.previsao_nada, descricao='PGR', catalogo=pgr)
         self.cancelada = venda(
-            tipo_condicao=TipoCondicao.RECORRENTE, quantidade_parcelas=6, valor_mensal=Decimal('999.00'),
-            dia_vencimento=5,
+            tipo_condicao=TipoCondicao.PARCELADO, quantidade_parcelas=6, data_acordada_cobranca=date(2026, 11, 5),
         )
         OrdemServico.objects.filter(pk=self.cancelada.pk).update(status=Status.CANCELADA)
 
@@ -78,7 +77,7 @@ class CobrancasTestCase(FinanceiroBase):
     def test_linha_traz_o_necessario_para_faturar(self):
         linha = self.cobrancas().data['ordens'][0]
 
-        self.assertEqual(linha['condicao_resumo'], 'Parcelado em 3x a cada 30 dias, 1º vencimento 10/11/2026')
+        self.assertEqual(linha['condicao_resumo'], 'Parcelado em 3x de R$ 1.000,00 (mensais), 1ª parcela 10/11/2026')
         self.assertEqual(linha['vendido_por_nome'], 'Vendedora')
         self.assertEqual(linha['liberar_em'], 'venda')
         self.assertEqual(linha['dias_aguardando_lancamento'], 5)
@@ -130,8 +129,10 @@ class SituacaoFinanceiraTestCase(FinanceiroBase):
         response = self.situacao(self.financeiro, self.faturada)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([evento['tipo'] for evento in response.data['eventos']], ['venda', 'liberacao', 'lancamento'])
-        self.assertEqual(response.data['eventos'][2]['texto'], 'Faturada (ref. NF 4567)')
+        financeiros = [evento for evento in response.data['eventos'] if evento['categoria'] == 'financeiro']
+        self.assertEqual([evento['tipo'] for evento in financeiros], ['lancamento', 'liberacao', 'venda'])
+        self.assertEqual(financeiros[0]['texto'], 'OS faturada por Analista Financeira (ref. NF 4567)')
+        self.assertEqual(financeiros[1]['texto'], 'OS liberada para o financeiro (na venda)')
         self.assertEqual(response.data['situacao'], 'faturadas')
 
     def test_quem_ve_valores_acessa_e_os_demais_nao(self):
@@ -143,18 +144,18 @@ class SituacaoFinanceiraTestCase(FinanceiroBase):
     def test_servicos_com_a_etapa(self):
         servicos = self.situacao(self.financeiro, self.previsao_quase).data['servicos']
 
-        self.assertEqual(sorted(servico['etapa'] for servico in servicos), ['concluido', 'na_fila'])
+        self.assertEqual(sorted(servico['etapa'] for servico in servicos), ['concluido', 'novo'])
 
 
 class IndicadoresFinanceirosTestCase(FinanceiroBase):
-    def test_faturamento_por_tipo_e_receita_recorrente(self):
+    def test_faturamento_por_tipo_de_condicao(self):
         self.client.force_authenticate(user=self.financeiro)
 
         dados = self.client.get(reverse('analise-financeiro')).data
 
         self.assertEqual(Decimal(dados['total_previsao']), Decimal('19000.00'))
         self.assertEqual(Decimal(dados['por_tipo_condicao']['parcelado']['a_faturar']), Decimal('3000.00'))
-        self.assertEqual(Decimal(dados['por_tipo_condicao']['recorrente']['previsao']), Decimal('18000.00'))
-        # A recorrente cancelada não conta na receita recorrente.
-        self.assertEqual(Decimal(dados['receita_recorrente_mensal']), Decimal('1500.00'))
-        self.assertEqual(dados['recorrentes_ativos'], 1)
+        # A parcelada cancelada não entra na previsão.
+        self.assertEqual(Decimal(dados['por_tipo_condicao']['parcelado']['previsao']), Decimal('18000.00'))
+        self.assertNotIn('recorrente', dados['por_tipo_condicao'])
+        self.assertNotIn('receita_recorrente_mensal', dados)

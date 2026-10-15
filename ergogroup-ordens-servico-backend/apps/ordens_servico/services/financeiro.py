@@ -1,14 +1,19 @@
 """Blocos do financeiro (ADR 0008, 9; fase 10 do plano). "Faturar" é dar o OK no sistema (o lançamento) e
 lançar no sistema financeiro externo; o sistema não controla parcelas."""
 from datetime import datetime, time, timedelta
+from functools import reduce
+from operator import or_
 
 from django.conf import settings
 from django.db.models import Count, Prefetch, Q, Sum
 from django.utils import timezone
 
 from apps.ordens_servico.models import OrdemServico, Servico
-from apps.ordens_servico.models.ordem_servico import LiberarEm, Status
+from apps.ordens_servico.models.ordem_servico import Status
+from apps.ordens_servico.services import conferencia
+from apps.ordens_servico.services.comercial import _responsaveis as responsaveis_do_servico
 from apps.ordens_servico.services.comercial import andamento
+from apps.ordens_servico.services.linha_do_tempo import linha_do_tempo_da_os
 from apps.ordens_servico.services.execucao import dias_desde, etapa_do_servico, hoje, nome
 
 
@@ -16,9 +21,13 @@ class Situacao:
     A_FATURAR = 'a_faturar'
     FATURADAS = 'faturadas'
     PREVISAO = 'previsao'
+    # Parâmetro da lista: as três situações numa chamada (a tela filtra e pagina no cliente; faturamento/04).
+    TODAS = 'todas'
 
 
 SITUACOES = [Situacao.A_FATURAR, Situacao.FATURADAS, Situacao.PREVISAO]
+SITUACOES_DA_LISTA = SITUACOES + [Situacao.TODAS]
+CATEGORIAS_DE_EVENTO = ['financeiro', 'execucao']
 
 # Cancelada nunca vai ser liberada: não entra na previsão.
 FILTRO_SITUACAO = {
@@ -56,9 +65,12 @@ def filtro_em_alerta():
 
 
 def _ordens():
+    servicos = Servico.objects.select_related('catalogo', 'setor', 'terminado_por').prefetch_related(
+        'tarefas__responsavel',
+    ).order_by('id')
     return OrdemServico.objects.select_related(
         'cliente', 'criado_por', 'liberada_para_cobranca_por', 'cobranca_realizada_por',
-    ).prefetch_related(Prefetch('servicos', queryset=Servico.objects.prefetch_related('tarefas')))
+    ).prefetch_related(Prefetch('servicos', queryset=servicos))
 
 
 def aplicar_filtros(queryset, filtros):
@@ -75,8 +87,26 @@ def aplicar_filtros(queryset, filtros):
     return queryset
 
 
-def linha(ordem):
-    """Tudo o que o financeiro precisa para faturar uma OS, sem abrir a observação."""
+def _pendentes(ordem):
+    """Na previsão: o que falta para a OS liberar e com quem está."""
+    return [{
+        'servico_id': servico.id,
+        'servico_nome': conferencia.nome_do_servico(servico),
+        'setor_nome': servico.setor.nome if servico.setor_id else None,
+        'etapa': etapa_do_servico(servico),
+        'responsaveis': conferencia.responsaveis_pendentes(servico),
+        'dias_sem_movimentacao': servico.dias_sem_movimentacao,
+    } for servico in conferencia.servicos_pendentes(ordem)]
+
+
+def _ultima_movimentacao(ordem):
+    momentos = [s.ultima_movimentacao_em for s in ordem.servicos.all() if s.ultima_movimentacao_em]
+    return max(momentos) if momentos else None
+
+
+def linha(ordem, pendencias=None):
+    """Tudo o que o financeiro precisa para faturar uma OS, sem abrir a observação. `pendencias`: os códigos
+    da conferência em que a OS aparece."""
     return {
         'ordem_servico_id': ordem.id,
         'situacao': situacao_da_ordem(ordem),
@@ -86,12 +116,14 @@ def linha(ordem):
         'data_venda': ordem.data_venda,
         'vendido_por_nome': nome(ordem.criado_por),
         'valor': ordem.valor,
-        'valor_mensal': ordem.valor_mensal,
         'tipo_condicao': ordem.tipo_condicao,
         'condicao_resumo': ordem.condicao_resumo,
         'forma_pagamento': ordem.forma_pagamento,
         'quantidade_parcelas': ordem.quantidade_parcelas,
         'data_acordada_cobranca': ordem.data_acordada_cobranca,
+        'vencimento_resumo': ordem.vencimento_resumo,
+        'vencimento_dias_apos_nota': ordem.vencimento_dias_apos_nota,
+        'dia_vencimento_demais': ordem.dia_vencimento_demais,
         'nome_contato_envio_nf': ordem.nome_contato_envio_nf,
         'contato_envio_nf': ordem.contato_envio_nf,
         'liberar_em': ordem.liberar_em,
@@ -104,6 +136,9 @@ def linha(ordem):
         'dias_aguardando_lancamento': dias_aguardando_lancamento(ordem),
         'em_alerta': em_alerta(ordem),
         'andamento': andamento(ordem),
+        'pendentes': _pendentes(ordem) if situacao_da_ordem(ordem) == Situacao.PREVISAO else [],
+        'ultima_movimentacao_em': _ultima_movimentacao(ordem),
+        'pendencias': pendencias or [],
     }
 
 
@@ -131,66 +166,110 @@ def _ordenar(situacao, linhas):
     return sorted(linhas, key=lambda item: (-progresso(item), item['data_venda'], item['ordem_servico_id']))
 
 
+def _filtro_faturadas(filtros):
+    """As faturadas podem ser limitadas pela data do lançamento (`faturada_de`/`faturada_ate`), para a lista não
+    crescer sem fim. As outras situações não são afetadas."""
+    filtro = FILTRO_SITUACAO[Situacao.FATURADAS]
+    if filtros.get('faturada_de'):
+        filtro &= Q(data_cobranca__gte=filtros['faturada_de'])
+    if filtros.get('faturada_ate'):
+        filtro &= Q(data_cobranca__lte=filtros['faturada_ate'])
+    return filtro
+
+
 def cobrancas(situacao, filtros=None):
-    """10.1: as OS de uma situação, com os contadores das três situações (sob os mesmos filtros)."""
+    """10.1: as OS de uma situação (ou das três, com `todas`), com os contadores das três situações (sob os
+    mesmos filtros) e os códigos da conferência de cada OS."""
     filtros = filtros or {}
     filtradas = aplicar_filtros(OrdemServico.objects.all(), filtros)
-    ordens = aplicar_filtros(_ordens(), filtros).filter(FILTRO_SITUACAO[situacao])
+    filtro = {
+        Situacao.A_FATURAR: FILTRO_SITUACAO[Situacao.A_FATURAR],
+        Situacao.PREVISAO: FILTRO_SITUACAO[Situacao.PREVISAO],
+        Situacao.FATURADAS: _filtro_faturadas(filtros),
+    }
+    situacoes = SITUACOES if situacao == Situacao.TODAS else [situacao]
+    ordens = aplicar_filtros(_ordens(), filtros).filter(reduce(or_, [filtro[s] for s in situacoes]))
     if filtros.get('em_alerta'):
         ordens = ordens.filter(filtro_em_alerta())
+    ordens = list(ordens)
+    pendencias = conferencia.pendencias_por_ordem(
+        conferencia.calcular(OrdemServico.objects.filter(pk__in=[o.pk for o in ordens])),
+    )
+    linhas = [linha(ordem, pendencias.get(ordem.pk)) for ordem in ordens]
+    contadores = _contadores(filtradas)
+    if filtros.get('faturada_de') or filtros.get('faturada_ate'):
+        agregado = filtradas.filter(filtro[Situacao.FATURADAS]).aggregate(quantidade=Count('id'), valor=Sum('valor'))
+        contadores[Situacao.FATURADAS] = {'quantidade': agregado['quantidade'], 'valor': agregado['valor'] or 0}
     return {
         'situacao': situacao,
-        'contadores': _contadores(filtradas),
+        'contadores': contadores,
         'em_alerta': filtradas.filter(filtro_em_alerta()).count(),
-        'ordens': _ordenar(situacao, [linha(ordem) for ordem in ordens]),
+        'dias_alerta_sem_lancamento': settings.DIAS_ALERTA_SEM_LANCAMENTO,
+        'ordens': [item for s in situacoes for item in _ordenar(s, [l for l in linhas if l['situacao'] == s])],
     }
 
 
-def _quando(momento):
-    """Data e hora no fuso local; o lançamento só tem data."""
-    if momento is None:
-        return None
-    return timezone.localtime(momento).isoformat() if isinstance(momento, datetime) else momento.isoformat()
+# Eventos da linha do tempo que interessam ao financeiro; os demais são da execução (filtro "Financeiro | Tudo").
+TIPOS_FINANCEIROS = {
+    'historico_anterior', 'venda', 'venda_alterada', 'condicao_alterada', 'liberacao', 'lancamento', 'os_concluida',
+    'os_cancelada', 'os_reaberta', 'servico_cancelado', 'servico_excluido',
+}
 
 
-def _eventos_financeiros(ordem):
-    """Venda, liberação e lançamento, a partir dos campos da OS. A linha do tempo completa vem na fase 11."""
-    eventos = [{
-        'quando': _quando(ordem.criada_em),
-        'quem': nome(ordem.criado_por),
-        'tipo': 'venda',
-        'texto': f'Venda registrada: {ordem.condicao_resumo}',
-    }]
-    if ordem.liberada_para_cobranca:
-        motivo = 'na venda' if ordem.liberar_em == LiberarEm.VENDA else 'na conclusão dos serviços'
-        eventos.append({
-            'quando': _quando(ordem.liberada_para_cobranca_em),
-            'quem': nome(ordem.liberada_para_cobranca_por),
-            'tipo': 'liberacao',
-            'texto': f'Liberada para faturar ({motivo})',
-        })
-    if ordem.cobranca_realizada:
-        referencia = f' (ref. {ordem.referencia_lancamento})' if ordem.referencia_lancamento else ''
-        eventos.append({
-            'quando': _quando(ordem.data_cobranca),
-            'quem': nome(ordem.cobranca_realizada_por),
-            'tipo': 'lancamento',
-            'texto': f'Faturada{referencia}',
-        })
-    return eventos
+def _servicos_realizados(ordem):
+    """Por serviço: setor, quem executou (as tarefas), início, término e quem finalizou."""
+    return [{
+        'id': servico.id,
+        'catalogo_nome': servico.catalogo.nome if servico.catalogo_id else None,
+        'descricao': servico.descricao,
+        'setor_nome': servico.setor.nome if servico.setor_id else None,
+        'etapa': etapa_do_servico(servico),
+        'prazo': servico.prazo,
+        'data_inicio': servico.data_inicio,
+        'data_termino': servico.data_termino,
+        'terminado_por_nome': nome(servico.terminado_por),
+        'responsaveis': responsaveis_do_servico(servico),
+        'dias_sem_movimentacao': servico.dias_sem_movimentacao if servico.ativo else None,
+    } for servico in ordem.servicos.all()]
 
 
-def situacao_financeira(ordem):
-    """10.4: a linha de cobrança da OS, os serviços com a etapa de cada um e os eventos financeiros."""
-    ordem = _ordens().get(pk=ordem.pk)
+def _dados_do_cliente(cliente):
+    """Tudo o que o cadastro tem do cliente, para conferir na hora de faturar (faturamento/04, seção 9)."""
     return {
-        **linha(ordem),
+        'id': cliente.id,
+        'nome': cliente.nome,
+        'tipo_inscricao': cliente.tipo_inscricao,
+        'tipo_inscricao_display': cliente.get_tipo_inscricao_display() if cliente.tipo_inscricao else None,
+        'numero_inscricao': cliente.numero_inscricao,
+        'tipo_cliente': cliente.tipo_cliente,
+        'tipo_cliente_display': cliente.get_tipo_cliente_display() if cliente.tipo_cliente else None,
+        'nome_representante': cliente.nome_representante,
+        'setor_representante': cliente.setor_representante,
+        'email_representante': cliente.email_representante,
+        'contato_representante': cliente.contato_representante,
+        'observacao': cliente.observacao,
+        'ativo': cliente.ativo,
+    }
+
+
+def situacao_financeira(ordem, usuario):
+    """10.4, o resumo para faturar (faturamento/04): a linha de cobrança da OS, os serviços realizados, as
+    pendências da conferência e a linha do tempo, com a categoria de cada evento."""
+    ordem = _ordens().get(pk=ordem.pk)
+    pendencias = conferencia.pendencias_da_ordem(ordem)
+    # Do mais recente ao mais antigo; no mesmo instante, a ordem da tradução ao contrário (a liberação na venda
+    # vem antes da venda).
+    eventos = [evento for _, evento in sorted(
+        enumerate(linha_do_tempo_da_os(ordem, usuario)), key=lambda par: (par[1]['quando'], par[0]), reverse=True,
+    )]
+    return {
+        **linha(ordem, [p['codigo'] for p in pendencias]),
         'observacao': ordem.observacao,
-        'servicos': [{
-            'id': servico.id,
-            'descricao': servico.descricao,
-            'etapa': etapa_do_servico(servico),
-            'data_termino': servico.data_termino,
-        } for servico in ordem.servicos.all()],
-        'eventos': _eventos_financeiros(ordem),
+        'cliente': _dados_do_cliente(ordem.cliente),
+        'servicos': _servicos_realizados(ordem),
+        'detalhe_pendencias': pendencias,
+        'eventos': [{
+            **evento,
+            'categoria': 'financeiro' if evento['tipo'] in TIPOS_FINANCEIROS else 'execucao',
+        } for evento in eventos],
     }
