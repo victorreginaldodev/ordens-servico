@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Trash2,
   Unlock,
+  MailOpen,
   UserCheck,
   type LucideIcon,
 } from 'lucide-react';
@@ -27,6 +28,8 @@ const EVENTO: Record<TipoDeEvento, { icon: LucideIcon; tone: Tone }> = {
   venda_alterada: { icon: FilePen, tone: 'neutral' },
   condicao_alterada: { icon: FilePen, tone: 'neutral' },
   chegada: { icon: Inbox, tone: 'warning' },
+  recebimento: { icon: MailOpen, tone: 'info' },
+  tarefa_recebida: { icon: MailOpen, tone: 'info' },
   distribuicao: { icon: UserCheck, tone: 'info' },
   reatribuicao: { icon: ArrowRightLeft, tone: 'info' },
   prazo_alterado: { icon: CalendarClock, tone: 'warning' },

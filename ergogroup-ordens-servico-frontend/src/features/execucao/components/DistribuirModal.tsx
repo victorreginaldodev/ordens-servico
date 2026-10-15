@@ -22,6 +22,8 @@ export interface ServicoParaDistribuir {
   setorNome?: string | null;
   /** Serviço que já tem tarefa: o modal acrescenta mais gente ("Dividir"). */
   jaDistribuido?: boolean;
+  /** Serviço novo, sem ciência do setor: distribuir também confirma o recebimento (ADR 0009). */
+  novo?: boolean;
 }
 
 interface Parte {
@@ -55,7 +57,8 @@ function Carga({ m }: { m: MembroDaEquipe }) {
 
 /**
  * Distribuir (ou dividir) um serviço: responsável e prazo; "Dividir entre pessoas" cria uma tarefa por
- * parte. Só membros do setor aparecem (`equipe/` com `membro_do_setor`). Um modal só, sem empilhar.
+ * parte. Aparece quem recebe tarefas do setor (`equipe/` com `recebe_tarefas`): primeiro os lotados, depois
+ * quem "também executa" aqui, vindo de outros setores (revisão de permissões, P1). Um modal só, sem empilhar.
  */
 export function DistribuirModal({
   servico,
@@ -79,7 +82,9 @@ export function DistribuirModal({
     }
   }, [servico, responsavelInicial]);
 
-  const membros = (equipe ?? []).filter((m) => m.membro_do_setor);
+  const membros = (equipe ?? []).filter((m) => m.recebe_tarefas);
+  const doSetor = membros.filter((m) => m.membro_do_setor);
+  const deOutros = membros.filter((m) => !m.membro_do_setor);
   const dividir = partes.length > 1;
   const muda = (i: number, p: Partial<Parte>) => {
     setPartes((ps) => ps.map((x, j) => (j === i ? { ...x, ...p } : x)));
@@ -109,14 +114,15 @@ export function DistribuirModal({
 
   return (
     <Dialog open={!!servico} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>
-            {servico?.jaDistribuido || dividir ? 'Dividir' : 'Distribuir'} {servico?.catalogo ?? 'serviço'}
+            {servico?.jaDistribuido ? 'Dividir' : servico?.novo ? (dividir ? 'Confirmar e dividir' : 'Confirmar e distribuir') : dividir ? 'Dividir' : 'Distribuir'} {servico?.catalogo ?? 'serviço'}
           </DialogTitle>
           <DialogDescription>
             {servico?.cliente} · OS {servico?.ordemServicoId}
             {servico?.setorNome ? ` · ${servico.setorNome}` : ''}
+            {servico?.novo ? <span className="mt-1 block">Ao distribuir, o recebimento pelo setor fica confirmado junto.</span> : null}
           </DialogDescription>
         </DialogHeader>
 
@@ -130,35 +136,45 @@ export function DistribuirModal({
           <div className="grid gap-4">
             <div className="grid gap-1.5">
               <Label>Responsável</Label>
-              <div role="listbox" aria-label="Membros do setor" className="grid max-h-64 gap-1 overflow-y-auto rounded-lg border p-1">
-                {membros.map((m) => {
-                  const on = partes[0].responsavel === m.usuario_id;
-                  return (
-                    <button
-                      key={m.usuario_id}
-                      type="button"
-                      role="option"
-                      aria-selected={on}
-                      onClick={() => muda(0, { responsavel: m.usuario_id })}
-                      className={cn(
-                        'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
-                        on ? 'bg-primary/10 ring-1 ring-primary/40' : 'hover:bg-muted',
-                      )}
-                    >
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/15 text-2xs font-bold text-primary">
-                        {getIniciais(m.nome)}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{m.nome}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{m.funcao}</span>
-                      </span>
-                      <Carga m={m} />
-                    </button>
-                  );
-                })}
-                {!membros.length ? <p className="p-3 text-sm text-muted-foreground">Ninguém vinculado a este setor.</p> : null}
+              <div role="listbox" aria-label="Quem recebe tarefas no setor" className="grid max-h-80 gap-2 overflow-y-auto rounded-lg border p-1">
+                {[
+                  { titulo: 'Do setor', pessoas: doSetor },
+                  { titulo: 'De outros setores (também executam aqui)', pessoas: deOutros },
+                ]
+                  .filter((g) => g.pessoas.length)
+                  .map((g) => (
+                    <div key={g.titulo} role="group" aria-label={g.titulo} className="grid gap-1 sm:grid-cols-2">
+                      {deOutros.length ? <p className="px-2 pt-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-2">{g.titulo}</p> : null}
+                      {g.pessoas.map((m) => {
+                          const on = partes[0].responsavel === m.usuario_id;
+                          return (
+                            <button
+                              key={m.usuario_id}
+                              type="button"
+                              role="option"
+                              aria-selected={on}
+                              onClick={() => muda(0, { responsavel: m.usuario_id })}
+                              className={cn(
+                                'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
+                                on ? 'bg-primary/10 ring-1 ring-primary/40' : 'hover:bg-muted',
+                              )}
+                            >
+                              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/15 text-2xs font-bold text-primary">
+                                {getIniciais(m.nome)}
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block truncate font-medium">{m.nome}</span>
+                                <span className="block truncate text-xs text-muted-foreground">{m.membro_do_setor ? m.funcao : m.setor_de_origem_nome}</span>
+                              </span>
+                              <Carga m={m} />
+                            </button>
+                          );
+                        })}
+                    </div>
+                  ))}
+                {!membros.length ? <p className="p-3 text-sm text-muted-foreground">Ninguém recebe tarefas neste setor.</p> : null}
               </div>
-              <span className="text-xs text-muted-foreground">Só membros do setor recebem o serviço. A carga ao lado ajuda a escolher.</span>
+              <span className="text-xs text-muted-foreground">Só quem recebe tarefas neste setor aparece. A carga ao lado ajuda a escolher.</span>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="dist-prazo">Prazo</Label>
@@ -202,7 +218,7 @@ export function DistribuirModal({
               Cada parte vira uma tarefa com responsável e prazo próprios. O prazo do serviço passa a ser o maior entre elas.
             </p>
             {partes.map((p, i) => (
-              <div key={i} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_9.5rem_1fr_auto] sm:items-end">
+              <div key={i} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[minmax(0,1.3fr)_11rem_minmax(0,1fr)_auto] sm:items-end">
                 <div className="grid gap-1">
                   <Label htmlFor={`p-r-${i}`} className="text-xs">
                     Responsável
@@ -214,11 +230,21 @@ export function DistribuirModal({
                     className="h-9 rounded-md border bg-background px-2 text-sm"
                   >
                     <option value="">Escolha</option>
-                    {membros.map((m) => (
-                      <option key={m.usuario_id} value={m.usuario_id}>
-                        {m.nome} ({m.ativos} ativo{m.ativos === 1 ? '' : 's'})
-                      </option>
-                    ))}
+                    {[
+                      { titulo: 'Do setor', pessoas: doSetor },
+                      { titulo: 'De outros setores', pessoas: deOutros },
+                    ]
+                      .filter((g) => g.pessoas.length)
+                      .map((g) => (
+                        <optgroup key={g.titulo} label={g.titulo}>
+                          {g.pessoas.map((m) => (
+                            <option key={m.usuario_id} value={m.usuario_id}>
+                              {m.nome}
+                              {m.membro_do_setor ? '' : ` · ${m.setor_de_origem_nome}`} ({m.ativos} ativo{m.ativos === 1 ? '' : 's'})
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
                   </select>
                 </div>
                 <div className="grid gap-1">
@@ -254,7 +280,7 @@ export function DistribuirModal({
             </Button>
             <Button onClick={confirmar} disabled={distribuir.isPending}>
               {distribuir.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {dividir ? 'Distribuir partes' : 'Distribuir'}
+              {servico?.novo ? (dividir ? 'Confirmar e distribuir partes' : 'Confirmar e distribuir') : dividir ? 'Distribuir partes' : 'Distribuir'}
             </Button>
           </div>
         </DialogFooter>

@@ -91,7 +91,7 @@ export function TarefaModal({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         {etapa === 'excluir' ? (
           <>
             <DialogHeader>

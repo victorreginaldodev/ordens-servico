@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  confirmarRecebimentoDeServicos,
+  confirmarRecebimentoDeTarefas,
   darCiencia,
   distribuir,
   editarTarefa,
@@ -121,10 +123,22 @@ export const useDistribuir = () => {
 export const useDarCiencia = () => {
   const invalidar = useInvalidarAposAcao();
   return useMutation({
-    mutationFn: ({ servicoId, payload }: { servicoId: number; payload?: CienciaPayload }) =>
+    mutationFn: ({ servicoId, payload }: { servicoId: number; payload: CienciaPayload }) =>
       darCiencia(servicoId, payload),
     onSuccess: invalidar,
   });
+};
+
+/** Ciência de recebimento do setor, em um ou vários serviços. */
+export const useConfirmarRecebimentoDeServicos = () => {
+  const invalidar = useInvalidarAposAcao();
+  return useMutation({ mutationFn: (servicos: number[]) => confirmarRecebimentoDeServicos(servicos), onSuccess: invalidar });
+};
+
+/** Ciência do responsável, em uma ou várias tarefas suas. */
+export const useConfirmarRecebimentoDeTarefas = () => {
+  const invalidar = useInvalidarAposAcao();
+  return useMutation({ mutationFn: (tarefas: number[]) => confirmarRecebimentoDeTarefas(tarefas), onSuccess: invalidar });
 };
 
 /** Mudar status, reatribuir, mudar prazo ou descrição de uma tarefa. */

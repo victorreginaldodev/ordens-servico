@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { TONE_CLASSES, type Tone } from '@/components/kit';
+import { Building2, Network } from 'lucide-react';
+import { PrioridadeIndicator, TONE_CLASSES, type Tone } from '@/components/kit';
+import { getIniciais, temTexto } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 export interface ColunaDoQuadro<T> {
@@ -10,6 +12,8 @@ export interface ColunaDoQuadro<T> {
   /** Aceita soltar cartões (ex.: "Distribuído" recebe da fila). */
   aceita?: boolean;
   vazio?: string;
+  /** Conteúdo sob o título (ex.: a navegação por mês dos concluídos). */
+  cabecalho?: React.ReactNode;
 }
 
 const TIPO = 'application/x-servix-cartao';
@@ -25,6 +29,7 @@ export function Quadro<T>({
   arrastavel,
   onSoltar,
   rotulo,
+  larguraMinima = '17rem',
 }: {
   colunas: ColunaDoQuadro<T>[];
   chave: (item: T) => string;
@@ -32,6 +37,8 @@ export function Quadro<T>({
   arrastavel?: (item: T) => boolean;
   onSoltar?: (colunaId: string, itemChave: string) => void;
   rotulo: string;
+  /** Largura mínima de cada coluna; com muitas colunas, o quadro rola na horizontal. */
+  larguraMinima?: string;
 }) {
   const [sobre, setSobre] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState(false);
@@ -39,7 +46,7 @@ export function Quadro<T>({
   return (
     <div
       className="grid gap-3 overflow-x-auto pb-2"
-      style={{ gridTemplateColumns: `repeat(${colunas.length}, minmax(15rem, 1fr))` }}
+      style={{ gridTemplateColumns: `repeat(${colunas.length}, minmax(${larguraMinima}, 1fr))` }}
       aria-label={rotulo}
     >
       {colunas.map((c) => (
@@ -69,7 +76,8 @@ export function Quadro<T>({
             <h3 className="text-sm font-semibold">{c.titulo}</h3>
             <span className="ml-auto rounded-full bg-card px-2 text-xs font-semibold tabular-nums text-muted-foreground">{c.itens.length}</span>
           </header>
-          <div className="flex flex-1 flex-col gap-2 px-2 pb-2">
+          {c.cabecalho ? <div className="-mt-1 px-3 pb-2">{c.cabecalho}</div> : null}
+          <div className="flex flex-1 flex-col gap-2.5 px-2.5 pb-2.5">
             {c.itens.map((it) => {
               const pode = arrastavel?.(it) ?? false;
               return (
@@ -100,47 +108,112 @@ export function Quadro<T>({
   );
 }
 
-/** Moldura do cartão: título, número da OS, cliente e um rodapé livre. Atrasado ganha a faixa vermelha. */
-export function Cartao({
-  titulo,
-  os,
-  cliente,
-  detalhe,
-  rodape,
-  atrasado,
-  prioridadeAlta,
-  onAbrir,
-}: {
+export interface CartaoProps {
+  /** Nome do serviço (catálogo). */
   titulo: string;
+  /** Descrição do serviço ou a parte da tarefa, abaixo do título. */
+  descricao?: string | null;
   os: number;
   cliente: string;
-  detalhe?: React.ReactNode;
-  rodape?: React.ReactNode;
-  atrasado?: boolean;
-  prioridadeAlta?: boolean;
+  /** Setor do serviço (na Visão geral, onde há vários). */
+  setor?: string | null;
+  prioridade?: string | null;
+  /** Chips de situação: prazo, parado, ciência, resultado do prazo. */
+  situacao?: React.ReactNode;
+  /** Informação de tempo ("Na fila há 3 dias", "Concluída em 12/10"). */
+  tempo?: React.ReactNode;
+  /** Linha extra (ex.: os outros serviços da venda). */
+  extra?: React.ReactNode;
+  /** Pessoas do cartão, com o nome completo da primeira. */
+  pessoas?: string[];
+  /** Texto quando não há pessoas (ex.: "Sem responsável"). */
+  semPessoas?: string;
+  acao?: React.ReactNode;
+  /** Faixa lateral de alerta: atrasado (danger) ou parado (warning). */
+  tom?: 'danger' | 'warning' | null;
   onAbrir: () => void;
-}) {
+}
+
+/** Pessoas no rodapé: avatares sobrepostos e o nome completo da primeira ("e mais N"). */
+function Pessoas({ nomes, vazio }: { nomes: string[]; vazio?: string }) {
+  if (!nomes.length) return vazio ? <span className="text-xs italic text-muted-foreground">{vazio}</span> : null;
+  const visiveis = nomes.slice(0, 3);
+  return (
+    <span className="flex min-w-0 items-center gap-2" title={nomes.join(', ')}>
+      <span className="flex shrink-0 -space-x-1.5" aria-hidden>
+        {visiveis.map((n, i) => (
+          <span key={`${n}-${i}`} className="grid size-6 place-items-center rounded-full border-2 border-card bg-primary/10 text-2xs font-semibold text-primary">
+            {getIniciais(n)}
+          </span>
+        ))}
+      </span>
+      <span className="min-w-0 truncate text-xs">
+        <span className="font-medium text-foreground">{nomes[0]}</span>
+        {nomes.length > 1 ? <span className="text-muted-foreground"> e mais {nomes.length - 1}</span> : null}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Cartão de serviço ou tarefa no quadro. Ordem de leitura: de onde vem (OS, setor, prioridade), o que é
+ * (serviço e descrição), para quem (cliente), como está (situação e tempo) e com quem está (pessoas e ação).
+ * Atrasado ganha a faixa vermelha à esquerda; parado, a amarela.
+ */
+export function Cartao({ titulo, descricao, os, cliente, setor, prioridade, situacao, tempo, extra, pessoas = [], semPessoas, acao, tom, onAbrir }: CartaoProps) {
+  const temRodape = pessoas.length > 0 || !!semPessoas || !!acao;
+  const prio = prioridade === 'alta' || prioridade === 'media' ? prioridade : null;
   return (
     <article
       tabIndex={0}
       onClick={(e) => !(e.target as HTMLElement).closest('a,button') && onAbrir()}
       onKeyDown={(e) => e.key === 'Enter' && e.target === e.currentTarget && onAbrir()}
       className={cn(
-        'flex cursor-pointer flex-col gap-1.5 rounded-lg border bg-card p-2.5 text-sm shadow-sm transition-colors hover:border-foreground/20',
+        'group relative flex cursor-pointer flex-col gap-2.5 overflow-hidden rounded-xl border bg-card p-3.5 text-sm shadow-sm transition-all',
+        'hover:-translate-y-px hover:border-primary/30 hover:shadow-md',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        atrasado && 'border-l-[3px] border-l-danger',
       )}
     >
-      <div className="flex items-start gap-1.5">
-        <span className="min-w-0 flex-1 font-semibold leading-snug">{titulo}</span>
-        {prioridadeAlta ? <span className="rounded bg-danger-subtle px-1 text-2xs font-semibold text-danger-strong">Alta</span> : null}
-        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">OS {os}</span>
+      {tom ? <span className={cn('absolute inset-y-0 left-0 w-1', tom === 'danger' ? 'bg-danger' : 'bg-warning')} aria-hidden /> : null}
+
+      <header className="flex items-center gap-2 text-2xs">
+        <span className="rounded-md bg-muted px-1.5 py-0.5 font-semibold tabular-nums text-muted-foreground">OS {os}</span>
+        {setor ? (
+          <span className="inline-flex min-w-0 items-center gap-1 truncate text-muted-foreground">
+            <Network className="size-3 shrink-0" aria-hidden />
+            {setor}
+          </span>
+        ) : null}
+        {prio ? <PrioridadeIndicator value={prio} className="ml-auto text-2xs [&_svg]:size-3.5" /> : null}
+      </header>
+
+      <div className="space-y-0.5">
+        <h4 className="line-clamp-2 font-semibold leading-snug text-foreground">{titulo}</h4>
+        {temTexto(descricao) ? <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{descricao}</p> : null}
       </div>
-      <span className="truncate text-xs text-muted-foreground">
-        {cliente}
-        {detalhe ? <> · {detalhe}</> : null}
-      </span>
-      {rodape ? <div className="flex flex-wrap items-center gap-1.5">{rodape}</div> : null}
+
+      <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <Building2 className="size-3.5 shrink-0" aria-hidden />
+        <span className="truncate" title={cliente}>
+          {cliente}
+        </span>
+      </p>
+
+      {situacao || tempo ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {situacao}
+          {tempo ? <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">{tempo}</span> : null}
+        </div>
+      ) : null}
+
+      {extra}
+
+      {temRodape ? (
+        <footer className="-mx-3.5 -mb-3.5 mt-0.5 flex min-h-11 items-center gap-2 border-t bg-muted/30 px-3.5 py-2">
+          <Pessoas nomes={pessoas} vazio={semPessoas} />
+          {acao ? <span className="ml-auto shrink-0">{acao}</span> : null}
+        </footer>
+      ) : null}
     </article>
   );
 }

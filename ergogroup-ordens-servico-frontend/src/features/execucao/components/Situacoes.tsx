@@ -1,6 +1,7 @@
-import { BellOff, Calendar, CalendarX, CircleCheck, Clock, Hourglass, TriangleAlert } from 'lucide-react';
-import { Chip, ETAPA_DEFS, MOTIVO_CIENCIA_LABEL, TONE_CLASSES } from '@/components/kit';
+import { Calendar, CalendarX, CircleCheck, CirclePause, Clock, Hourglass, TriangleAlert } from 'lucide-react';
+import { Chip, ETAPA_DEFS, TONE_CLASSES, rotuloDaPausa } from '@/components/kit';
 import { diffInDays, formatDate, parseDate } from '@/lib/format';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import type { Etapa, OutroServicoDaOS, SituacaoPrazo } from '../services';
 
@@ -18,14 +19,16 @@ export interface SituacoesProps {
   diasSemMovimentacao?: number;
   cienciaVigente?: boolean;
   motivoCiencia?: string | null;
+  /** Até quando a pausa explicada silencia o aviso. */
+  cienciaAte?: string | null;
 }
 
 /**
  * No máximo duas situações, em palavras (fluxos-e-navegacao.md §6.2.2, item 5):
  * o prazo ("Atrasado 5 dias", "Vence 14/10", "Prazo 24/10", "Sem prazo") e, se houver, o alerta
- * ("Parado há 9 dias") ou a ciência ("Aguardando o cliente").
+ * ("Sem andamento há 9 dias") ou a pausa explicada ("Aguardando o cliente · até 21/10").
  */
-export function Situacoes({ prazo, situacao, emAlerta, diasSemMovimentacao = 0, cienciaVigente, motivoCiencia }: SituacoesProps) {
+export function Situacoes({ prazo, situacao, emAlerta, diasSemMovimentacao = 0, cienciaVigente, motivoCiencia, cienciaAte }: SituacoesProps) {
   const chips: React.ReactNode[] = [];
   const data = parseDate(prazo);
   if (situacao === 'atrasado' && data) {
@@ -55,20 +58,59 @@ export function Situacoes({ prazo, situacao, emAlerta, diasSemMovimentacao = 0, 
   }
   if (emAlerta) {
     chips.push(
-      <Chip key="a" tom="warning" icone={Hourglass} dica="Nenhuma mudança nas tarefas há 7 dias ou mais. Não é erro: é um aviso.">
-        Parado há {dias(diasSemMovimentacao)}
+      <Chip key="a" tom="warning" icone={Hourglass} dica={DICA_SEM_ANDAMENTO}>
+        Sem andamento há {dias(diasSemMovimentacao)}
       </Chip>,
     );
   } else if (cienciaVigente) {
-    const rotulo = motivoCiencia ? MOTIVO_CIENCIA_LABEL[motivoCiencia as keyof typeof MOTIVO_CIENCIA_LABEL] ?? motivoCiencia : 'Ciente';
     chips.push(
-      <Chip key="a" tom="neutral" icone={BellOff} dica="Alguém confirmou que o serviço está esperando algo. O aviso de parado fica silenciado por 7 dias.">
-        {rotulo}
+      <Chip key="a" tom="info" icone={CirclePause} dica={DICA_PAUSA}>
+        {rotuloDaPausa(motivoCiencia)}
+        {cienciaAte ? ` · até ${dm(cienciaAte)}` : ''}
       </Chip>,
     );
   }
   if (!chips.length) return <span className="text-muted-foreground">—</span>;
   return <span className="flex flex-wrap gap-1">{chips}</span>;
+}
+
+const DICA_SEM_ANDAMENTO =
+  'Nenhuma mudança nas tarefas há 7 dias ou mais. Se o trabalho andou, atualize a tarefa; se está esperando algo, explique a pausa.';
+const DICA_PAUSA = 'A pausa foi explicada: o serviço está esperando algo. O aviso fica em silêncio até a data e volta se nada mudar.';
+
+/**
+ * Coluna "Andamento" das tabelas da execução, em três estados (fluxos-e-navegacao.md §6.2.8):
+ * normal ("Última mudança há 3 dias", discreto), sem andamento (amarelo) e pausa explicada (motivo e até quando).
+ */
+export function AndamentoDoServico({
+  dias: n,
+  emAlerta,
+  cienciaVigente,
+  motivo,
+  ate,
+}: {
+  dias: number;
+  emAlerta: boolean;
+  cienciaVigente: boolean;
+  motivo?: string | null;
+  ate?: string | null;
+}) {
+  if (emAlerta) {
+    return (
+      <Chip tom="warning" icone={Hourglass} dica={DICA_SEM_ANDAMENTO}>
+        Sem andamento há {dias(n)}
+      </Chip>
+    );
+  }
+  if (cienciaVigente) {
+    return (
+      <Chip tom="info" icone={CirclePause} dica={DICA_PAUSA}>
+        {rotuloDaPausa(motivo)}
+        {ate ? ` · até ${dm(ate)}` : ''}
+      </Chip>
+    );
+  }
+  return <span className="text-xs text-muted-foreground">{n === 0 ? 'Mudou hoje' : `Última mudança há ${dias(n)}`}</span>;
 }
 
 /** Concluído no prazo ou quantos dias depois; sem prazo, só o texto. */
@@ -92,7 +134,8 @@ export function ResultadoDoPrazo({ prazo, termino, noPrazo }: { prazo: string | 
 }
 
 const DOT: Record<Etapa, string> = {
-  na_fila: TONE_CLASSES.warning.dot,
+  novo: TONE_CLASSES.warning.dot,
+  a_distribuir: TONE_CLASSES.warning.dot,
   distribuido: TONE_CLASSES.neutral.dot,
   em_execucao: TONE_CLASSES.info.dot,
   concluido: TONE_CLASSES.success.dot,
@@ -116,5 +159,65 @@ export function OutrosServicosDaOS({ itens, setorAtual, className }: { itens: Ou
         </span>
       ))}
     </span>
+  );
+}
+
+/** Versão compacta para o cartão do quadro: um ponto por serviço (cor da etapa) e a lista no `title`. */
+export function OutrosServicosResumo({ itens }: { itens: OutroServicoDaOS[] }) {
+  if (!itens.length) return null;
+  const lista = itens.map((o) => `${o.catalogo_nome ?? o.descricao} · ${o.setor_nome ?? 'Sem setor'} · ${ETAPA_DEFS[o.etapa].label}`).join('\n');
+  return (
+    <p className="flex items-center gap-2 text-xs text-muted-foreground" title={lista}>
+      <span className="flex -space-x-0.5" aria-hidden>
+        {itens.slice(0, 5).map((o) => (
+          <span key={o.id} className={cn('size-2 rounded-full ring-2 ring-card', DOT[o.etapa])} />
+        ))}
+      </span>
+      Mais {itens.length} serviço{itens.length === 1 ? '' : 's'} nesta venda
+    </p>
+  );
+}
+
+/**
+ * Etiqueta curta, de largura fixa, para a tabela: "+2 na OS". Ao clicar, lista os outros serviços da venda com o
+ * setor, a etapa e quem está com cada um (revisão de 14/10/2026: a fileira de etiquetas esticava a linha).
+ */
+export function OutrosServicosEtiqueta({ itens }: { itens: OutroServicoDaOS[] }) {
+  if (!itens.length) return <span className="text-xs text-muted-foreground">Só este</span>;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          data-row-interactive
+          className="inline-flex h-6 w-24 items-center gap-1.5 rounded-md border bg-card px-2 text-xs font-medium tabular-nums transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Mais ${itens.length} serviço${itens.length === 1 ? '' : 's'} nesta venda`}
+        >
+          <span className="flex -space-x-0.5" aria-hidden>
+            {itens.slice(0, 3).map((o) => (
+              <span key={o.id} className={cn('size-2 rounded-full ring-2 ring-card', DOT[o.etapa])} />
+            ))}
+          </span>
+          +{itens.length} na OS
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 p-2">
+        <p className="px-1 pb-1.5 text-xs font-semibold text-muted-foreground">Outros serviços desta venda</p>
+        <ul className="grid gap-1">
+          {itens.map((o) => (
+            <li key={o.id} className="grid gap-0.5 rounded-md px-1.5 py-1 text-xs hover:bg-muted">
+              <span className="flex items-center gap-1.5 font-semibold uppercase">
+                <span className={cn('size-1.5 shrink-0 rounded-full', DOT[o.etapa])} aria-hidden />
+                {o.catalogo_nome ?? o.descricao}
+              </span>
+              <span className="pl-3 text-muted-foreground">
+                {o.setor_nome ?? 'Sem setor'} · {ETAPA_DEFS[o.etapa].label}
+                {o.responsaveis.length ? ` · ${o.responsaveis.join(', ')}` : ''}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 }

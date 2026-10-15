@@ -11,6 +11,7 @@ import { comoLista, type Esquemas, type FiltrosDe } from '@/api/tipos';
 const BASE = '/api/execucao';
 
 export type Etapa = Esquemas['EtapaEnum'];
+export type EtapaDaTarefa = Esquemas['EtapaTarefaEnum'];
 export type SituacaoPrazo = Esquemas['SituacaoPrazoEnum'];
 export type MotivoCiencia = Esquemas['MotivoCienciaEnum'];
 
@@ -90,8 +91,23 @@ export const distribuir = async (servicoId: number, payload: DistribuirPayload):
   return data;
 };
 
-/** "Estou ciente": silencia o alerta de serviço sem movimentação por mais N dias. */
-export const darCiencia = async (servicoId: number, payload: CienciaPayload = {}): Promise<DetalheDoServico> => {
+/**
+ * Ciência de recebimento do setor (ADR 0009): os serviços passam de novo para a distribuir. Aceita vários;
+ * exige `tarefas.distribuir` no setor de cada um, e se faltar em algum nada é gravado.
+ */
+export const confirmarRecebimentoDeServicos = async (servicos: number[]): Promise<Esquemas['ServicosRecebidos']> => {
+  const { data } = await api.post<Esquemas['ServicosRecebidos']>(`${BASE}/servicos/recebimento/`, { servicos });
+  return data;
+};
+
+/** Ciência do responsável (ADR 0009): as tarefas passam de nova para a iniciar. Só o próprio responsável. */
+export const confirmarRecebimentoDeTarefas = async (tarefas: number[]): Promise<Esquemas['TarefasRecebidas']> => {
+  const { data } = await api.post<Esquemas['TarefasRecebidas']>(`${BASE}/tarefas/recebimento/`, { tarefas });
+  return data;
+};
+
+/** Explicar a pausa: o motivo (obrigatório; "outro" exige a observação) silencia o aviso de sem andamento por N dias. */
+export const darCiencia = async (servicoId: number, payload: CienciaPayload): Promise<DetalheDoServico> => {
   const { data } = await api.post<DetalheDoServico>(`${BASE}/servicos/${servicoId}/ciencia/`, payload);
   return data;
 };
