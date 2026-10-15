@@ -72,6 +72,7 @@ paths:
           - liberacao_cobranca
           - liberacao_faturamento
           - propagacao_status
+          - recebimento
           - status
         description: Filtrar pelo tipo de ação registrada.
       - in: query
@@ -134,7 +135,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Registro de Auditoria.
+        description: Um valor inteiro único que identifica este Registro de Auditoria.
         required: true
       tags:
       - auditoria
@@ -172,6 +173,7 @@ paths:
           - liberacao_cobranca
           - liberacao_faturamento
           - propagacao_status
+          - recebimento
           - status
         description: Filtrar pelo tipo de ação registrada.
       - in: query
@@ -253,6 +255,7 @@ paths:
           - liberacao_cobranca
           - liberacao_faturamento
           - propagacao_status
+          - recebimento
           - status
         description: Filtrar pelo tipo de ação registrada.
       - in: query
@@ -354,9 +357,9 @@ paths:
           description: ''
     post:
       operationId: catalogo_catalogos_create
-      description: Cria um novo catálogo. O setor responsável pela execução é obrigatório
-        e precisa estar ativo. A resposta traz `avisos` quando o setor ainda não tem
-        quem o organize.
+      description: Cria um novo catálogo. O setor responsável pela execução é obrigatório,
+        precisa estar ativo e, para catálogo ativo, ter quem receba tarefas (400 se
+        não tiver). A resposta traz `avisos` quando o setor ainda não tem quem o organize.
       summary: Criar catálogo
       tags:
       - catalogo
@@ -449,7 +452,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo Operacional.
+        description: Um valor inteiro único que identifica este Catálogo Operacional.
         required: true
       tags:
       - catalogo
@@ -473,7 +476,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo Operacional.
+        description: Um valor inteiro único que identifica este Catálogo Operacional.
         required: true
       tags:
       - catalogo
@@ -509,7 +512,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo Operacional.
+        description: Um valor inteiro único que identifica este Catálogo Operacional.
         required: true
       tags:
       - catalogo
@@ -544,7 +547,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo Operacional.
+        description: Um valor inteiro único que identifica este Catálogo Operacional.
         required: true
       tags:
       - catalogo
@@ -565,7 +568,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo.
+        description: Um valor inteiro único que identifica este Catálogo.
         required: true
       tags:
       - catalogo
@@ -582,14 +585,17 @@ paths:
           description: ''
     put:
       operationId: catalogo_catalogos_update
-      description: Substitui integralmente os dados de um catálogo.
+      description: Substitui integralmente os dados de um catálogo. Ao mudar o setor,
+        `mover_servicos_em_aberto=true` leva junto os serviços em aberto e sem tarefas
+        (`servicos_em_aberto`); a resposta traz `servicos_movidos`. Catálogo ativo
+        só em setor com quem receba tarefas.
       summary: Atualizar catálogo
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo.
+        description: Um valor inteiro único que identifica este Catálogo.
         required: true
       tags:
       - catalogo
@@ -618,14 +624,15 @@ paths:
           description: ''
     patch:
       operationId: catalogo_catalogos_partial_update
-      description: Atualiza um ou mais campos de um catálogo.
+      description: Atualiza um ou mais campos de um catálogo. Mesmas regras de setor
+        da atualização completa.
       summary: Atualizar catálogo parcialmente
       parameters:
       - in: path
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo.
+        description: Um valor inteiro único que identifica este Catálogo.
         required: true
       tags:
       - catalogo
@@ -661,7 +668,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Catálogo.
+        description: Um valor inteiro único que identifica este Catálogo.
         required: true
       tags:
       - catalogo
@@ -672,6 +679,39 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/catalogo/catalogos/mudar-setor/:
+    post:
+      operationId: catalogo_catalogos_mudar_setor_create
+      description: Passa os catálogos informados para o setor escolhido (ativo e,
+        se algum catálogo for ativo, com quem receba tarefas). Com `mover_servicos_em_aberto=true`,
+        leva junto os serviços em aberto e sem tarefas; eles voltam a "novo" no setor
+        de destino, que recebe o aviso de chegada. Exige `catalogo.gerenciar`.
+      summary: Mudar o setor de vários catálogos
+      tags:
+      - catalogo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MudarSetorDosCatalogosRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MudarSetorDosCatalogosRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MudarSetorDosCatalogosRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoMudarSetor'
+          description: ''
   /api/catalogo/subitens/:
     get:
       operationId: catalogo_subitens_list
@@ -752,7 +792,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Subitem de catálogo.
+        description: Um valor inteiro único que identifica este Subitem de catálogo.
         required: true
       tags:
       - catalogo
@@ -776,7 +816,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Subitem de catálogo.
+        description: Um valor inteiro único que identifica este Subitem de catálogo.
         required: true
       tags:
       - catalogo
@@ -812,7 +852,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Subitem de catálogo.
+        description: Um valor inteiro único que identifica este Subitem de catálogo.
         required: true
       tags:
       - catalogo
@@ -847,7 +887,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Subitem de catálogo.
+        description: Um valor inteiro único que identifica este Subitem de catálogo.
         required: true
       tags:
       - catalogo
@@ -942,7 +982,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Cliente.
+        description: Um valor inteiro único que identifica este Cliente.
         required: true
       tags:
       - clientes
@@ -966,7 +1006,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Cliente.
+        description: Um valor inteiro único que identifica este Cliente.
         required: true
       tags:
       - clientes
@@ -1002,7 +1042,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Cliente.
+        description: Um valor inteiro único que identifica este Cliente.
         required: true
       tags:
       - clientes
@@ -1037,7 +1077,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Cliente.
+        description: Um valor inteiro único que identifica este Cliente.
         required: true
       tags:
       - clientes
@@ -1331,7 +1371,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this usuário.
+        description: Um valor inteiro único que identifica este usuário.
         required: true
       tags:
       - contas
@@ -1356,7 +1396,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this usuário.
+        description: Um valor inteiro único que identifica este usuário.
         required: true
       tags:
       - contas
@@ -1393,7 +1433,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this usuário.
+        description: Um valor inteiro único que identifica este usuário.
         required: true
       tags:
       - contas
@@ -1430,7 +1470,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this usuário.
+        description: Um valor inteiro único que identifica este usuário.
         required: true
       tags:
       - contas
@@ -1453,7 +1493,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this usuário.
+        description: Um valor inteiro único que identifica este usuário.
         required: true
       tags:
       - contas
@@ -1494,7 +1534,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this usuário.
+        description: Um valor inteiro único que identifica este usuário.
         required: true
       tags:
       - contas
@@ -1520,7 +1560,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this usuário.
+        description: Um valor inteiro único que identifica este usuário.
         required: true
       tags:
       - contas
@@ -1591,6 +1631,15 @@ paths:
       summary: Em andamento no setor
       parameters:
       - in: query
+        name: etapa
+        schema:
+          type: string
+          enum:
+          - a_iniciar
+          - em_andamento
+          - nova
+        description: Etapa da tarefa.
+      - in: query
         name: responsavel
         schema:
           type: integer
@@ -1655,10 +1704,11 @@ paths:
   /api/execucao/equipe/:
     get:
       operationId: execucao_equipe_list
-      description: 'Por membro do setor: itens ativos por situação de prazo, em alerta
-        e idade do mais antigo. Inclui quem ainda tem tarefa ativa no setor sem ser
-        membro. Serve também de lista de responsáveis na distribuição (só os membros
-        podem receber tarefas).'
+      description: 'Por pessoa que recebe tarefas do setor (lotada com "Recebe tarefas"
+        ou que "também executa" aqui): itens ativos por situação de prazo, em alerta
+        e idade do mais antigo. Inclui quem ainda tem tarefa ativa no setor sem receber
+        mais (`recebe_tarefas` falso). Serve de lista de responsáveis na distribuição:
+        só quem tem `recebe_tarefas` pode ser escolhido.'
       summary: Equipe e carga do setor
       parameters:
       - in: query
@@ -1685,9 +1735,10 @@ paths:
   /api/execucao/fila/:
     get:
       operationId: execucao_fila_list
-      description: Serviços do setor que chegaram e ainda não foram distribuídos,
-        mais antigos primeiro, com o contexto da venda e os outros serviços da mesma
-        OS. Agrupar por cliente ou por OS é decisão da tela.
+      description: 'Serviços do setor que chegaram e ainda não foram distribuídos:
+        os novos (sem ciência do setor) primeiro, depois os a distribuir; em cada
+        grupo, os mais antigos primeiro. Traz o contexto da venda e os outros serviços
+        da mesma OS. Agrupar por cliente ou por OS é decisão da tela.'
       summary: Fila de triagem do setor
       parameters:
       - in: query
@@ -1695,6 +1746,14 @@ paths:
         schema:
           type: integer
         description: Filtrar pelo cliente.
+      - in: query
+        name: etapa
+        schema:
+          type: string
+          enum:
+          - a_distribuir
+          - novo
+        description: Só uma das etapas.
       - in: query
         name: ordem_servico
         schema:
@@ -1744,6 +1803,15 @@ paths:
           type: string
         description: 'Data inicial (AAAA-MM-DD). Padrão: primeiro dia do mês atual.'
       - in: query
+        name: etapa
+        schema:
+          type: string
+          enum:
+          - a_iniciar
+          - em_andamento
+          - nova
+        description: Etapa da tarefa (sem `status`).
+      - in: query
         name: status
         schema:
           type: string
@@ -1765,12 +1833,32 @@ paths:
                 items:
                   $ref: '#/components/schemas/LinhaDeTarefa'
           description: ''
+  /api/execucao/meus-servicos/contadores/:
+    get:
+      operationId: execucao_meus_servicos_contadores_retrieve
+      description: 'Quantas tarefas ativas da pessoa estão em cada etapa: nova, a
+        iniciar e em andamento.'
+      summary: Contadores de Meus serviços
+      tags:
+      - execução
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContadoresMeusServicos'
+          description: ''
   /api/execucao/servicos/{id}/:
     get:
       operationId: execucao_servicos_retrieve
       description: O serviço com tarefas, prazo, alerta e ciência, o contexto da venda
-        (sem valores) e os outros serviços da mesma OS. `pode_distribuir` e `pode_dar_ciencia`
-        dizem quais ações mostrar.
+        (sem valores) e os outros serviços da mesma OS. `pode_distribuir`, `pode_dar_ciencia`
+        e `pode_confirmar_recebimento` (no serviço e em cada tarefa) dizem quais ações
+        mostrar.
       summary: Detalhe do serviço
       parameters:
       - in: path
@@ -1794,10 +1882,11 @@ paths:
   /api/execucao/servicos/{id}/ciencia/:
     post:
       operationId: execucao_servicos_ciencia_create
-      description: '"Está tudo bem, deixar assim": silencia o alerta de serviço sem
-        movimentação por mais N dias, com motivo opcional. Pode dar ciência quem tem
-        tarefa no serviço ou quem acompanha o setor.'
-      summary: Estou ciente do alerta
+      description: 'O serviço está sem andamento porque espera algo: o motivo (obrigatório;
+        "outro" exige a observação) silencia o aviso por N dias e fica visível para
+        o setor (`ciencia_ate`). Se o trabalho andou, o certo é atualizar a tarefa.
+        Pode explicar quem tem tarefa no serviço ou quem acompanha o setor.'
+      summary: Explicar a pausa
       parameters:
       - in: path
         name: id
@@ -1817,6 +1906,7 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CienciaRequest'
+        required: true
       security:
       - jwtAuth: []
       - basicAuth: []
@@ -1867,6 +1957,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetalheDoServico'
           description: ''
+  /api/execucao/servicos/recebimento/:
+    post:
+      operationId: execucao_servicos_recebimento_create
+      description: 'Ciência do setor de que os serviços chegaram (ADR 0009): passam
+        de novo para a distribuir. Aceita vários de uma vez. Exige `tarefas.distribuir`
+        no setor de cada serviço; se faltar em algum, nada é gravado. Serviço que
+        já tinha ciência volta em `ja_recebidos`. Distribuir também registra a ciência.'
+      summary: Confirmar recebimento de serviços
+      tags:
+      - execução
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceberServicosRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReceberServicosRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReceberServicosRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicosRecebidos'
+          description: ''
   /api/execucao/setores/:
     get:
       operationId: execucao_setores_list
@@ -1889,14 +2012,50 @@ paths:
                 items:
                   $ref: '#/components/schemas/SetorAcompanhado'
           description: ''
+  /api/execucao/tarefas/recebimento/:
+    post:
+      operationId: execucao_tarefas_recebimento_create
+      description: 'Ciência do responsável de que a tarefa é dele (ADR 0009): passa
+        de nova para a iniciar. Aceita várias de uma vez. Só o responsável confirma;
+        se alguma não for dele, nada é gravado. Começar a tarefa também registra a
+        ciência; trocar o responsável a zera.'
+      summary: Confirmar recebimento de tarefas
+      tags:
+      - execução
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceberTarefasRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReceberTarefasRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReceberTarefasRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TarefasRecebidas'
+          description: ''
   /api/financeiro/cobrancas/:
     get:
       operationId: financeiro_cobrancas_retrieve
       description: 'As OS de uma situação, com tudo o que o financeiro precisa para
         faturar: `a_faturar` (liberadas e ainda não lançadas, as mais antigas primeiro),
         `faturadas` (lançadas, as mais recentes primeiro) e `previsao` (ainda não
-        liberadas, as mais perto de liberar primeiro; sem as canceladas). Traz os
-        contadores das três situações sob os mesmos filtros. Exige `financeiro.registrar_cobranca`.'
+        liberadas, as mais perto de liberar primeiro; sem as canceladas). Com `todas`,
+        as três numa chamada (a faturar, previsão e faturadas, nessa ordem). Traz
+        os contadores das três situações sob os mesmos filtros, o que falta em cada
+        OS da previsão (`pendentes`) e os códigos da conferência (`pendencias`). Exige
+        `financeiro.registrar_cobranca` e `financeiro.ver_valores`.'
       summary: Cobranças
       parameters:
       - in: query
@@ -1922,6 +2081,16 @@ paths:
           - 'true'
         description: Só as liberadas há N dias sem lançamento.
       - in: query
+        name: faturada_ate
+        schema:
+          type: string
+        description: Faturadas lançadas até esta data (AAAA-MM-DD).
+      - in: query
+        name: faturada_de
+        schema:
+          type: string
+        description: Faturadas lançadas a partir desta data (AAAA-MM-DD).
+      - in: query
         name: forma_pagamento
         schema:
           type: string
@@ -1942,6 +2111,7 @@ paths:
           - a_faturar
           - faturadas
           - previsao
+          - todas
         description: 'Padrão: `a_faturar`.'
       - in: query
         name: tipo_condicao
@@ -1950,7 +2120,6 @@ paths:
           enum:
           - a_vista
           - parcelado
-          - recorrente
       tags:
       - financeiro
       security:
@@ -1964,12 +2133,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/Cobrancas'
           description: ''
+  /api/financeiro/conferencia/:
+    get:
+      operationId: financeiro_conferencia_retrieve
+      description: O que o sistema verifica para que nada concluído fique sem cobrança
+        (faturamento/04). As garantias (`tipo=garantia`) são as regras da liberação
+        e devem dar sempre 0; as atenções dizem o que depende de alguém ou o que mudou
+        depois da liberação ou do lançamento, com o serviço, o setor e quem está com
+        ele. Calculada na hora da consulta. Exige `financeiro.registrar_cobranca`
+        e `financeiro.ver_valores`.
+      summary: Conferência do faturamento
+      tags:
+      - financeiro
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conferencia'
+          description: ''
+  /api/financeiro/conferencia/corrigir/:
+    post:
+      operationId: financeiro_conferencia_corrigir_create
+      description: Refaz a sincronização dos serviços e das OS ainda não liberadas
+        (o mesmo que acontece quando uma tarefa é salva). Só aplica o que a regra
+        manda; cada mudança fica na auditoria. Devolve quantos serviços mudaram de
+        status e quantas OS foram liberadas.
+      summary: Corrigir a sincronização
+      tags:
+      - financeiro
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Correcao'
+          description: ''
   /api/financeiro/ordens/{id}/:
     get:
       operationId: financeiro_ordens_retrieve
-      description: Condição, liberação, lançamento e alerta da OS, os serviços com
-        a etapa de cada um e os eventos financeiros (venda, liberação e lançamento).
-        Exige `financeiro.ver_valores`.
+      description: 'O resumo para faturar: os dados do cliente; condição, liberação,
+        lançamento e alerta da OS; os serviços realizados (setor, quem executou, início,
+        término e quem finalizou); as pendências da conferência; e a linha do tempo
+        da OS, com a categoria de cada evento (`financeiro` ou `execucao`). Exige
+        `financeiro.ver_valores`.'
       summary: Situação financeira da OS
       parameters:
       - in: path
@@ -2110,7 +2325,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço Operacional.
+        description: Um valor inteiro único que identifica este Ordem de Serviço Operacional.
         required: true
       tags:
       - ordens-servico
@@ -2136,7 +2351,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço Operacional.
+        description: Um valor inteiro único que identifica este Ordem de Serviço Operacional.
         required: true
       tags:
       - ordens-servico
@@ -2173,7 +2388,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço Operacional.
+        description: Um valor inteiro único que identifica este Ordem de Serviço Operacional.
         required: true
       tags:
       - ordens-servico
@@ -2208,7 +2423,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço Operacional.
+        description: Um valor inteiro único que identifica este Ordem de Serviço Operacional.
         required: true
       tags:
       - ordens-servico
@@ -2231,7 +2446,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço Operacional.
+        description: Um valor inteiro único que identifica este Ordem de Serviço Operacional.
         required: true
       tags:
       - ordens-servico
@@ -2293,13 +2508,14 @@ paths:
         schema:
           type: string
           enum:
+          - a_distribuir
           - cancelado
           - concluido
           - distribuido
           - em_execucao
-          - na_fila
-        description: 'OS com ao menos um serviço na etapa (ex.: `na_fila` = vendas
-          com algo ainda não distribuído).'
+          - novo
+        description: 'OS com ao menos um serviço na etapa (ex.: `novo` = vendas com
+          algo que o setor ainda não recebeu).'
       - in: query
         name: liberada
         schema:
@@ -2319,7 +2535,8 @@ paths:
         name: q
         schema:
           type: string
-        description: Busca por nome do cliente ou observação (parcial).
+        description: Busca por nome do cliente ou, para quem vê valores, pela observação
+          (parcial).
       tags:
       - ordens-servico
       security:
@@ -2341,9 +2558,11 @@ paths:
         automaticamente com o usuário autenticado. Se `liberar_em=venda`, a OS já
         é criada com `liberada_para_cobranca=true`; com `liberar_em=conclusao`, é
         liberada quando todos os serviços terminam. A condição de pagamento é validada
-        pelo `tipo_condicao`: parcelado exige ao menos 2 parcelas e o primeiro vencimento
-        (`data_acordada_cobranca`); recorrente exige o número de meses (`quantidade_parcelas`)
-        e o `dia_vencimento`.'
+        pelo `tipo_condicao` (à vista ou parcelado): o vencimento é obrigatório e
+        é a data combinada (`data_acordada_cobranca`) ou os dias após a nota (`vencimento_dias_apos_nota`),
+        nunca os dois; no parcelado ele é o da 1ª parcela, as parcelas são mensais
+        e são pelo menos 2, e `dia_vencimento_demais` (1 a 31, opcional) fixa o dia
+        das parcelas da 2ª em diante.'
       summary: Criar ordem de serviço
       tags:
       - ordens-servico
@@ -2380,7 +2599,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço.
+        description: Um valor inteiro único que identifica este Ordem de Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2406,7 +2625,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço.
+        description: Um valor inteiro único que identifica este Ordem de Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2444,7 +2663,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço.
+        description: Um valor inteiro único que identifica este Ordem de Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2479,7 +2698,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço.
+        description: Um valor inteiro único que identifica este Ordem de Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2502,7 +2721,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço.
+        description: Um valor inteiro único que identifica este Ordem de Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2541,7 +2760,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço.
+        description: Um valor inteiro único que identifica este Ordem de Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2569,7 +2788,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Ordem de Serviço.
+        description: Um valor inteiro único que identifica este Ordem de Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2699,7 +2918,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Serviço.
+        description: Um valor inteiro único que identifica este Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2724,7 +2943,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Serviço.
+        description: Um valor inteiro único que identifica este Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2761,7 +2980,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Serviço.
+        description: Um valor inteiro único que identifica este Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2796,7 +3015,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Serviço.
+        description: Um valor inteiro único que identifica este Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2820,7 +3039,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Serviço.
+        description: Um valor inteiro único que identifica este Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2849,7 +3068,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Serviço.
+        description: Um valor inteiro único que identifica este Serviço.
         required: true
       tags:
       - ordens-servico
@@ -2971,7 +3190,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Tarefa.
+        description: Um valor inteiro único que identifica este Tarefa.
         required: true
       tags:
       - ordens-servico
@@ -2997,7 +3216,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Tarefa.
+        description: Um valor inteiro único que identifica este Tarefa.
         required: true
       tags:
       - ordens-servico
@@ -3034,7 +3253,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Tarefa.
+        description: Um valor inteiro único que identifica este Tarefa.
         required: true
       tags:
       - ordens-servico
@@ -3070,7 +3289,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Tarefa.
+        description: Um valor inteiro único que identifica este Tarefa.
         required: true
       tags:
       - ordens-servico
@@ -3168,7 +3387,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Função.
+        description: Um valor inteiro único que identifica este Função.
         required: true
       tags:
       - organizacoes
@@ -3192,7 +3411,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Função.
+        description: Um valor inteiro único que identifica este Função.
         required: true
       tags:
       - organizacoes
@@ -3228,7 +3447,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Função.
+        description: Um valor inteiro único que identifica este Função.
         required: true
       tags:
       - organizacoes
@@ -3264,7 +3483,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Função.
+        description: Um valor inteiro único que identifica este Função.
         required: true
       tags:
       - organizacoes
@@ -3376,7 +3595,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Membro de setor.
+        description: Um valor inteiro único que identifica este Membro de setor.
         required: true
       tags:
       - organizacoes
@@ -3400,7 +3619,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Membro de setor.
+        description: Um valor inteiro único que identifica este Membro de setor.
         required: true
       tags:
       - organizacoes
@@ -3436,7 +3655,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Membro de setor.
+        description: Um valor inteiro único que identifica este Membro de setor.
         required: true
       tags:
       - organizacoes
@@ -3471,7 +3690,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Membro de setor.
+        description: Um valor inteiro único que identifica este Membro de setor.
         required: true
       tags:
       - organizacoes
@@ -3541,7 +3760,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Organização.
+        description: Um valor inteiro único que identifica este Organização.
         required: true
       tags:
       - organizacoes
@@ -3566,7 +3785,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Organização.
+        description: Um valor inteiro único que identifica este Organização.
         required: true
       tags:
       - organizacoes
@@ -3603,7 +3822,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Organização.
+        description: Um valor inteiro único que identifica este Organização.
         required: true
       tags:
       - organizacoes
@@ -3704,7 +3923,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Setor.
+        description: Um valor inteiro único que identifica este Setor.
         required: true
       tags:
       - organizacoes
@@ -3729,7 +3948,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Setor.
+        description: Um valor inteiro único que identifica este Setor.
         required: true
       tags:
       - organizacoes
@@ -3766,7 +3985,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Setor.
+        description: Um valor inteiro único que identifica este Setor.
         required: true
       tags:
       - organizacoes
@@ -3803,7 +4022,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this Setor.
+        description: Um valor inteiro único que identifica este Setor.
         required: true
       tags:
       - organizacoes
@@ -3829,6 +4048,7 @@ components:
       - cobranca_realizada
       - contrato
       - ciencia_alerta
+      - recebimento
       - backfill
       type: string
       description: |-
@@ -3843,6 +4063,7 @@ components:
         * `cobranca_realizada` - Cobrança Realizada
         * `contrato` - Contrato
         * `ciencia_alerta` - Ciência de alerta
+        * `recebimento` - Ciência de recebimento
         * `backfill` - Backfill
     Alerta:
       type: object
@@ -3876,6 +4097,11 @@ components:
         alerta_ciente_observacao:
           type: string
           nullable: true
+        ciencia_ate:
+          type: string
+          format: date
+          nullable: true
+          description: Até quando a pausa explicada silencia o aviso.
         servico_id:
           type: integer
         catalogo_nome:
@@ -3905,6 +4131,7 @@ components:
       - alerta_ciente_observacao
       - alerta_ciente_por_nome
       - catalogo_nome
+      - ciencia_ate
       - ciencia_vigente
       - cliente_id
       - cliente_nome
@@ -3923,7 +4150,9 @@ components:
       properties:
         total:
           type: integer
-        na_fila:
+        novo:
+          type: integer
+        a_distribuir:
           type: integer
         distribuido:
           type: integer
@@ -3934,12 +4163,25 @@ components:
         cancelado:
           type: integer
       required:
+      - a_distribuir
       - cancelado
       - concluido
       - distribuido
       - em_execucao
-      - na_fila
+      - novo
       - total
+    Atuacao:
+      type: object
+      description: 'Setor em que a pessoa "também executa": recebe tarefas lá, sem
+        permissões de gestão.'
+      properties:
+        setor:
+          type: integer
+        setor_nome:
+          type: string
+      required:
+      - setor
+      - setor_nome
     BlankEnum:
       enum:
       - ''
@@ -4023,9 +4265,15 @@ components:
           items:
             $ref: '#/components/schemas/SubitemCatalogo'
           readOnly: true
+        servicos_em_aberto:
+          type: integer
+          readOnly: true
+          description: 'Serviços deste catálogo abertos e ainda sem tarefas (novos
+            ou a distribuir): os que podem mudar de setor junto com o catálogo.'
       required:
       - id
       - nome
+      - servicos_em_aberto
       - setor
       - setor_nome
       - subitens
@@ -4049,7 +4297,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 9223372036854775807
+          maximum: 65535
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -4074,7 +4322,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 9223372036854775807
+          maximum: 65535
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -4099,20 +4347,35 @@ components:
           default: true
           description: Catálogos inativos continuam nos serviços já vendidos, mas
             não podem ser usados em serviços novos.
+        mover_servicos_em_aberto:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: 'Ao mudar o setor: leva junto os serviços em aberto e sem tarefas
+            (os demais ficam no setor antigo).'
       required:
       - nome
       - setor
+    CategoriaDoEventoEnum:
+      enum:
+      - financeiro
+      - execucao
+      type: string
+      description: |-
+        * `financeiro` - financeiro
+        * `execucao` - execucao
     CienciaRequest:
       type: object
+      description: 'Explicar a pausa (ADR 0008, 3; revisão de 14/10/2026): o motivo
+        é obrigatório, e "outro" exige a observação.'
       properties:
         motivo:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/MotivoCienciaEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          $ref: '#/components/schemas/MotivoCienciaEnum'
         observacao:
           type: string
           nullable: true
+      required:
+      - motivo
     Cliente:
       type: object
       properties:
@@ -4193,6 +4456,61 @@ components:
       - cliente_id
       - cliente_nome
       - total_valor_cobrado
+    ClienteDoResumo:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        tipo_inscricao:
+          type: string
+          nullable: true
+          description: cnpj, cpf, cei, cno ou caepf.
+        tipo_inscricao_display:
+          type: string
+          nullable: true
+        numero_inscricao:
+          type: string
+          nullable: true
+        tipo_cliente:
+          type: string
+          nullable: true
+          description: gestao, avulso ou fornecedor.
+        tipo_cliente_display:
+          type: string
+          nullable: true
+        nome_representante:
+          type: string
+          nullable: true
+        setor_representante:
+          type: string
+          nullable: true
+        email_representante:
+          type: string
+          nullable: true
+        contato_representante:
+          type: string
+          nullable: true
+        observacao:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+      required:
+      - ativo
+      - contato_representante
+      - email_representante
+      - id
+      - nome
+      - nome_representante
+      - numero_inscricao
+      - observacao
+      - setor_representante
+      - tipo_cliente
+      - tipo_cliente_display
+      - tipo_inscricao
+      - tipo_inscricao_display
     ClienteList:
       type: object
       properties:
@@ -4211,13 +4529,43 @@ components:
         tipo_cliente_display:
           type: string
           readOnly: true
+        tipo_inscricao:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TipoInscricaoEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         numero_inscricao:
           type: string
           nullable: true
           maxLength: 30
+        nome_representante:
+          type: string
+          nullable: true
+          maxLength: 50
+        setor_representante:
+          type: string
+          nullable: true
+          maxLength: 50
+        email_representante:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        contato_representante:
+          type: string
+          nullable: true
+          maxLength: 50
+        cobranca_revisao_alteracao:
+          type: boolean
         ativo:
           type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
       required:
+      - data_criacao
       - id
       - nome
       - tipo_cliente_display
@@ -4234,10 +4582,35 @@ components:
           - $ref: '#/components/schemas/TipoClienteEnum'
           - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
+        tipo_inscricao:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TipoInscricaoEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         numero_inscricao:
           type: string
           nullable: true
           maxLength: 30
+        nome_representante:
+          type: string
+          nullable: true
+          maxLength: 50
+        setor_representante:
+          type: string
+          nullable: true
+          maxLength: 50
+        email_representante:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        contato_representante:
+          type: string
+          nullable: true
+          maxLength: 50
+        cobranca_revisao_alteracao:
+          type: boolean
         ativo:
           type: boolean
       required:
@@ -4324,7 +4697,7 @@ components:
       type: object
       properties:
         situacao:
-          $ref: '#/components/schemas/SituacaoEnum'
+          $ref: '#/components/schemas/SituacaoDaListaDeCobrancasEnum'
         contadores:
           allOf:
           - $ref: '#/components/schemas/Contadores'
@@ -4332,15 +4705,41 @@ components:
         em_alerta:
           type: integer
           description: Quantas OS a faturar estão em alerta.
+        dias_alerta_sem_lancamento:
+          type: integer
+          description: A partir de quantos dias a OS liberada entra em alerta.
         ordens:
           type: array
           items:
             $ref: '#/components/schemas/LinhaDeCobranca'
       required:
       - contadores
+      - dias_alerta_sem_lancamento
       - em_alerta
       - ordens
       - situacao
+    CodigoDaConferenciaEnum:
+      enum:
+      - sync_conclusao
+      - sync_venda
+      - sync_servico
+      - concluido_os_parada
+      - sem_distribuir
+      - vencimento_chegando
+      - aguardando_lancamento
+      - mudou_apos_liberacao
+      - mudou_apos_lancamento
+      type: string
+      description: |-
+        * `sync_conclusao` - sync_conclusao
+        * `sync_venda` - sync_venda
+        * `sync_servico` - sync_servico
+        * `concluido_os_parada` - concluido_os_parada
+        * `sem_distribuir` - sem_distribuir
+        * `vencimento_chegando` - vencimento_chegando
+        * `aguardando_lancamento` - aguardando_lancamento
+        * `mudou_apos_liberacao` - mudou_apos_liberacao
+        * `mudou_apos_lancamento` - mudou_apos_lancamento
     ComplexidadeEnum:
       enum:
       - 1
@@ -4375,11 +4774,6 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        valor_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
         tipo_condicao:
           $ref: '#/components/schemas/TipoCondicaoEnum'
         condicao_resumo:
@@ -4393,35 +4787,52 @@ components:
           type: string
           format: date
           nullable: true
-        intervalo_parcelas_dias:
+          description: Vencimento (no parcelado, a 1ª parcela).
+        vencimento_dias_apos_nota:
           type: integer
           nullable: true
-        dia_fechamento:
+          description: Vencimento em dias após a emissão da nota, no lugar da data.
+        dia_vencimento_demais:
           type: integer
           nullable: true
-        dia_vencimento:
-          type: integer
-          nullable: true
+          description: 'Parcelado: dia do mês das parcelas da 2ª em diante. Vazio
+            = mesmo dia da 1ª.'
         liberar_em:
           $ref: '#/components/schemas/LiberarEmEnum'
         nome_contato_envio_nf:
           type: string
         contato_envio_nf:
           type: string
+        observacao:
+          type: string
+          nullable: true
+          description: Observações de pagamento e faturamento.
       required:
       - condicao_resumo
       - contato_envio_nf
       - data_acordada_cobranca
-      - dia_fechamento
-      - dia_vencimento
+      - dia_vencimento_demais
       - forma_pagamento
-      - intervalo_parcelas_dias
       - liberar_em
       - nome_contato_envio_nf
+      - observacao
       - quantidade_parcelas
       - tipo_condicao
       - valor
-      - valor_mensal
+      - vencimento_dias_apos_nota
+    Conferencia:
+      type: object
+      properties:
+        verificado_em:
+          type: string
+          format: date-time
+        verificacoes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Verificacao'
+      required:
+      - verificacoes
+      - verificado_em
     Contador:
       type: object
       properties:
@@ -4447,8 +4858,23 @@ components:
       - a_faturar
       - faturadas
       - previsao
+    ContadoresMeusServicos:
+      type: object
+      properties:
+        nova:
+          type: integer
+        a_iniciar:
+          type: integer
+        em_andamento:
+          type: integer
+      required:
+      - a_iniciar
+      - em_andamento
+      - nova
     ContextoDaOSDetalhe:
       type: object
+      description: 'Sem a observação da OS: ela é de pagamento e faturamento e fica
+        só com quem vê valores.'
       properties:
         ordem_servico_id:
           type: integer
@@ -4464,17 +4890,23 @@ components:
           nullable: true
         prioridade:
           $ref: '#/components/schemas/PrioridadeEnum'
-        observacao:
-          type: string
-          nullable: true
       required:
       - cliente_id
       - cliente_nome
       - data_venda
-      - observacao
       - ordem_servico_id
       - prioridade
       - vendido_por_nome
+    Correcao:
+      type: object
+      properties:
+        servicos_corrigidos:
+          type: integer
+        ordens_liberadas:
+          type: integer
+      required:
+      - ordens_liberadas
+      - servicos_corrigidos
     Detalhe:
       type: object
       properties:
@@ -4500,6 +4932,19 @@ components:
           - $ref: '#/components/schemas/MotivoCienciaEnum'
           - $ref: '#/components/schemas/NullEnum'
         alerta_ciente_observacao:
+          type: string
+          nullable: true
+        ciencia_ate:
+          type: string
+          format: date
+          nullable: true
+          description: Até quando a pausa explicada silencia o aviso.
+        recebido_em:
+          type: string
+          format: date-time
+          nullable: true
+          description: Ciência de recebimento do setor (ADR 0009).
+        recebido_por_nome:
           type: string
           nullable: true
         id:
@@ -4565,12 +5010,17 @@ components:
           type: boolean
         pode_dar_ciencia:
           type: boolean
+        pode_confirmar_recebimento:
+          type: boolean
+          description: Serviço aberto, sem ciência de recebimento, e a pessoa distribui
+            no setor.
       required:
       - alerta_ciente_em
       - alerta_ciente_motivo
       - alerta_ciente_observacao
       - alerta_ciente_por_nome
       - catalogo_nome
+      - ciencia_ate
       - ciencia_vigente
       - criado_em
       - data_inicio
@@ -4582,10 +5032,13 @@ components:
       - id
       - ordem_servico
       - outros_servicos_da_os
+      - pode_confirmar_recebimento
       - pode_dar_ciencia
       - pode_distribuir
       - prazo
       - prioridade
+      - recebido_em
+      - recebido_por_nome
       - setor_id
       - setor_nome
       - situacao_prazo
@@ -4643,20 +5096,44 @@ components:
       description: |-
         * `global` - global
         * `setor` - setor
+    EtapaDaFilaEnum:
+      enum:
+      - novo
+      - a_distribuir
+      type: string
+      description: |-
+        * `novo` - novo
+        * `a_distribuir` - a_distribuir
     EtapaEnum:
       enum:
-      - na_fila
+      - novo
+      - a_distribuir
       - distribuido
       - em_execucao
       - concluido
       - cancelado
       type: string
       description: |-
-        * `na_fila` - na_fila
+        * `novo` - novo
+        * `a_distribuir` - a_distribuir
         * `distribuido` - distribuido
         * `em_execucao` - em_execucao
         * `concluido` - concluido
         * `cancelado` - cancelado
+    EtapaTarefaEnum:
+      enum:
+      - nova
+      - a_iniciar
+      - em_andamento
+      - concluida
+      - cancelada
+      type: string
+      description: |-
+        * `nova` - nova
+        * `a_iniciar` - a_iniciar
+        * `em_andamento` - em_andamento
+        * `concluida` - concluida
+        * `cancelada` - cancelada
     EventoDaLinhaDoTempo:
       type: object
       properties:
@@ -4713,6 +5190,8 @@ components:
       - os_reaberta
       - liberacao
       - lancamento
+      - recebimento
+      - tarefa_recebida
       type: string
       description: |-
         * `historico_anterior` - historico_anterior
@@ -4738,35 +5217,42 @@ components:
         * `os_reaberta` - os_reaberta
         * `liberacao` - liberacao
         * `lancamento` - lancamento
-    EventoFinanceiro:
+        * `recebimento` - recebimento
+        * `tarefa_recebida` - tarefa_recebida
+    EventoDoResumo:
       type: object
       properties:
         quando:
           type: string
-          nullable: true
-          description: Data e hora (ISO 8601); o lançamento só tem data.
+          format: date-time
         quem:
           type: string
           nullable: true
+          description: Quem fez a ação; vazio quando foi o sistema.
         tipo:
-          $ref: '#/components/schemas/EventoFinanceiroTipoEnum'
+          $ref: '#/components/schemas/EventoDaLinhaDoTempoTipoEnum'
         texto:
           type: string
+        ordem_servico_id:
+          type: integer
+          nullable: true
+        servico_id:
+          type: integer
+          nullable: true
+        tarefa_id:
+          type: integer
+          nullable: true
+        categoria:
+          $ref: '#/components/schemas/CategoriaDoEventoEnum'
       required:
+      - categoria
+      - ordem_servico_id
       - quando
       - quem
+      - servico_id
+      - tarefa_id
       - texto
       - tipo
-    EventoFinanceiroTipoEnum:
-      enum:
-      - venda
-      - liberacao
-      - lancamento
-      type: string
-      description: |-
-        * `venda` - venda
-        * `liberacao` - liberacao
-        * `lancamento` - lancamento
     FinanceiroAnaliseResponse:
       type: object
       properties:
@@ -4791,13 +5277,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/PorTipoCondicao'
           description: A faturar, faturado e previsão por tipo de condição.
-        receita_recorrente_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
-          description: Soma do valor mensal dos recorrentes não cancelados.
-        recorrentes_ativos:
-          type: integer
         ticket_medio:
           type: string
           format: decimal
@@ -4812,8 +5291,6 @@ components:
       required:
       - clientes
       - por_tipo_condicao
-      - receita_recorrente_mensal
-      - recorrentes_ativos
       - ticket_medio
       - total_cobrado
       - total_para_cobrar
@@ -4950,6 +5427,35 @@ components:
       - nome
       - organizacao
       - setores
+    ItemDaConferencia:
+      type: object
+      properties:
+        ordem_servico_id:
+          type: integer
+        cliente_nome:
+          type: string
+        servico_id:
+          type: integer
+          nullable: true
+        servico_nome:
+          type: string
+          nullable: true
+        setor_nome:
+          type: string
+          nullable: true
+        responsavel_nome:
+          type: string
+          nullable: true
+        detalhe:
+          type: string
+      required:
+      - cliente_nome
+      - detalhe
+      - ordem_servico_id
+      - responsavel_nome
+      - servico_id
+      - servico_nome
+      - setor_nome
     ItemDaFila:
       type: object
       properties:
@@ -4965,6 +5471,14 @@ components:
         vendido_por_nome:
           type: string
           nullable: true
+        recebido_em:
+          type: string
+          format: date-time
+          nullable: true
+          description: Ciência de recebimento do setor (ADR 0009).
+        recebido_por_nome:
+          type: string
+          nullable: true
         servico_id:
           type: integer
         catalogo_nome:
@@ -4974,6 +5488,8 @@ components:
           type: string
         prioridade:
           $ref: '#/components/schemas/PrioridadeEnum'
+        etapa:
+          $ref: '#/components/schemas/EtapaDaFilaEnum'
         na_fila_ha_dias:
           type: integer
         em_alerta:
@@ -4989,10 +5505,13 @@ components:
       - data_venda
       - descricao
       - em_alerta
+      - etapa
       - na_fila_ha_dias
       - ordem_servico_id
       - outros_servicos_da_os
       - prioridade
+      - recebido_em
+      - recebido_por_nome
       - servico_id
       - vendido_por_nome
     LiberadaCobranca:
@@ -5046,11 +5565,6 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        valor_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
         tipo_condicao:
           $ref: '#/components/schemas/TipoCondicaoEnum'
         condicao_resumo:
@@ -5064,7 +5578,20 @@ components:
           type: string
           format: date
           nullable: true
-          description: Primeiro vencimento.
+          description: Vencimento (no parcelado, a 1ª parcela).
+        vencimento_resumo:
+          type: string
+          nullable: true
+          description: 'Ex.: "10/08/2026" ou "21 dias após a nota"; vazio sem vencimento.'
+        vencimento_dias_apos_nota:
+          type: integer
+          nullable: true
+          description: Vencimento em dias após a emissão da nota, no lugar da data.
+        dia_vencimento_demais:
+          type: integer
+          nullable: true
+          description: 'Parcelado: dia do mês das parcelas da 2ª em diante. Vazio
+            = mesmo dia da 1ª.'
         nome_contato_envio_nf:
           type: string
         contato_envio_nf:
@@ -5103,6 +5630,23 @@ components:
           description: Liberada há `DIAS_ALERTA_SEM_LANCAMENTO` dias sem lançamento.
         andamento:
           $ref: '#/components/schemas/Andamento'
+        pendentes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoPendente'
+          description: 'Na previsão: os serviços que faltam para liberar, o mais parado
+            primeiro.'
+        ultima_movimentacao_em:
+          type: string
+          format: date-time
+          nullable: true
+          description: A mais recente dos serviços.
+        pendencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodigoDaConferenciaEnum'
+          description: Códigos das verificações da conferência em que a OS aparece
+            (faturamento/04).
       required:
       - andamento
       - cliente_id
@@ -5113,6 +5657,7 @@ components:
       - data_acordada_cobranca
       - data_cobranca
       - data_venda
+      - dia_vencimento_demais
       - dias_aguardando_lancamento
       - em_alerta
       - forma_pagamento
@@ -5122,13 +5667,17 @@ components:
       - nome_contato_envio_nf
       - ordem_servico_id
       - origem_lancamento
+      - pendencias
+      - pendentes
       - quantidade_parcelas
       - referencia_lancamento
       - situacao
       - status
       - tipo_condicao
+      - ultima_movimentacao_em
       - valor
-      - valor_mensal
+      - vencimento_dias_apos_nota
+      - vencimento_resumo
       - vendido_por_nome
     LinhaDeTarefa:
       type: object
@@ -5137,6 +5686,13 @@ components:
           type: integer
         status:
           type: string
+        etapa:
+          $ref: '#/components/schemas/EtapaTarefaEnum'
+        recebida_em:
+          type: string
+          format: date-time
+          nullable: true
+          description: Ciência de recebimento do responsável.
         descricao:
           type: string
           nullable: true
@@ -5150,6 +5706,9 @@ components:
         catalogo_nome:
           type: string
           nullable: true
+        servico_descricao:
+          type: string
+          description: O que será feito no serviço (a `descricao` é a da tarefa).
         setor_nome:
           type: string
           nullable: true
@@ -5166,6 +5725,12 @@ components:
         idade_dias:
           type: integer
           description: Dias desde a criação da tarefa.
+        atribuida_ha_dias:
+          type: integer
+          description: Dias desde que a tarefa chegou ao responsável atual (criação
+            ou última troca de responsável).
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
         data_inicio:
           type: string
           format: date
@@ -5178,17 +5743,41 @@ components:
           type: boolean
         servico_dias_sem_movimentacao:
           type: integer
+        servico_ciencia_vigente:
+          type: boolean
+          description: A pausa do serviço está explicada e o aviso, silenciado.
+        servico_ciencia_motivo:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MotivoCienciaEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        servico_ciencia_observacao:
+          type: string
+          nullable: true
+        servico_ciencia_ate:
+          type: string
+          format: date
+          nullable: true
       required:
+      - atribuida_ha_dias
       - catalogo_nome
       - cliente_nome
       - data_inicio
       - data_termino
       - descricao
+      - etapa
       - idade_dias
       - ordem_servico_id
       - prazo
+      - prioridade
+      - recebida_em
       - responsavel_id
       - responsavel_nome
+      - servico_ciencia_ate
+      - servico_ciencia_motivo
+      - servico_ciencia_observacao
+      - servico_ciencia_vigente
+      - servico_descricao
       - servico_dias_sem_movimentacao
       - servico_em_alerta
       - servico_id
@@ -5245,7 +5834,17 @@ components:
           nullable: true
         membro_do_setor:
           type: boolean
-          description: Falso para quem tem tarefa ativa no setor sem ser membro.
+          description: A pessoa é lotada neste setor.
+        recebe_tarefas:
+          type: boolean
+          description: Pode ser responsável por tarefas do setor (lotada com "Recebe
+            tarefas" ou "também executa" aqui). Falso para quem só aparece por ter
+            tarefa ativa no setor.
+        setor_de_origem_nome:
+          type: string
+          nullable: true
+          description: Setor da pessoa, quando ela é de outro setor e "também executa"
+            neste.
         ativos:
           type: integer
         atrasados:
@@ -5259,6 +5858,13 @@ components:
         mais_antigo_dias:
           type: integer
           nullable: true
+        sem_ciencia:
+          type: integer
+          description: Tarefas ativas da pessoa sem ciência dela.
+        sem_ciencia_mais_antiga_dias:
+          type: integer
+          nullable: true
+          description: Dias desde a atribuição da tarefa sem ciência mais antiga.
       required:
       - ativos
       - atrasados
@@ -5267,7 +5873,11 @@ components:
       - mais_antigo_dias
       - membro_do_setor
       - nome
+      - recebe_tarefas
+      - sem_ciencia
+      - sem_ciencia_mais_antiga_dias
       - sem_prazo
+      - setor_de_origem_nome
       - usuario_id
       - vence_7_dias
     MembroSetor:
@@ -5416,6 +6026,23 @@ components:
       description: |-
         * `atrasado` - atrasado
         * `sem_movimentacao` - sem_movimentacao
+    MudarSetorDosCatalogosRequest:
+      type: object
+      properties:
+        catalogos:
+          type: array
+          items:
+            type: integer
+        setor:
+          type: integer
+        mover_servicos_em_aberto:
+          type: boolean
+          default: false
+          description: Leva junto os serviços em aberto e sem tarefas desses catálogos
+            (os demais ficam no setor antigo).
+      required:
+      - catalogos
+      - setor
     NullEnum:
       enum:
       - null
@@ -5505,11 +6132,6 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        valor_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
         tipo_condicao:
           $ref: '#/components/schemas/TipoCondicaoEnum'
         tipo_condicao_display:
@@ -5525,26 +6147,19 @@ components:
           readOnly: true
         quantidade_parcelas:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         data_acordada_cobranca:
           type: string
           format: date
           nullable: true
-        intervalo_parcelas_dias:
+        vencimento_dias_apos_nota:
           type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
-          nullable: true
-        dia_fechamento:
-          type: integer
-          maximum: 31
+          maximum: 365
           minimum: 1
           nullable: true
-        dia_vencimento:
+        dia_vencimento_demais:
           type: integer
           maximum: 31
           minimum: 1
@@ -5693,11 +6308,6 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        valor_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
         tipo_condicao:
           $ref: '#/components/schemas/TipoCondicaoEnum'
         tipo_condicao_display:
@@ -5801,7 +6411,7 @@ components:
           readOnly: true
         quantidade:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         descricao:
@@ -5830,7 +6440,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 9223372036854775807
+          maximum: 65535
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -5972,7 +6582,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 9223372036854775807
+          maximum: 65535
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -6060,7 +6670,7 @@ components:
           type: integer
         quantidade:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         descricao:
@@ -6080,7 +6690,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 9223372036854775807
+          maximum: 65535
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -6131,37 +6741,25 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        valor_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
         tipo_condicao:
           $ref: '#/components/schemas/TipoCondicaoEnum'
         forma_pagamento:
           $ref: '#/components/schemas/FormaPagamentoEnum'
         quantidade_parcelas:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         data_acordada_cobranca:
           type: string
           format: date
           nullable: true
-        intervalo_parcelas_dias:
+        vencimento_dias_apos_nota:
           type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
-          nullable: true
-        dia_fechamento:
-          type: integer
-          maximum: 31
+          maximum: 365
           minimum: 1
           nullable: true
-        dia_vencimento:
+        dia_vencimento_demais:
           type: integer
           maximum: 31
           minimum: 1
@@ -6449,7 +7047,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 9223372036854775807
+          maximum: 65535
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -6472,6 +7070,12 @@ components:
           default: true
           description: Catálogos inativos continuam nos serviços já vendidos, mas
             não podem ser usados em serviços novos.
+        mover_servicos_em_aberto:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: 'Ao mudar o setor: leva junto os serviços em aberto e sem tarefas
+            (os demais ficam no setor antigo).'
     PatchedClienteRequest:
       type: object
       properties:
@@ -6564,7 +7168,7 @@ components:
           type: integer
         quantidade:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         descricao:
@@ -6584,7 +7188,7 @@ components:
         complexidade:
           nullable: true
           minimum: 0
-          maximum: 9223372036854775807
+          maximum: 65535
           oneOf:
           - $ref: '#/components/schemas/ComplexidadeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -6631,37 +7235,25 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        valor_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
         tipo_condicao:
           $ref: '#/components/schemas/TipoCondicaoEnum'
         forma_pagamento:
           $ref: '#/components/schemas/FormaPagamentoEnum'
         quantidade_parcelas:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         data_acordada_cobranca:
           type: string
           format: date
           nullable: true
-        intervalo_parcelas_dias:
+        vencimento_dias_apos_nota:
           type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
-          nullable: true
-        dia_fechamento:
-          type: integer
-          maximum: 31
+          maximum: 365
           minimum: 1
           nullable: true
-        dia_vencimento:
+        dia_vencimento_demais:
           type: integer
           maximum: 31
           minimum: 1
@@ -6793,7 +7385,7 @@ components:
           type: boolean
         ordem:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         catalogo:
@@ -6837,6 +7429,29 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+    PendenciaDaOrdem:
+      type: object
+      properties:
+        codigo:
+          $ref: '#/components/schemas/CodigoDaConferenciaEnum'
+        tipo:
+          $ref: '#/components/schemas/TipoDeVerificacaoEnum'
+        titulo:
+          type: string
+        explicacao:
+          type: string
+        detalhe:
+          type: string
+        servico_id:
+          type: integer
+          nullable: true
+      required:
+      - codigo
+      - detalhe
+      - explicacao
+      - servico_id
+      - tipo
+      - titulo
     PermissaoCatalogo:
       type: object
       properties:
@@ -6864,6 +7479,7 @@ components:
       - servicos.gerenciar
       - tarefas.distribuir
       - tarefas.editar_setor
+      - tarefas.receber
       - usuarios.gerenciar
       - usuarios.gerenciar_diretoria
       - usuarios.redefinir_senha
@@ -6885,6 +7501,7 @@ components:
         * `servicos.gerenciar` - Ajustar e excluir serviços do setor
         * `tarefas.distribuir` - Criar, reatribuir e excluir tarefas
         * `tarefas.editar_setor` - Editar qualquer tarefa do setor
+        * `tarefas.receber` - Pode ser responsável por tarefas do setor
         * `usuarios.gerenciar` - Criar, editar, ativar e desativar usuários
         * `usuarios.gerenciar_diretoria` - Gerenciar usuários da diretoria
         * `usuarios.redefinir_senha` - Alterar a senha de outros usuários
@@ -6914,12 +7531,9 @@ components:
           $ref: '#/components/schemas/SomasPorSituacao'
         parcelado:
           $ref: '#/components/schemas/SomasPorSituacao'
-        recorrente:
-          $ref: '#/components/schemas/SomasPorSituacao'
       required:
       - a_vista
       - parcelado
-      - recorrente
     PrioridadeEnum:
       enum:
       - baixa
@@ -6930,6 +7544,24 @@ components:
         * `baixa` - Baixa
         * `media` - Média
         * `alta` - Alta
+    ReceberServicosRequest:
+      type: object
+      properties:
+        servicos:
+          type: array
+          items:
+            type: integer
+      required:
+      - servicos
+    ReceberTarefasRequest:
+      type: object
+      properties:
+        tarefas:
+          type: array
+          items:
+            type: integer
+      required:
+      - tarefas
     RegistroAuditoria:
       type: object
       properties:
@@ -7060,6 +7692,21 @@ components:
       - nome
       - prazo
       - status
+    ResultadoMudarSetor:
+      type: object
+      properties:
+        catalogos_alterados:
+          type: integer
+        servicos_movidos:
+          type: integer
+        avisos:
+          type: array
+          items:
+            type: string
+      required:
+      - avisos
+      - catalogos_alterados
+      - servicos_movidos
     ResumoDaVenda:
       type: object
       properties:
@@ -7082,9 +7729,6 @@ components:
           type: string
         prioridade:
           $ref: '#/components/schemas/PrioridadeEnum'
-        observacao:
-          type: string
-          nullable: true
         andamento:
           $ref: '#/components/schemas/Andamento'
         servicos:
@@ -7110,7 +7754,6 @@ components:
       - data_venda
       - financeiro
       - id
-      - observacao
       - prioridade
       - servicos
       - status
@@ -7260,6 +7903,18 @@ components:
         ciencia_vigente:
           type: boolean
           readOnly: true
+        recebido_em:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        recebido_por:
+          type: integer
+          readOnly: true
+          nullable: true
+        recebido_por_nome:
+          type: string
+          readOnly: true
       required:
       - alerta_ciente_em
       - alerta_ciente_motivo
@@ -7280,6 +7935,9 @@ components:
       - ordem_servico
       - prazo
       - prioridade_display
+      - recebido_em
+      - recebido_por
+      - recebido_por_nome
       - setor
       - setor_nome
       - status
@@ -7358,24 +8016,6 @@ components:
       - servico_id
       - terminado_por_nome
       - vendido_por_nome
-    ServicoDaSituacao:
-      type: object
-      properties:
-        id:
-          type: integer
-        descricao:
-          type: string
-        etapa:
-          $ref: '#/components/schemas/EtapaEnum'
-        data_termino:
-          type: string
-          format: date
-          nullable: true
-      required:
-      - data_termino
-      - descricao
-      - etapa
-      - id
     ServicoDaVenda:
       type: object
       description: Serviço vendido, enviado junto na criação da OS (ADR 0008, 5).
@@ -7566,6 +8206,16 @@ components:
         ciencia_vigente:
           type: boolean
           readOnly: true
+        recebido_em:
+          type: string
+          format: date-time
+          nullable: true
+        recebido_por:
+          type: integer
+          nullable: true
+        recebido_por_nome:
+          type: string
+          readOnly: true
         cliente_nome:
           type: string
           readOnly: true
@@ -7591,10 +8241,39 @@ components:
       - id
       - ordem_servico
       - prioridade_display
+      - recebido_por_nome
       - setor_nome
       - status_display
       - tem_tarefas
       - terminado_por_nome
+    ServicoPendente:
+      type: object
+      properties:
+        servico_id:
+          type: integer
+        servico_nome:
+          type: string
+          description: Nome do catálogo (ou a descrição, sem catálogo).
+        setor_nome:
+          type: string
+          nullable: true
+        etapa:
+          $ref: '#/components/schemas/EtapaEnum'
+        responsaveis:
+          type: array
+          items:
+            type: string
+          description: Quem está com as tarefas abertas.
+        dias_sem_movimentacao:
+          type: integer
+          nullable: true
+      required:
+      - dias_sem_movimentacao
+      - etapa
+      - responsaveis
+      - servico_id
+      - servico_nome
+      - setor_nome
     ServicoPorStatus:
       type: object
       properties:
@@ -7626,6 +8305,58 @@ components:
       - catalogo_nome
       - percentual
       - total
+    ServicoRealizado:
+      type: object
+      properties:
+        id:
+          type: integer
+        catalogo_nome:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        setor_nome:
+          type: string
+          nullable: true
+        etapa:
+          $ref: '#/components/schemas/EtapaEnum'
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+        terminado_por_nome:
+          type: string
+          nullable: true
+          description: Quem finalizou o serviço.
+        responsaveis:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponsavelDoServico'
+          description: 'Quem executou: uma linha por tarefa.'
+        dias_sem_movimentacao:
+          type: integer
+          nullable: true
+          description: Só nos serviços em aberto.
+      required:
+      - catalogo_nome
+      - data_inicio
+      - data_termino
+      - descricao
+      - dias_sem_movimentacao
+      - etapa
+      - id
+      - prazo
+      - responsaveis
+      - setor_nome
+      - terminado_por_nome
     ServicoRequest:
       type: object
       properties:
@@ -7642,6 +8373,21 @@ components:
       required:
       - descricao
       - ordem_servico
+    ServicosRecebidos:
+      type: object
+      properties:
+        recebidos:
+          type: array
+          items:
+            type: integer
+        ja_recebidos:
+          type: array
+          items:
+            type: integer
+          description: Já tinham ciência.
+      required:
+      - ja_recebidos
+      - recebidos
     Setor:
       type: object
       properties:
@@ -7667,6 +8413,18 @@ components:
         sem_organizador:
           type: boolean
           readOnly: true
+        catalogos_ativos:
+          type: integer
+          readOnly: true
+        executa_servicos:
+          type: boolean
+          readOnly: true
+        recebem_tarefas:
+          type: integer
+          readOnly: true
+        sem_quem_receba:
+          type: boolean
+          readOnly: true
         criado_em:
           type: string
           format: date-time
@@ -7677,12 +8435,16 @@ components:
           readOnly: true
       required:
       - atualizado_em
+      - catalogos_ativos
       - criado_em
+      - executa_servicos
       - id
       - nome
       - organizacao
       - organizadores
+      - recebem_tarefas
       - sem_organizador
+      - sem_quem_receba
     SetorAcompanhado:
       type: object
       properties:
@@ -7693,8 +8455,12 @@ components:
         organiza:
           type: boolean
           description: Se a pessoa pode distribuir no setor.
-        na_fila:
+        novos:
           type: integer
+          description: Chegaram e ninguém do setor deu ciência.
+        a_distribuir:
+          type: integer
+          description: O setor deu ciência e falta distribuir.
         em_andamento:
           type: integer
           description: Distribuídos ou em execução.
@@ -7706,15 +8472,20 @@ components:
         sem_prazo:
           type: integer
           description: Distribuídos ou em execução sem prazo.
+        tarefas_sem_ciencia:
+          type: integer
+          description: Tarefas ativas do setor sem ciência do responsável.
       required:
+      - a_distribuir
       - atrasados
       - em_alerta
       - em_andamento
       - id
-      - na_fila
       - nome
+      - novos
       - organiza
       - sem_prazo
+      - tarefas_sem_ciencia
     SetorRequest:
       type: object
       properties:
@@ -7733,6 +8504,18 @@ components:
       required:
       - nome
       - organizacao
+    SituacaoDaListaDeCobrancasEnum:
+      enum:
+      - a_faturar
+      - faturadas
+      - previsao
+      - todas
+      type: string
+      description: |-
+        * `a_faturar` - a_faturar
+        * `faturadas` - faturadas
+        * `previsao` - previsao
+        * `todas` - todas
     SituacaoEnum:
       enum:
       - a_faturar
@@ -7770,11 +8553,6 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        valor_mensal:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
         tipo_condicao:
           $ref: '#/components/schemas/TipoCondicaoEnum'
         condicao_resumo:
@@ -7788,7 +8566,20 @@ components:
           type: string
           format: date
           nullable: true
-          description: Primeiro vencimento.
+          description: Vencimento (no parcelado, a 1ª parcela).
+        vencimento_resumo:
+          type: string
+          nullable: true
+          description: 'Ex.: "10/08/2026" ou "21 dias após a nota"; vazio sem vencimento.'
+        vencimento_dias_apos_nota:
+          type: integer
+          nullable: true
+          description: Vencimento em dias após a emissão da nota, no lugar da data.
+        dia_vencimento_demais:
+          type: integer
+          nullable: true
+          description: 'Parcelado: dia do mês das parcelas da 2ª em diante. Vazio
+            = mesmo dia da 1ª.'
         nome_contato_envio_nf:
           type: string
         contato_envio_nf:
@@ -7827,19 +8618,46 @@ components:
           description: Liberada há `DIAS_ALERTA_SEM_LANCAMENTO` dias sem lançamento.
         andamento:
           $ref: '#/components/schemas/Andamento'
+        pendentes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServicoPendente'
+          description: 'Na previsão: os serviços que faltam para liberar, o mais parado
+            primeiro.'
+        ultima_movimentacao_em:
+          type: string
+          format: date-time
+          nullable: true
+          description: A mais recente dos serviços.
+        pendencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodigoDaConferenciaEnum'
+          description: Códigos das verificações da conferência em que a OS aparece
+            (faturamento/04).
         observacao:
           type: string
           nullable: true
+        cliente:
+          allOf:
+          - $ref: '#/components/schemas/ClienteDoResumo'
+          description: Os dados do cadastro do cliente, para conferir ao faturar.
         servicos:
           type: array
           items:
-            $ref: '#/components/schemas/ServicoDaSituacao'
+            $ref: '#/components/schemas/ServicoRealizado'
+        detalhe_pendencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendenciaDaOrdem'
         eventos:
           type: array
           items:
-            $ref: '#/components/schemas/EventoFinanceiro'
+            $ref: '#/components/schemas/EventoDoResumo'
+          description: A linha do tempo da OS, do mais recente ao mais antigo.
       required:
       - andamento
+      - cliente
       - cliente_id
       - cliente_nome
       - cobranca_realizada_por_nome
@@ -7848,6 +8666,8 @@ components:
       - data_acordada_cobranca
       - data_cobranca
       - data_venda
+      - detalhe_pendencias
+      - dia_vencimento_demais
       - dias_aguardando_lancamento
       - em_alerta
       - eventos
@@ -7859,14 +8679,18 @@ components:
       - observacao
       - ordem_servico_id
       - origem_lancamento
+      - pendencias
+      - pendentes
       - quantidade_parcelas
       - referencia_lancamento
       - servicos
       - situacao
       - status
       - tipo_condicao
+      - ultima_movimentacao_em
       - valor
-      - valor_mensal
+      - vencimento_dias_apos_nota
+      - vencimento_resumo
       - vendido_por_nome
     SituacaoPrazoEnum:
       enum:
@@ -7949,7 +8773,7 @@ components:
           type: boolean
         ordem:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         criado_em:
@@ -7982,7 +8806,7 @@ components:
           type: boolean
         ordem:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         catalogo:
@@ -8030,6 +8854,15 @@ components:
           format: date
           readOnly: true
           nullable: true
+        recebida_em:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        etapa:
+          allOf:
+          - $ref: '#/components/schemas/EtapaTarefaEnum'
+          readOnly: true
         criada_em:
           type: string
           format: date-time
@@ -8043,8 +8876,10 @@ components:
       - criada_em
       - data_inicio
       - data_termino
+      - etapa
       - id
       - prioridade_display
+      - recebida_em
       - responsavel
       - responsavel_nome
       - servico
@@ -8094,6 +8929,15 @@ components:
           nullable: true
         status:
           type: string
+        etapa:
+          $ref: '#/components/schemas/EtapaTarefaEnum'
+        recebida_em:
+          type: string
+          format: date-time
+          nullable: true
+        pode_confirmar_recebimento:
+          type: boolean
+          description: Só para o responsável, com a tarefa nova.
         prazo:
           type: string
           format: date
@@ -8115,8 +8959,11 @@ components:
       - data_inicio
       - data_termino
       - descricao
+      - etapa
       - id
+      - pode_confirmar_recebimento
       - prazo
+      - recebida_em
       - responsavel_id
       - responsavel_nome
       - situacao_prazo
@@ -8165,6 +9012,14 @@ components:
           type: string
           format: date
           nullable: true
+        recebida_em:
+          type: string
+          format: date-time
+          nullable: true
+        etapa:
+          allOf:
+          - $ref: '#/components/schemas/EtapaTarefaEnum'
+          readOnly: true
         criada_em:
           type: string
           format: date-time
@@ -8178,6 +9033,7 @@ components:
       - catalogo_nome
       - cliente_nome
       - criada_em
+      - etapa
       - id
       - prioridade_display
       - responsavel
@@ -8218,6 +9074,21 @@ components:
       required:
       - responsavel
       - servico
+    TarefasRecebidas:
+      type: object
+      properties:
+        recebidas:
+          type: array
+          items:
+            type: integer
+        ja_recebidas:
+          type: array
+          items:
+            type: integer
+          description: Já tinham ciência.
+      required:
+      - ja_recebidas
+      - recebidas
     TaxaCancelamento:
       type: object
       properties:
@@ -8385,12 +9256,18 @@ components:
       enum:
       - a_vista
       - parcelado
-      - recorrente
       type: string
       description: |-
         * `a_vista` - À vista
         * `parcelado` - Parcelado
-        * `recorrente` - Recorrente
+    TipoDeVerificacaoEnum:
+      enum:
+      - garantia
+      - atencao
+      type: string
+      description: |-
+        * `garantia` - garantia
+        * `atencao` - atencao
     TipoInscricaoEnum:
       enum:
       - cnpj
@@ -8453,6 +9330,13 @@ components:
           items:
             $ref: '#/components/schemas/Vinculo'
           description: 'Setor e função do usuário: lista com no máximo um item.'
+        tambem_executa_em:
+          type: array
+          items:
+            type: integer
+          description: IDs dos setores, fora o da lotação, em que a pessoa também
+            recebe tarefas. Se enviado, substitui a lista. Cada setor que entra ou
+            sai exige `tarefas.distribuir` nele.
       required:
       - email
       - id
@@ -8487,6 +9371,13 @@ components:
           items:
             $ref: '#/components/schemas/VinculoRequest'
           description: 'Setor e função do usuário: lista com no máximo um item.'
+        tambem_executa_em:
+          type: array
+          items:
+            type: integer
+          description: IDs dos setores, fora o da lotação, em que a pessoa também
+            recebe tarefas. Se enviado, substitui a lista. Cada setor que entra ou
+            sai exige `tarefas.distribuir` nele.
         password:
           type: string
           writeOnly: true
@@ -8540,6 +9431,13 @@ components:
           items:
             $ref: '#/components/schemas/Vinculo'
           readOnly: true
+        tambem_executa_em:
+          type: array
+          items:
+            $ref: '#/components/schemas/Atuacao'
+          readOnly: true
+          description: Setores, fora o da lotação, em que a pessoa também recebe tarefas
+            (sem permissões de gestão).
         permissoes:
           allOf:
           - $ref: '#/components/schemas/ResumoPermissoes'
@@ -8564,6 +9462,7 @@ components:
       - last_login
       - nome_completo
       - permissoes
+      - tambem_executa_em
       - username
       - vinculos
     UsuarioList:
@@ -8587,6 +9486,13 @@ components:
           items:
             $ref: '#/components/schemas/Vinculo'
           readOnly: true
+        tambem_executa_em:
+          type: array
+          items:
+            $ref: '#/components/schemas/Atuacao'
+          readOnly: true
+          description: Setores, fora o da lotação, em que a pessoa também recebe tarefas
+            (sem permissões de gestão).
         data_criacao:
           type: string
           format: date-time
@@ -8597,6 +9503,7 @@ components:
       - email
       - id
       - nome_completo
+      - tambem_executa_em
       - vinculos
     UsuarioPayload:
       type: object
@@ -8663,11 +9570,20 @@ components:
           readOnly: true
           description: Se enviado, substitui o vínculo do usuário (lista com no máximo
             um item; vazia remove o vínculo).
+        tambem_executa_em:
+          type: array
+          items:
+            type: integer
+          readOnly: true
+          description: IDs dos setores, fora o da lotação, em que a pessoa também
+            recebe tarefas. Se enviado, substitui a lista. Cada setor que entra ou
+            sai exige `tarefas.distribuir` nele.
       required:
       - ativo
       - email
       - id
       - nome_completo
+      - tambem_executa_em
       - username
       - vinculos
     UsuarioUpdateRequest:
@@ -8695,6 +9611,46 @@ components:
       - email
       - nome_completo
       - username
+    Verificacao:
+      type: object
+      properties:
+        codigo:
+          $ref: '#/components/schemas/CodigoDaConferenciaEnum'
+        tipo:
+          allOf:
+          - $ref: '#/components/schemas/TipoDeVerificacaoEnum'
+          description: |-
+            Garantia: deve ser sempre 0.
+
+            * `garantia` - garantia
+            * `atencao` - atencao
+        situacao:
+          allOf:
+          - $ref: '#/components/schemas/SituacaoEnum'
+          description: |-
+            Situação das OS em que a verificação vale.
+
+            * `a_faturar` - a_faturar
+            * `faturadas` - faturadas
+            * `previsao` - previsao
+        titulo:
+          type: string
+        explicacao:
+          type: string
+        quantidade:
+          type: integer
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemDaConferencia'
+      required:
+      - codigo
+      - explicacao
+      - itens
+      - quantidade
+      - situacao
+      - tipo
+      - titulo
     Vinculo:
       type: object
       description: Vínculo do usuário com um setor. Na escrita, informe `setor` e

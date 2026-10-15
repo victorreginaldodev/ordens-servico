@@ -139,7 +139,7 @@ export interface paths {
         put?: never;
         /**
          * Criar catálogo
-         * @description Cria um novo catálogo. O setor responsável pela execução é obrigatório e precisa estar ativo. A resposta traz `avisos` quando o setor ainda não tem quem o organize.
+         * @description Cria um novo catálogo. O setor responsável pela execução é obrigatório, precisa estar ativo e, para catálogo ativo, ter quem receba tarefas (400 se não tiver). A resposta traz `avisos` quando o setor ainda não tem quem o organize.
          */
         post: operations["catalogo_catalogos_create"];
         delete?: never;
@@ -218,7 +218,7 @@ export interface paths {
         get: operations["catalogo_catalogos_retrieve"];
         /**
          * Atualizar catálogo
-         * @description Substitui integralmente os dados de um catálogo.
+         * @description Substitui integralmente os dados de um catálogo. Ao mudar o setor, `mover_servicos_em_aberto=true` leva junto os serviços em aberto e sem tarefas (`servicos_em_aberto`); a resposta traz `servicos_movidos`. Catálogo ativo só em setor com quem receba tarefas.
          */
         put: operations["catalogo_catalogos_update"];
         post?: never;
@@ -231,9 +231,29 @@ export interface paths {
         head?: never;
         /**
          * Atualizar catálogo parcialmente
-         * @description Atualiza um ou mais campos de um catálogo.
+         * @description Atualiza um ou mais campos de um catálogo. Mesmas regras de setor da atualização completa.
          */
         patch: operations["catalogo_catalogos_partial_update"];
+        trace?: never;
+    };
+    "/api/catalogo/catalogos/mudar-setor/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mudar o setor de vários catálogos
+         * @description Passa os catálogos informados para o setor escolhido (ativo e, se algum catálogo for ativo, com quem receba tarefas). Com `mover_servicos_em_aberto=true`, leva junto os serviços em aberto e sem tarefas; eles voltam a "novo" no setor de destino, que recebe o aviso de chegada. Exige `catalogo.gerenciar`.
+         */
+        post: operations["catalogo_catalogos_mudar_setor_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/catalogo/subitens/": {
@@ -693,7 +713,7 @@ export interface paths {
         };
         /**
          * Equipe e carga do setor
-         * @description Por membro do setor: itens ativos por situação de prazo, em alerta e idade do mais antigo. Inclui quem ainda tem tarefa ativa no setor sem ser membro. Serve também de lista de responsáveis na distribuição (só os membros podem receber tarefas).
+         * @description Por pessoa que recebe tarefas do setor (lotada com "Recebe tarefas" ou que "também executa" aqui): itens ativos por situação de prazo, em alerta e idade do mais antigo. Inclui quem ainda tem tarefa ativa no setor sem receber mais (`recebe_tarefas` falso). Serve de lista de responsáveis na distribuição: só quem tem `recebe_tarefas` pode ser escolhido.
          */
         get: operations["execucao_equipe_list"];
         put?: never;
@@ -713,7 +733,7 @@ export interface paths {
         };
         /**
          * Fila de triagem do setor
-         * @description Serviços do setor que chegaram e ainda não foram distribuídos, mais antigos primeiro, com o contexto da venda e os outros serviços da mesma OS. Agrupar por cliente ou por OS é decisão da tela.
+         * @description Serviços do setor que chegaram e ainda não foram distribuídos: os novos (sem ciência do setor) primeiro, depois os a distribuir; em cada grupo, os mais antigos primeiro. Traz o contexto da venda e os outros serviços da mesma OS. Agrupar por cliente ou por OS é decisão da tela.
          */
         get: operations["execucao_fila_list"];
         put?: never;
@@ -744,6 +764,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/execucao/meus-servicos/contadores/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Contadores de Meus serviços
+         * @description Quantas tarefas ativas da pessoa estão em cada etapa: nova, a iniciar e em andamento.
+         */
+        get: operations["execucao_meus_servicos_contadores_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/execucao/servicos/{id}/": {
         parameters: {
             query?: never;
@@ -753,7 +793,7 @@ export interface paths {
         };
         /**
          * Detalhe do serviço
-         * @description O serviço com tarefas, prazo, alerta e ciência, o contexto da venda (sem valores) e os outros serviços da mesma OS. `pode_distribuir` e `pode_dar_ciencia` dizem quais ações mostrar.
+         * @description O serviço com tarefas, prazo, alerta e ciência, o contexto da venda (sem valores) e os outros serviços da mesma OS. `pode_distribuir`, `pode_dar_ciencia` e `pode_confirmar_recebimento` (no serviço e em cada tarefa) dizem quais ações mostrar.
          */
         get: operations["execucao_servicos_retrieve"];
         put?: never;
@@ -774,8 +814,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Estou ciente do alerta
-         * @description "Está tudo bem, deixar assim": silencia o alerta de serviço sem movimentação por mais N dias, com motivo opcional. Pode dar ciência quem tem tarefa no serviço ou quem acompanha o setor.
+         * Explicar a pausa
+         * @description O serviço está sem andamento porque espera algo: o motivo (obrigatório; "outro" exige a observação) silencia o aviso por N dias e fica visível para o setor (`ciencia_ate`). Se o trabalho andou, o certo é atualizar a tarefa. Pode explicar quem tem tarefa no serviço ou quem acompanha o setor.
          */
         post: operations["execucao_servicos_ciencia_create"];
         delete?: never;
@@ -804,6 +844,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/execucao/servicos/recebimento/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar recebimento de serviços
+         * @description Ciência do setor de que os serviços chegaram (ADR 0009): passam de novo para a distribuir. Aceita vários de uma vez. Exige `tarefas.distribuir` no setor de cada serviço; se faltar em algum, nada é gravado. Serviço que já tinha ciência volta em `ja_recebidos`. Distribuir também registra a ciência.
+         */
+        post: operations["execucao_servicos_recebimento_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/execucao/setores/": {
         parameters: {
             query?: never;
@@ -824,6 +884,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/execucao/tarefas/recebimento/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar recebimento de tarefas
+         * @description Ciência do responsável de que a tarefa é dele (ADR 0009): passa de nova para a iniciar. Aceita várias de uma vez. Só o responsável confirma; se alguma não for dele, nada é gravado. Começar a tarefa também registra a ciência; trocar o responsável a zera.
+         */
+        post: operations["execucao_tarefas_recebimento_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/financeiro/cobrancas/": {
         parameters: {
             query?: never;
@@ -833,11 +913,51 @@ export interface paths {
         };
         /**
          * Cobranças
-         * @description As OS de uma situação, com tudo o que o financeiro precisa para faturar: `a_faturar` (liberadas e ainda não lançadas, as mais antigas primeiro), `faturadas` (lançadas, as mais recentes primeiro) e `previsao` (ainda não liberadas, as mais perto de liberar primeiro; sem as canceladas). Traz os contadores das três situações sob os mesmos filtros. Exige `financeiro.registrar_cobranca`.
+         * @description As OS de uma situação, com tudo o que o financeiro precisa para faturar: `a_faturar` (liberadas e ainda não lançadas, as mais antigas primeiro), `faturadas` (lançadas, as mais recentes primeiro) e `previsao` (ainda não liberadas, as mais perto de liberar primeiro; sem as canceladas). Com `todas`, as três numa chamada (a faturar, previsão e faturadas, nessa ordem). Traz os contadores das três situações sob os mesmos filtros, o que falta em cada OS da previsão (`pendentes`) e os códigos da conferência (`pendencias`). Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
          */
         get: operations["financeiro_cobrancas_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financeiro/conferencia/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conferência do faturamento
+         * @description O que o sistema verifica para que nada concluído fique sem cobrança (faturamento/04). As garantias (`tipo=garantia`) são as regras da liberação e devem dar sempre 0; as atenções dizem o que depende de alguém ou o que mudou depois da liberação ou do lançamento, com o serviço, o setor e quem está com ele. Calculada na hora da consulta. Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
+         */
+        get: operations["financeiro_conferencia_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financeiro/conferencia/corrigir/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Corrigir a sincronização
+         * @description Refaz a sincronização dos serviços e das OS ainda não liberadas (o mesmo que acontece quando uma tarefa é salva). Só aplica o que a regra manda; cada mudança fica na auditoria. Devolve quantos serviços mudaram de status e quantas OS foram liberadas.
+         */
+        post: operations["financeiro_conferencia_corrigir_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -853,7 +973,7 @@ export interface paths {
         };
         /**
          * Situação financeira da OS
-         * @description Condição, liberação, lançamento e alerta da OS, os serviços com a etapa de cada um e os eventos financeiros (venda, liberação e lançamento). Exige `financeiro.ver_valores`.
+         * @description O resumo para faturar: os dados do cliente; condição, liberação, lançamento e alerta da OS; os serviços realizados (setor, quem executou, início, término e quem finalizou); as pendências da conferência; e a linha do tempo da OS, com a categoria de cada evento (`financeiro` ou `execucao`). Exige `financeiro.ver_valores`.
          */
         get: operations["financeiro_ordens_retrieve"];
         put?: never;
@@ -955,7 +1075,7 @@ export interface paths {
         put?: never;
         /**
          * Criar ordem de serviço
-         * @description Cria uma nova ordem de serviço. O campo `criado_por` é preenchido automaticamente com o usuário autenticado. Se `liberar_em=venda`, a OS já é criada com `liberada_para_cobranca=true`; com `liberar_em=conclusao`, é liberada quando todos os serviços terminam. A condição de pagamento é validada pelo `tipo_condicao`: parcelado exige ao menos 2 parcelas e o primeiro vencimento (`data_acordada_cobranca`); recorrente exige o número de meses (`quantidade_parcelas`) e o `dia_vencimento`.
+         * @description Cria uma nova ordem de serviço. O campo `criado_por` é preenchido automaticamente com o usuário autenticado. Se `liberar_em=venda`, a OS já é criada com `liberada_para_cobranca=true`; com `liberar_em=conclusao`, é liberada quando todos os serviços terminam. A condição de pagamento é validada pelo `tipo_condicao` (à vista ou parcelado): o vencimento é obrigatório e é a data combinada (`data_acordada_cobranca`) ou os dias após a nota (`vencimento_dias_apos_nota`), nunca os dois; no parcelado ele é o da 1ª parcela, as parcelas são mensais e são pelo menos 2, e `dia_vencimento_demais` (1 a 31, opcional) fixa o dia das parcelas da 2ª em diante.
          */
         post: operations["ordens_servico_ordens_create"];
         delete?: never;
@@ -1466,10 +1586,11 @@ export interface components {
          *     * `cobranca_realizada` - Cobrança Realizada
          *     * `contrato` - Contrato
          *     * `ciencia_alerta` - Ciência de alerta
+         *     * `recebimento` - Ciência de recebimento
          *     * `backfill` - Backfill
          * @enum {string}
          */
-        AcaoEnum: "criacao" | "atualizacao" | "exclusao" | "status" | "propagacao_status" | "liberacao_faturamento" | "faturamento" | "liberacao_cobranca" | "cobranca_realizada" | "contrato" | "ciencia_alerta" | "backfill";
+        AcaoEnum: "criacao" | "atualizacao" | "exclusao" | "status" | "propagacao_status" | "liberacao_faturamento" | "faturamento" | "liberacao_cobranca" | "cobranca_realizada" | "contrato" | "ciencia_alerta" | "recebimento" | "backfill";
         Alerta: {
             ordem_servico_id: number;
             cliente_id: number;
@@ -1483,6 +1604,11 @@ export interface components {
             alerta_ciente_por_nome: string | null;
             alerta_ciente_motivo: (components["schemas"]["MotivoCienciaEnum"] | components["schemas"]["NullEnum"]) | null;
             alerta_ciente_observacao: string | null;
+            /**
+             * Format: date
+             * @description Até quando a pausa explicada silencia o aviso.
+             */
+            ciencia_ate: string | null;
             servico_id: number;
             catalogo_nome: string | null;
             descricao: string;
@@ -1495,11 +1621,17 @@ export interface components {
         };
         Andamento: {
             total: number;
-            na_fila: number;
+            novo: number;
+            a_distribuir: number;
             distribuido: number;
             em_execucao: number;
             concluido: number;
             cancelado: number;
+        };
+        /** @description Setor em que a pessoa "também executa": recebe tarefas lá, sem permissões de gestão. */
+        Atuacao: {
+            setor: number;
+            setor_nome: string;
         };
         /** @enum {unknown} */
         BlankEnum: "";
@@ -1539,6 +1671,8 @@ export interface components {
              */
             ativo: boolean;
             readonly subitens: components["schemas"]["SubitemCatalogo"][];
+            /** @description Serviços deste catálogo abertos e ainda sem tarefas (novos ou a distribuir): os que podem mudar de setor junto com o catálogo. */
+            readonly servicos_em_aberto: number;
         };
         CatalogoOperacional: {
             readonly id: number;
@@ -1568,9 +1702,21 @@ export interface components {
              * @default true
              */
             ativo: boolean;
+            /**
+             * @description Ao mudar o setor: leva junto os serviços em aberto e sem tarefas (os demais ficam no setor antigo).
+             * @default false
+             */
+            mover_servicos_em_aberto: boolean;
         };
+        /**
+         * @description * `financeiro` - financeiro
+         *     * `execucao` - execucao
+         * @enum {string}
+         */
+        CategoriaDoEventoEnum: "financeiro" | "execucao";
+        /** @description Explicar a pausa (ADR 0008, 3; revisão de 14/10/2026): o motivo é obrigatório, e "outro" exige a observação. */
         CienciaRequest: {
-            motivo?: (components["schemas"]["MotivoCienciaEnum"] | components["schemas"]["NullEnum"]) | null;
+            motivo: components["schemas"]["MotivoCienciaEnum"];
             observacao?: string | null;
         };
         Cliente: {
@@ -1598,18 +1744,51 @@ export interface components {
             /** Format: decimal */
             total_valor_cobrado: string;
         };
+        ClienteDoResumo: {
+            id: number;
+            nome: string;
+            /** @description cnpj, cpf, cei, cno ou caepf. */
+            tipo_inscricao: string | null;
+            tipo_inscricao_display: string | null;
+            numero_inscricao: string | null;
+            /** @description gestao, avulso ou fornecedor. */
+            tipo_cliente: string | null;
+            tipo_cliente_display: string | null;
+            nome_representante: string | null;
+            setor_representante: string | null;
+            email_representante: string | null;
+            contato_representante: string | null;
+            observacao: string | null;
+            ativo: boolean;
+        };
         ClienteList: {
             readonly id: number;
             nome: string;
             tipo_cliente?: (components["schemas"]["TipoClienteEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             readonly tipo_cliente_display: string;
+            tipo_inscricao?: (components["schemas"]["TipoInscricaoEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             numero_inscricao?: string | null;
+            nome_representante?: string | null;
+            setor_representante?: string | null;
+            /** Format: email */
+            email_representante?: string | null;
+            contato_representante?: string | null;
+            cobranca_revisao_alteracao?: boolean;
             ativo?: boolean;
+            /** Format: date-time */
+            readonly data_criacao: string;
         };
         ClienteListRequest: {
             nome: string;
             tipo_cliente?: (components["schemas"]["TipoClienteEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            tipo_inscricao?: (components["schemas"]["TipoInscricaoEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             numero_inscricao?: string | null;
+            nome_representante?: string | null;
+            setor_representante?: string | null;
+            /** Format: email */
+            email_representante?: string | null;
+            contato_representante?: string | null;
+            cobranca_revisao_alteracao?: boolean;
             ativo?: boolean;
         };
         ClienteRequest: {
@@ -1637,13 +1816,28 @@ export interface components {
             mais_vendas: components["schemas"]["ClienteVendas"][];
         };
         Cobrancas: {
-            situacao: components["schemas"]["SituacaoEnum"];
+            situacao: components["schemas"]["SituacaoDaListaDeCobrancasEnum"];
             /** @description As três situações, sob os mesmos filtros. */
             contadores: components["schemas"]["Contadores"];
             /** @description Quantas OS a faturar estão em alerta. */
             em_alerta: number;
+            /** @description A partir de quantos dias a OS liberada entra em alerta. */
+            dias_alerta_sem_lancamento: number;
             ordens: components["schemas"]["LinhaDeCobranca"][];
         };
+        /**
+         * @description * `sync_conclusao` - sync_conclusao
+         *     * `sync_venda` - sync_venda
+         *     * `sync_servico` - sync_servico
+         *     * `concluido_os_parada` - concluido_os_parada
+         *     * `sem_distribuir` - sem_distribuir
+         *     * `vencimento_chegando` - vencimento_chegando
+         *     * `aguardando_lancamento` - aguardando_lancamento
+         *     * `mudou_apos_liberacao` - mudou_apos_liberacao
+         *     * `mudou_apos_lancamento` - mudou_apos_lancamento
+         * @enum {string}
+         */
+        CodigoDaConferenciaEnum: "sync_conclusao" | "sync_venda" | "sync_servico" | "concluido_os_parada" | "sem_distribuir" | "vencimento_chegando" | "aguardando_lancamento" | "mudou_apos_liberacao" | "mudou_apos_lancamento";
         /**
          * @description * `1` - Baixa
          *     * `2` - Média
@@ -1661,20 +1855,29 @@ export interface components {
         CondicoesDaVenda: {
             /** Format: decimal */
             valor: string;
-            /** Format: decimal */
-            valor_mensal: string | null;
             tipo_condicao: components["schemas"]["TipoCondicaoEnum"];
             condicao_resumo: string;
             forma_pagamento: components["schemas"]["FormaPagamentoEnum"];
             quantidade_parcelas: number | null;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Vencimento (no parcelado, a 1ª parcela).
+             */
             data_acordada_cobranca: string | null;
-            intervalo_parcelas_dias: number | null;
-            dia_fechamento: number | null;
-            dia_vencimento: number | null;
+            /** @description Vencimento em dias após a emissão da nota, no lugar da data. */
+            vencimento_dias_apos_nota: number | null;
+            /** @description Parcelado: dia do mês das parcelas da 2ª em diante. Vazio = mesmo dia da 1ª. */
+            dia_vencimento_demais: number | null;
             liberar_em: components["schemas"]["LiberarEmEnum"];
             nome_contato_envio_nf: string;
             contato_envio_nf: string;
+            /** @description Observações de pagamento e faturamento. */
+            observacao: string | null;
+        };
+        Conferencia: {
+            /** Format: date-time */
+            verificado_em: string;
+            verificacoes: components["schemas"]["Verificacao"][];
         };
         Contador: {
             quantidade: number;
@@ -1686,6 +1889,12 @@ export interface components {
             faturadas: components["schemas"]["Contador"];
             previsao: components["schemas"]["Contador"];
         };
+        ContadoresMeusServicos: {
+            nova: number;
+            a_iniciar: number;
+            em_andamento: number;
+        };
+        /** @description Sem a observação da OS: ela é de pagamento e faturamento e fica só com quem vê valores. */
         ContextoDaOSDetalhe: {
             ordem_servico_id: number;
             cliente_id: number;
@@ -1694,7 +1903,10 @@ export interface components {
             data_venda: string;
             vendido_por_nome: string | null;
             prioridade: components["schemas"]["PrioridadeEnum"];
-            observacao: string | null;
+        };
+        Correcao: {
+            servicos_corrigidos: number;
+            ordens_liberadas: number;
         };
         Detalhe: {
             detail: string;
@@ -1706,6 +1918,17 @@ export interface components {
             alerta_ciente_por_nome: string | null;
             alerta_ciente_motivo: (components["schemas"]["MotivoCienciaEnum"] | components["schemas"]["NullEnum"]) | null;
             alerta_ciente_observacao: string | null;
+            /**
+             * Format: date
+             * @description Até quando a pausa explicada silencia o aviso.
+             */
+            ciencia_ate: string | null;
+            /**
+             * Format: date-time
+             * @description Ciência de recebimento do setor (ADR 0009).
+             */
+            recebido_em: string | null;
+            recebido_por_nome: string | null;
             id: number;
             catalogo_nome: string | null;
             descricao: string;
@@ -1733,6 +1956,8 @@ export interface components {
             outros_servicos_da_os: components["schemas"]["OutroServicoDaOS"][];
             pode_distribuir: boolean;
             pode_dar_ciencia: boolean;
+            /** @description Serviço aberto, sem ciência de recebimento, e a pessoa distribui no setor. */
+            pode_confirmar_recebimento: boolean;
         };
         DistribuicaoTempoOS: {
             ate_7: number;
@@ -1760,14 +1985,30 @@ export interface components {
          */
         EscopoEnum: "global" | "setor";
         /**
-         * @description * `na_fila` - na_fila
+         * @description * `novo` - novo
+         *     * `a_distribuir` - a_distribuir
+         * @enum {string}
+         */
+        EtapaDaFilaEnum: "novo" | "a_distribuir";
+        /**
+         * @description * `novo` - novo
+         *     * `a_distribuir` - a_distribuir
          *     * `distribuido` - distribuido
          *     * `em_execucao` - em_execucao
          *     * `concluido` - concluido
          *     * `cancelado` - cancelado
          * @enum {string}
          */
-        EtapaEnum: "na_fila" | "distribuido" | "em_execucao" | "concluido" | "cancelado";
+        EtapaEnum: "novo" | "a_distribuir" | "distribuido" | "em_execucao" | "concluido" | "cancelado";
+        /**
+         * @description * `nova` - nova
+         *     * `a_iniciar` - a_iniciar
+         *     * `em_andamento` - em_andamento
+         *     * `concluida` - concluida
+         *     * `cancelada` - cancelada
+         * @enum {string}
+         */
+        EtapaTarefaEnum: "nova" | "a_iniciar" | "em_andamento" | "concluida" | "cancelada";
         EventoDaLinhaDoTempo: {
             /** Format: date-time */
             quando: string;
@@ -1803,23 +2044,23 @@ export interface components {
          *     * `os_reaberta` - os_reaberta
          *     * `liberacao` - liberacao
          *     * `lancamento` - lancamento
+         *     * `recebimento` - recebimento
+         *     * `tarefa_recebida` - tarefa_recebida
          * @enum {string}
          */
-        EventoDaLinhaDoTempoTipoEnum: "historico_anterior" | "venda" | "venda_alterada" | "condicao_alterada" | "chegada" | "distribuicao" | "reatribuicao" | "prazo_alterado" | "tarefa_iniciada" | "tarefa_concluida" | "tarefa_cancelada" | "tarefa_reaberta" | "tarefa_excluida" | "ciencia" | "servico_concluido" | "servico_cancelado" | "servico_reaberto" | "servico_excluido" | "os_concluida" | "os_cancelada" | "os_reaberta" | "liberacao" | "lancamento";
-        EventoFinanceiro: {
-            /** @description Data e hora (ISO 8601); o lançamento só tem data. */
-            quando: string | null;
+        EventoDaLinhaDoTempoTipoEnum: "historico_anterior" | "venda" | "venda_alterada" | "condicao_alterada" | "chegada" | "distribuicao" | "reatribuicao" | "prazo_alterado" | "tarefa_iniciada" | "tarefa_concluida" | "tarefa_cancelada" | "tarefa_reaberta" | "tarefa_excluida" | "ciencia" | "servico_concluido" | "servico_cancelado" | "servico_reaberto" | "servico_excluido" | "os_concluida" | "os_cancelada" | "os_reaberta" | "liberacao" | "lancamento" | "recebimento" | "tarefa_recebida";
+        EventoDoResumo: {
+            /** Format: date-time */
+            quando: string;
+            /** @description Quem fez a ação; vazio quando foi o sistema. */
             quem: string | null;
-            tipo: components["schemas"]["EventoFinanceiroTipoEnum"];
+            tipo: components["schemas"]["EventoDaLinhaDoTempoTipoEnum"];
             texto: string;
+            ordem_servico_id: number | null;
+            servico_id: number | null;
+            tarefa_id: number | null;
+            categoria: components["schemas"]["CategoriaDoEventoEnum"];
         };
-        /**
-         * @description * `venda` - venda
-         *     * `liberacao` - liberacao
-         *     * `lancamento` - lancamento
-         * @enum {string}
-         */
-        EventoFinanceiroTipoEnum: "venda" | "liberacao" | "lancamento";
         FinanceiroAnaliseResponse: {
             /** Format: decimal */
             total_cobrado: string;
@@ -1834,12 +2075,6 @@ export interface components {
             total_previsao: string;
             /** @description A faturar, faturado e previsão por tipo de condição. */
             por_tipo_condicao: components["schemas"]["PorTipoCondicao"];
-            /**
-             * Format: decimal
-             * @description Soma do valor mensal dos recorrentes não cancelados.
-             */
-            receita_recorrente_mensal: string;
-            recorrentes_ativos: number;
             /** Format: decimal */
             ticket_medio: string | null;
             vendas_por_mes: components["schemas"]["MesDecimal"][];
@@ -1898,6 +2133,15 @@ export interface components {
             /** @description Setores em que a função pode ser atribuída. */
             setores: number[];
         };
+        ItemDaConferencia: {
+            ordem_servico_id: number;
+            cliente_nome: string;
+            servico_id: number | null;
+            servico_nome: string | null;
+            setor_nome: string | null;
+            responsavel_nome: string | null;
+            detalhe: string;
+        };
         ItemDaFila: {
             ordem_servico_id: number;
             cliente_id: number;
@@ -1905,10 +2149,17 @@ export interface components {
             /** Format: date */
             data_venda: string;
             vendido_por_nome: string | null;
+            /**
+             * Format: date-time
+             * @description Ciência de recebimento do setor (ADR 0009).
+             */
+            recebido_em: string | null;
+            recebido_por_nome: string | null;
             servico_id: number;
             catalogo_nome: string | null;
             descricao: string;
             prioridade: components["schemas"]["PrioridadeEnum"];
+            etapa: components["schemas"]["EtapaDaFilaEnum"];
             na_fila_ha_dias: number;
             em_alerta: boolean;
             outros_servicos_da_os: components["schemas"]["OutroServicoDaOS"][];
@@ -1937,17 +2188,21 @@ export interface components {
             vendido_por_nome: string | null;
             /** Format: decimal */
             valor: string;
-            /** Format: decimal */
-            valor_mensal: string | null;
             tipo_condicao: components["schemas"]["TipoCondicaoEnum"];
             condicao_resumo: string;
             forma_pagamento: components["schemas"]["FormaPagamentoEnum"];
             quantidade_parcelas: number | null;
             /**
              * Format: date
-             * @description Primeiro vencimento.
+             * @description Vencimento (no parcelado, a 1ª parcela).
              */
             data_acordada_cobranca: string | null;
+            /** @description Ex.: "10/08/2026" ou "21 dias após a nota"; vazio sem vencimento. */
+            vencimento_resumo: string | null;
+            /** @description Vencimento em dias após a emissão da nota, no lugar da data. */
+            vencimento_dias_apos_nota: number | null;
+            /** @description Parcelado: dia do mês das parcelas da 2ª em diante. Vazio = mesmo dia da 1ª. */
+            dia_vencimento_demais: number | null;
             nome_contato_envio_nf: string;
             contato_envio_nf: string;
             liberar_em: components["schemas"]["LiberarEmEnum"];
@@ -1967,15 +2222,32 @@ export interface components {
             /** @description Liberada há `DIAS_ALERTA_SEM_LANCAMENTO` dias sem lançamento. */
             em_alerta: boolean;
             andamento: components["schemas"]["Andamento"];
+            /** @description Na previsão: os serviços que faltam para liberar, o mais parado primeiro. */
+            pendentes: components["schemas"]["ServicoPendente"][];
+            /**
+             * Format: date-time
+             * @description A mais recente dos serviços.
+             */
+            ultima_movimentacao_em: string | null;
+            /** @description Códigos das verificações da conferência em que a OS aparece (faturamento/04). */
+            pendencias: components["schemas"]["CodigoDaConferenciaEnum"][];
         };
         LinhaDeTarefa: {
             tarefa_id: number;
             status: string;
+            etapa: components["schemas"]["EtapaTarefaEnum"];
+            /**
+             * Format: date-time
+             * @description Ciência de recebimento do responsável.
+             */
+            recebida_em: string | null;
             descricao: string | null;
             responsavel_id: number;
             responsavel_nome: string | null;
             servico_id: number;
             catalogo_nome: string | null;
+            /** @description O que será feito no serviço (a `descricao` é a da tarefa). */
+            servico_descricao: string;
             setor_nome: string | null;
             cliente_nome: string;
             ordem_servico_id: number;
@@ -1984,12 +2256,21 @@ export interface components {
             situacao_prazo: components["schemas"]["SituacaoPrazoEnum"];
             /** @description Dias desde a criação da tarefa. */
             idade_dias: number;
+            /** @description Dias desde que a tarefa chegou ao responsável atual (criação ou última troca de responsável). */
+            atribuida_ha_dias: number;
+            prioridade: components["schemas"]["PrioridadeEnum"];
             /** Format: date */
             data_inicio: string | null;
             /** Format: date */
             data_termino: string | null;
             servico_em_alerta: boolean;
             servico_dias_sem_movimentacao: number;
+            /** @description A pausa do serviço está explicada e o aviso, silenciado. */
+            servico_ciencia_vigente: boolean;
+            servico_ciencia_motivo: (components["schemas"]["MotivoCienciaEnum"] | components["schemas"]["NullEnum"]) | null;
+            servico_ciencia_observacao: string | null;
+            /** Format: date */
+            servico_ciencia_ate: string | null;
         };
         /** @description Retorna access, refresh e dados do usuário autenticado. */
         LoginRequest: {
@@ -2008,14 +2289,22 @@ export interface components {
             usuario_id: number;
             nome: string | null;
             funcao: string | null;
-            /** @description Falso para quem tem tarefa ativa no setor sem ser membro. */
+            /** @description A pessoa é lotada neste setor. */
             membro_do_setor: boolean;
+            /** @description Pode ser responsável por tarefas do setor (lotada com "Recebe tarefas" ou "também executa" aqui). Falso para quem só aparece por ter tarefa ativa no setor. */
+            recebe_tarefas: boolean;
+            /** @description Setor da pessoa, quando ela é de outro setor e "também executa" neste. */
+            setor_de_origem_nome: string | null;
             ativos: number;
             atrasados: number;
             vence_7_dias: number;
             sem_prazo: number;
             em_alerta: number;
             mais_antigo_dias: number | null;
+            /** @description Tarefas ativas da pessoa sem ciência dela. */
+            sem_ciencia: number;
+            /** @description Dias desde a atribuição da tarefa sem ciência mais antiga. */
+            sem_ciencia_mais_antiga_dias: number | null;
         };
         MembroSetor: {
             readonly id: number;
@@ -2075,6 +2364,15 @@ export interface components {
          * @enum {string}
          */
         MotivosEnum: "atrasado" | "sem_movimentacao";
+        MudarSetorDosCatalogosRequest: {
+            catalogos: number[];
+            setor: number;
+            /**
+             * @description Leva junto os serviços em aberto e sem tarefas desses catálogos (os demais ficam no setor antigo).
+             * @default false
+             */
+            mover_servicos_em_aberto: boolean;
+        };
         /** @enum {unknown} */
         NullEnum: null;
         OperacionalAnaliseResponse: {
@@ -2109,21 +2407,16 @@ export interface components {
             prazo?: string | null;
             /** Format: decimal */
             valor?: string;
-            /** Format: decimal */
-            valor_mensal?: string | null;
             tipo_condicao?: components["schemas"]["TipoCondicaoEnum"];
             readonly tipo_condicao_display: string;
             readonly condicao_resumo: string;
             forma_pagamento?: components["schemas"]["FormaPagamentoEnum"];
             readonly forma_pagamento_display: string;
-            /** Format: int64 */
             quantidade_parcelas?: number | null;
             /** Format: date */
             data_acordada_cobranca?: string | null;
-            /** Format: int64 */
-            intervalo_parcelas_dias?: number | null;
-            dia_fechamento?: number | null;
-            dia_vencimento?: number | null;
+            vencimento_dias_apos_nota?: number | null;
+            dia_vencimento_demais?: number | null;
             liberar_em?: components["schemas"]["LiberarEmEnum"];
             readonly liberar_em_display: string;
             nome_contato_envio_nf?: string;
@@ -2163,8 +2456,6 @@ export interface components {
             readonly vendido_por_nome: string;
             /** Format: decimal */
             valor?: string;
-            /** Format: decimal */
-            valor_mensal?: string | null;
             tipo_condicao?: components["schemas"]["TipoCondicaoEnum"];
             readonly tipo_condicao_display: string;
             readonly condicao_resumo: string;
@@ -2311,18 +2602,13 @@ export interface components {
             prazo?: string | null;
             /** Format: decimal */
             valor?: string;
-            /** Format: decimal */
-            valor_mensal?: string | null;
             tipo_condicao?: components["schemas"]["TipoCondicaoEnum"];
             forma_pagamento?: components["schemas"]["FormaPagamentoEnum"];
-            /** Format: int64 */
             quantidade_parcelas?: number | null;
             /** Format: date */
             data_acordada_cobranca?: string | null;
-            /** Format: int64 */
-            intervalo_parcelas_dias?: number | null;
-            dia_fechamento?: number | null;
-            dia_vencimento?: number | null;
+            vencimento_dias_apos_nota?: number | null;
+            dia_vencimento_demais?: number | null;
             liberar_em?: components["schemas"]["LiberarEmEnum"];
             nome_contato_envio_nf?: string;
             /** Format: email */
@@ -2441,6 +2727,11 @@ export interface components {
              * @default true
              */
             ativo: boolean;
+            /**
+             * @description Ao mudar o setor: leva junto os serviços em aberto e sem tarefas (os demais ficam no setor antigo).
+             * @default false
+             */
+            mover_servicos_em_aberto: boolean;
         };
         PatchedClienteRequest: {
             nome?: string;
@@ -2507,18 +2798,13 @@ export interface components {
             prazo?: string | null;
             /** Format: decimal */
             valor?: string;
-            /** Format: decimal */
-            valor_mensal?: string | null;
             tipo_condicao?: components["schemas"]["TipoCondicaoEnum"];
             forma_pagamento?: components["schemas"]["FormaPagamentoEnum"];
-            /** Format: int64 */
             quantidade_parcelas?: number | null;
             /** Format: date */
             data_acordada_cobranca?: string | null;
-            /** Format: int64 */
-            intervalo_parcelas_dias?: number | null;
-            dia_fechamento?: number | null;
-            dia_vencimento?: number | null;
+            vencimento_dias_apos_nota?: number | null;
+            dia_vencimento_demais?: number | null;
             liberar_em?: components["schemas"]["LiberarEmEnum"];
             nome_contato_envio_nf?: string;
             /** Format: email */
@@ -2593,6 +2879,14 @@ export interface components {
             username?: string;
             nome_completo?: string;
         };
+        PendenciaDaOrdem: {
+            codigo: components["schemas"]["CodigoDaConferenciaEnum"];
+            tipo: components["schemas"]["TipoDeVerificacaoEnum"];
+            titulo: string;
+            explicacao: string;
+            detalhe: string;
+            servico_id: number | null;
+        };
         PermissaoCatalogo: {
             codigo: string;
             descricao: string;
@@ -2611,6 +2905,7 @@ export interface components {
          *     * `servicos.gerenciar` - Ajustar e excluir serviços do setor
          *     * `tarefas.distribuir` - Criar, reatribuir e excluir tarefas
          *     * `tarefas.editar_setor` - Editar qualquer tarefa do setor
+         *     * `tarefas.receber` - Pode ser responsável por tarefas do setor
          *     * `usuarios.gerenciar` - Criar, editar, ativar e desativar usuários
          *     * `usuarios.gerenciar_diretoria` - Gerenciar usuários da diretoria
          *     * `usuarios.redefinir_senha` - Alterar a senha de outros usuários
@@ -2620,7 +2915,7 @@ export interface components {
          *     * `setores.todos` - As permissões por setor valem em todos os setores
          * @enum {string}
          */
-        PermissoesEnum: "os.ver_todas" | "os.gerenciar" | "os.excluir" | "os_operacional.gerenciar" | "financeiro.ver_valores" | "financeiro.registrar_cobranca" | "clientes.gerenciar" | "catalogo.gerenciar" | "servicos.ver_setor" | "servicos.gerenciar" | "tarefas.distribuir" | "tarefas.editar_setor" | "usuarios.gerenciar" | "usuarios.gerenciar_diretoria" | "usuarios.redefinir_senha" | "organizacao.configurar" | "indicadores.ver_geral" | "auditoria.ver" | "setores.todos";
+        PermissoesEnum: "os.ver_todas" | "os.gerenciar" | "os.excluir" | "os_operacional.gerenciar" | "financeiro.ver_valores" | "financeiro.registrar_cobranca" | "clientes.gerenciar" | "catalogo.gerenciar" | "servicos.ver_setor" | "servicos.gerenciar" | "tarefas.distribuir" | "tarefas.editar_setor" | "tarefas.receber" | "usuarios.gerenciar" | "usuarios.gerenciar_diretoria" | "usuarios.redefinir_senha" | "organizacao.configurar" | "indicadores.ver_geral" | "auditoria.ver" | "setores.todos";
         PermissoesNoSetor: {
             setor: number;
             setor_nome: string;
@@ -2629,7 +2924,6 @@ export interface components {
         PorTipoCondicao: {
             a_vista: components["schemas"]["SomasPorSituacao"];
             parcelado: components["schemas"]["SomasPorSituacao"];
-            recorrente: components["schemas"]["SomasPorSituacao"];
         };
         /**
          * @description * `baixa` - Baixa
@@ -2638,6 +2932,12 @@ export interface components {
          * @enum {string}
          */
         PrioridadeEnum: "baixa" | "media" | "alta";
+        ReceberServicosRequest: {
+            servicos: number[];
+        };
+        ReceberTarefasRequest: {
+            tarefas: number[];
+        };
         RegistroAuditoria: {
             readonly id: number;
             readonly entidade: components["schemas"]["EntidadeEnum"];
@@ -2673,6 +2973,11 @@ export interface components {
             /** Format: date */
             data_termino: string | null;
         };
+        ResultadoMudarSetor: {
+            catalogos_alterados: number;
+            servicos_movidos: number;
+            avisos: string[];
+        };
         ResumoDaVenda: {
             id: number;
             cliente_id: number;
@@ -2684,7 +2989,6 @@ export interface components {
             criada_em: string;
             status: string;
             prioridade: components["schemas"]["PrioridadeEnum"];
-            observacao: string | null;
             andamento: components["schemas"]["Andamento"];
             servicos: components["schemas"]["ServicoDoResumo"][];
             /** @description Vazio para quem não tem `financeiro.ver_valores`. */
@@ -2743,6 +3047,10 @@ export interface components {
             readonly alerta_ciente_motivo: (components["schemas"]["MotivoCienciaEnum"] | components["schemas"]["NullEnum"]) | null;
             readonly alerta_ciente_observacao: string | null;
             readonly ciencia_vigente: boolean;
+            /** Format: date-time */
+            readonly recebido_em: string | null;
+            readonly recebido_por: number | null;
+            readonly recebido_por_nome: string;
         };
         ServicoAnalise: {
             concluidos_ultimos_12_meses_total: number;
@@ -2767,13 +3075,6 @@ export interface components {
             data_termino: string;
             /** @description Vazio quando não havia prazo. */
             no_prazo: boolean | null;
-        };
-        ServicoDaSituacao: {
-            id: number;
-            descricao: string;
-            etapa: components["schemas"]["EtapaEnum"];
-            /** Format: date */
-            data_termino: string | null;
         };
         /** @description Serviço vendido, enviado junto na criação da OS (ADR 0008, 5). O setor vem do catálogo. */
         ServicoDaVenda: {
@@ -2844,11 +3145,25 @@ export interface components {
             alerta_ciente_motivo?: (components["schemas"]["MotivoCienciaEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             alerta_ciente_observacao?: string | null;
             readonly ciencia_vigente: boolean;
+            /** Format: date-time */
+            recebido_em?: string | null;
+            recebido_por?: number | null;
+            readonly recebido_por_nome: string;
             /** @default  */
             readonly cliente_nome: string;
             /** Format: date */
             readonly data_venda: string;
             readonly tem_tarefas: boolean;
+        };
+        ServicoPendente: {
+            servico_id: number;
+            /** @description Nome do catálogo (ou a descrição, sem catálogo). */
+            servico_nome: string;
+            setor_nome: string | null;
+            etapa: components["schemas"]["EtapaEnum"];
+            /** @description Quem está com as tarefas abertas. */
+            responsaveis: string[];
+            dias_sem_movimentacao: number | null;
         };
         ServicoPorStatus: {
             status: string;
@@ -2862,11 +3177,35 @@ export interface components {
             /** Format: double */
             percentual: number | null;
         };
+        ServicoRealizado: {
+            id: number;
+            catalogo_nome: string | null;
+            descricao: string;
+            setor_nome: string | null;
+            etapa: components["schemas"]["EtapaEnum"];
+            /** Format: date */
+            prazo: string | null;
+            /** Format: date */
+            data_inicio: string | null;
+            /** Format: date */
+            data_termino: string | null;
+            /** @description Quem finalizou o serviço. */
+            terminado_por_nome: string | null;
+            /** @description Quem executou: uma linha por tarefa. */
+            responsaveis: components["schemas"]["ResponsavelDoServico"][];
+            /** @description Só nos serviços em aberto. */
+            dias_sem_movimentacao: number | null;
+        };
         ServicoRequest: {
             ordem_servico: number;
             catalogo?: number | null;
             descricao: string;
             prioridade?: components["schemas"]["PrioridadeEnum"];
+        };
+        ServicosRecebidos: {
+            recebidos: number[];
+            /** @description Já tinham ciência. */
+            ja_recebidos: number[];
         };
         Setor: {
             readonly id: number;
@@ -2877,6 +3216,10 @@ export interface components {
             ativo: boolean;
             readonly organizadores: components["schemas"]["Organizador"][];
             readonly sem_organizador: boolean;
+            readonly catalogos_ativos: number;
+            readonly executa_servicos: boolean;
+            readonly recebem_tarefas: number;
+            readonly sem_quem_receba: boolean;
             /** Format: date-time */
             readonly criado_em: string;
             /** Format: date-time */
@@ -2887,7 +3230,10 @@ export interface components {
             nome: string;
             /** @description Se a pessoa pode distribuir no setor. */
             organiza: boolean;
-            na_fila: number;
+            /** @description Chegaram e ninguém do setor deu ciência. */
+            novos: number;
+            /** @description O setor deu ciência e falta distribuir. */
+            a_distribuir: number;
             /** @description Distribuídos ou em execução. */
             em_andamento: number;
             atrasados: number;
@@ -2895,6 +3241,8 @@ export interface components {
             em_alerta: number;
             /** @description Distribuídos ou em execução sem prazo. */
             sem_prazo: number;
+            /** @description Tarefas ativas do setor sem ciência do responsável. */
+            tarefas_sem_ciencia: number;
         };
         SetorRequest: {
             organizacao: number;
@@ -2903,6 +3251,14 @@ export interface components {
             /** @default true */
             ativo: boolean;
         };
+        /**
+         * @description * `a_faturar` - a_faturar
+         *     * `faturadas` - faturadas
+         *     * `previsao` - previsao
+         *     * `todas` - todas
+         * @enum {string}
+         */
+        SituacaoDaListaDeCobrancasEnum: "a_faturar" | "faturadas" | "previsao" | "todas";
         /**
          * @description * `a_faturar` - a_faturar
          *     * `faturadas` - faturadas
@@ -2922,17 +3278,21 @@ export interface components {
             vendido_por_nome: string | null;
             /** Format: decimal */
             valor: string;
-            /** Format: decimal */
-            valor_mensal: string | null;
             tipo_condicao: components["schemas"]["TipoCondicaoEnum"];
             condicao_resumo: string;
             forma_pagamento: components["schemas"]["FormaPagamentoEnum"];
             quantidade_parcelas: number | null;
             /**
              * Format: date
-             * @description Primeiro vencimento.
+             * @description Vencimento (no parcelado, a 1ª parcela).
              */
             data_acordada_cobranca: string | null;
+            /** @description Ex.: "10/08/2026" ou "21 dias após a nota"; vazio sem vencimento. */
+            vencimento_resumo: string | null;
+            /** @description Vencimento em dias após a emissão da nota, no lugar da data. */
+            vencimento_dias_apos_nota: number | null;
+            /** @description Parcelado: dia do mês das parcelas da 2ª em diante. Vazio = mesmo dia da 1ª. */
+            dia_vencimento_demais: number | null;
             nome_contato_envio_nf: string;
             contato_envio_nf: string;
             liberar_em: components["schemas"]["LiberarEmEnum"];
@@ -2952,9 +3312,22 @@ export interface components {
             /** @description Liberada há `DIAS_ALERTA_SEM_LANCAMENTO` dias sem lançamento. */
             em_alerta: boolean;
             andamento: components["schemas"]["Andamento"];
+            /** @description Na previsão: os serviços que faltam para liberar, o mais parado primeiro. */
+            pendentes: components["schemas"]["ServicoPendente"][];
+            /**
+             * Format: date-time
+             * @description A mais recente dos serviços.
+             */
+            ultima_movimentacao_em: string | null;
+            /** @description Códigos das verificações da conferência em que a OS aparece (faturamento/04). */
+            pendencias: components["schemas"]["CodigoDaConferenciaEnum"][];
             observacao: string | null;
-            servicos: components["schemas"]["ServicoDaSituacao"][];
-            eventos: components["schemas"]["EventoFinanceiro"][];
+            /** @description Os dados do cadastro do cliente, para conferir ao faturar. */
+            cliente: components["schemas"]["ClienteDoResumo"];
+            servicos: components["schemas"]["ServicoRealizado"][];
+            detalhe_pendencias: components["schemas"]["PendenciaDaOrdem"][];
+            /** @description A linha do tempo da OS, do mais recente ao mais antigo. */
+            eventos: components["schemas"]["EventoDoResumo"][];
         };
         /**
          * @description * `atrasado` - atrasado
@@ -3033,6 +3406,9 @@ export interface components {
             /** Format: date */
             readonly data_termino: string | null;
             /** Format: date-time */
+            readonly recebida_em: string | null;
+            readonly etapa: components["schemas"]["EtapaTarefaEnum"];
+            /** Format: date-time */
             readonly criada_em: string;
             /** Format: date-time */
             readonly atualizado_em: string;
@@ -3054,6 +3430,11 @@ export interface components {
             responsavel_nome: string | null;
             descricao: string | null;
             status: string;
+            etapa: components["schemas"]["EtapaTarefaEnum"];
+            /** Format: date-time */
+            recebida_em: string | null;
+            /** @description Só para o responsável, com a tarefa nova. */
+            pode_confirmar_recebimento: boolean;
             /** Format: date */
             prazo: string | null;
             situacao_prazo: (components["schemas"]["SituacaoPrazoEnum"] | components["schemas"]["NullEnum"]) | null;
@@ -3081,6 +3462,9 @@ export interface components {
             /** Format: date */
             data_termino?: string | null;
             /** Format: date-time */
+            recebida_em?: string | null;
+            readonly etapa: components["schemas"]["EtapaTarefaEnum"];
+            /** Format: date-time */
             readonly criada_em: string;
             /** Format: date-time */
             readonly atualizado_em: string;
@@ -3098,6 +3482,11 @@ export interface components {
             prioridade?: components["schemas"]["PrioridadeEnum"];
             /** Format: date */
             prazo?: string | null;
+        };
+        TarefasRecebidas: {
+            recebidas: number[];
+            /** @description Já tinham ciência. */
+            ja_recebidas: number[];
         };
         TaxaCancelamento: {
             tarefas: components["schemas"]["BlocoCancelamento"];
@@ -3163,10 +3552,15 @@ export interface components {
         /**
          * @description * `a_vista` - À vista
          *     * `parcelado` - Parcelado
-         *     * `recorrente` - Recorrente
          * @enum {string}
          */
-        TipoCondicaoEnum: "a_vista" | "parcelado" | "recorrente";
+        TipoCondicaoEnum: "a_vista" | "parcelado";
+        /**
+         * @description * `garantia` - garantia
+         *     * `atencao` - atencao
+         * @enum {string}
+         */
+        TipoDeVerificacaoEnum: "garantia" | "atencao";
         /**
          * @description * `cnpj` - CNPJ
          *     * `cpf` - CPF
@@ -3199,6 +3593,8 @@ export interface components {
             ativo: boolean;
             /** @description Setor e função do usuário: lista com no máximo um item. */
             vinculos?: components["schemas"]["Vinculo"][];
+            /** @description IDs dos setores, fora o da lotação, em que a pessoa também recebe tarefas. Se enviado, substitui a lista. Cada setor que entra ou sai exige `tarefas.distribuir` nele. */
+            tambem_executa_em?: number[];
         };
         /** @description Grava os vínculos enviados em `vinculos` com as proteções de `definir_vinculos`. */
         UsuarioCreateRequest: {
@@ -3214,6 +3610,8 @@ export interface components {
             ativo: boolean;
             /** @description Setor e função do usuário: lista com no máximo um item. */
             vinculos?: components["schemas"]["VinculoRequest"][];
+            /** @description IDs dos setores, fora o da lotação, em que a pessoa também recebe tarefas. Se enviado, substitui a lista. Cada setor que entra ou sai exige `tarefas.distribuir` nele. */
+            tambem_executa_em?: number[];
             password: string;
             password_confirmacao: string;
         };
@@ -3239,6 +3637,8 @@ export interface components {
              */
             readonly is_superuser: boolean;
             readonly vinculos: components["schemas"]["Vinculo"][];
+            /** @description Setores, fora o da lotação, em que a pessoa também recebe tarefas (sem permissões de gestão). */
+            readonly tambem_executa_em: components["schemas"]["Atuacao"][];
             readonly permissoes: components["schemas"]["ResumoPermissoes"];
             /** Format: date-time */
             readonly data_criacao: string;
@@ -3255,6 +3655,8 @@ export interface components {
             nome_completo: string;
             readonly ativo: boolean;
             readonly vinculos: components["schemas"]["Vinculo"][];
+            /** @description Setores, fora o da lotação, em que a pessoa também recebe tarefas (sem permissões de gestão). */
+            readonly tambem_executa_em: components["schemas"]["Atuacao"][];
             /** Format: date-time */
             readonly data_criacao: string;
         };
@@ -3284,6 +3686,8 @@ export interface components {
             readonly ativo: boolean;
             /** @description Se enviado, substitui o vínculo do usuário (lista com no máximo um item; vazia remove o vínculo). */
             readonly vinculos: components["schemas"]["Vinculo"][];
+            /** @description IDs dos setores, fora o da lotação, em que a pessoa também recebe tarefas. Se enviado, substitui a lista. Cada setor que entra ou sai exige `tarefas.distribuir` nele. */
+            readonly tambem_executa_em: number[];
         };
         /** @description Grava os vínculos enviados em `vinculos` com as proteções de `definir_vinculos`. */
         UsuarioUpdateRequest: {
@@ -3295,6 +3699,24 @@ export interface components {
              */
             username: string;
             nome_completo: string;
+        };
+        Verificacao: {
+            codigo: components["schemas"]["CodigoDaConferenciaEnum"];
+            /** @description Garantia: deve ser sempre 0.
+             *
+             *     * `garantia` - garantia
+             *     * `atencao` - atencao */
+            tipo: components["schemas"]["TipoDeVerificacaoEnum"];
+            /** @description Situação das OS em que a verificação vale.
+             *
+             *     * `a_faturar` - a_faturar
+             *     * `faturadas` - faturadas
+             *     * `previsao` - previsao */
+            situacao: components["schemas"]["SituacaoEnum"];
+            titulo: string;
+            explicacao: string;
+            quantidade: number;
+            itens: components["schemas"]["ItemDaConferencia"][];
         };
         /** @description Vínculo do usuário com um setor. Na escrita, informe `setor` e `funcao`. */
         Vinculo: {
@@ -3367,7 +3789,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filtrar pelo tipo de ação registrada. */
-                acao?: "atualizacao" | "backfill" | "ciencia_alerta" | "cobranca_realizada" | "contrato" | "criacao" | "exclusao" | "faturamento" | "liberacao_cobranca" | "liberacao_faturamento" | "propagacao_status" | "status";
+                acao?: "atualizacao" | "backfill" | "ciencia_alerta" | "cobranca_realizada" | "contrato" | "criacao" | "exclusao" | "faturamento" | "liberacao_cobranca" | "liberacao_faturamento" | "propagacao_status" | "recebimento" | "status";
                 /** @description Filtrar por entidade auditada. */
                 entidade?: "mini_os" | "ordem_servico" | "servico" | "tarefa";
                 /** @description Filtrar pelo ID da mini OS. */
@@ -3402,7 +3824,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Registro de Auditoria. */
+                /** @description Um valor inteiro único que identifica este Registro de Auditoria. */
                 id: number;
             };
             cookie?: never;
@@ -3423,7 +3845,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filtrar pelo tipo de ação registrada. */
-                acao?: "atualizacao" | "backfill" | "ciencia_alerta" | "cobranca_realizada" | "contrato" | "criacao" | "exclusao" | "faturamento" | "liberacao_cobranca" | "liberacao_faturamento" | "propagacao_status" | "status";
+                acao?: "atualizacao" | "backfill" | "ciencia_alerta" | "cobranca_realizada" | "contrato" | "criacao" | "exclusao" | "faturamento" | "liberacao_cobranca" | "liberacao_faturamento" | "propagacao_status" | "recebimento" | "status";
                 /** @description Filtrar por entidade auditada. */
                 entidade?: "mini_os" | "ordem_servico" | "servico" | "tarefa";
                 /** @description Filtrar pelo ID da mini OS. */
@@ -3460,7 +3882,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filtrar pelo tipo de ação registrada. */
-                acao?: "atualizacao" | "backfill" | "ciencia_alerta" | "cobranca_realizada" | "contrato" | "criacao" | "exclusao" | "faturamento" | "liberacao_cobranca" | "liberacao_faturamento" | "propagacao_status" | "status";
+                acao?: "atualizacao" | "backfill" | "ciencia_alerta" | "cobranca_realizada" | "contrato" | "criacao" | "exclusao" | "faturamento" | "liberacao_cobranca" | "liberacao_faturamento" | "propagacao_status" | "recebimento" | "status";
                 /** @description Filtrar por entidade auditada. */
                 entidade?: "mini_os" | "ordem_servico" | "servico" | "tarefa";
                 /** @description Filtrar pelo ID da mini OS. */
@@ -3596,7 +4018,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo Operacional. */
+                /** @description Um valor inteiro único que identifica este Catálogo Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -3618,7 +4040,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo Operacional. */
+                /** @description Um valor inteiro único que identifica este Catálogo Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -3646,7 +4068,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo Operacional. */
+                /** @description Um valor inteiro único que identifica este Catálogo Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -3667,7 +4089,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo Operacional. */
+                /** @description Um valor inteiro único que identifica este Catálogo Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -3695,7 +4117,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo. */
+                /** @description Um valor inteiro único que identifica este Catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3717,7 +4139,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo. */
+                /** @description Um valor inteiro único que identifica este Catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3745,7 +4167,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo. */
+                /** @description Um valor inteiro único que identifica este Catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3766,7 +4188,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Catálogo. */
+                /** @description Um valor inteiro único que identifica este Catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3785,6 +4207,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Catalogo"];
+                };
+            };
+        };
+    };
+    catalogo_catalogos_mudar_setor_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MudarSetorDosCatalogosRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["MudarSetorDosCatalogosRequest"];
+                "multipart/form-data": components["schemas"]["MudarSetorDosCatalogosRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoMudarSetor"];
                 };
             };
         };
@@ -3845,7 +4292,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Subitem de catálogo. */
+                /** @description Um valor inteiro único que identifica este Subitem de catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3867,7 +4314,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Subitem de catálogo. */
+                /** @description Um valor inteiro único que identifica este Subitem de catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3895,7 +4342,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Subitem de catálogo. */
+                /** @description Um valor inteiro único que identifica este Subitem de catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3916,7 +4363,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Subitem de catálogo. */
+                /** @description Um valor inteiro único que identifica este Subitem de catálogo. */
                 id: number;
             };
             cookie?: never;
@@ -3995,7 +4442,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Cliente. */
+                /** @description Um valor inteiro único que identifica este Cliente. */
                 id: number;
             };
             cookie?: never;
@@ -4017,7 +4464,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Cliente. */
+                /** @description Um valor inteiro único que identifica este Cliente. */
                 id: number;
             };
             cookie?: never;
@@ -4045,7 +4492,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Cliente. */
+                /** @description Um valor inteiro único que identifica este Cliente. */
                 id: number;
             };
             cookie?: never;
@@ -4066,7 +4513,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Cliente. */
+                /** @description Um valor inteiro único que identifica este Cliente. */
                 id: number;
             };
             cookie?: never;
@@ -4339,7 +4786,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this usuário. */
+                /** @description Um valor inteiro único que identifica este usuário. */
                 id: number;
             };
             cookie?: never;
@@ -4361,7 +4808,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this usuário. */
+                /** @description Um valor inteiro único que identifica este usuário. */
                 id: number;
             };
             cookie?: never;
@@ -4389,7 +4836,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this usuário. */
+                /** @description Um valor inteiro único que identifica este usuário. */
                 id: number;
             };
             cookie?: never;
@@ -4410,7 +4857,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this usuário. */
+                /** @description Um valor inteiro único que identifica este usuário. */
                 id: number;
             };
             cookie?: never;
@@ -4438,7 +4885,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this usuário. */
+                /** @description Um valor inteiro único que identifica este usuário. */
                 id: number;
             };
             cookie?: never;
@@ -4480,7 +4927,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this usuário. */
+                /** @description Um valor inteiro único que identifica este usuário. */
                 id: number;
             };
             cookie?: never;
@@ -4502,7 +4949,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this usuário. */
+                /** @description Um valor inteiro único que identifica este usuário. */
                 id: number;
             };
             cookie?: never;
@@ -4570,6 +5017,8 @@ export interface operations {
     execucao_andamento_list: {
         parameters: {
             query: {
+                /** @description Etapa da tarefa. */
+                etapa?: "a_iniciar" | "em_andamento" | "nova";
                 /** @description Filtrar pelo responsável. */
                 responsavel?: number;
                 /** @description ID do setor. */
@@ -4644,6 +5093,8 @@ export interface operations {
             query: {
                 /** @description Filtrar pelo cliente. */
                 cliente?: number;
+                /** @description Só uma das etapas. */
+                etapa?: "a_distribuir" | "novo";
                 /** @description Filtrar pela OS. */
                 ordem_servico?: number;
                 /** @description Filtrar pela prioridade. */
@@ -4674,6 +5125,8 @@ export interface operations {
                 ate?: string;
                 /** @description Data inicial (AAAA-MM-DD). Padrão: primeiro dia do mês atual. */
                 de?: string;
+                /** @description Etapa da tarefa (sem `status`). */
+                etapa?: "a_iniciar" | "em_andamento" | "nova";
                 /** @description Histórico de concluídas. */
                 status?: "concluida";
             };
@@ -4689,6 +5142,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LinhaDeTarefa"][];
+                };
+            };
+        };
+    };
+    execucao_meus_servicos_contadores_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContadoresMeusServicos"];
                 };
             };
         };
@@ -4723,7 +5195,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["CienciaRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["CienciaRequest"];
@@ -4768,6 +5240,31 @@ export interface operations {
             };
         };
     };
+    execucao_servicos_recebimento_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceberServicosRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReceberServicosRequest"];
+                "multipart/form-data": components["schemas"]["ReceberServicosRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServicosRecebidos"];
+                };
+            };
+        };
+    };
     execucao_setores_list: {
         parameters: {
             query?: never;
@@ -4787,6 +5284,31 @@ export interface operations {
             };
         };
     };
+    execucao_tarefas_recebimento_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceberTarefasRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReceberTarefasRequest"];
+                "multipart/form-data": components["schemas"]["ReceberTarefasRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TarefasRecebidas"];
+                };
+            };
+        };
+    };
     financeiro_cobrancas_retrieve: {
         parameters: {
             query?: {
@@ -4798,10 +5320,14 @@ export interface operations {
                 de?: string;
                 /** @description Só as liberadas há N dias sem lançamento. */
                 em_alerta?: "true";
+                /** @description Faturadas lançadas até esta data (AAAA-MM-DD). */
+                faturada_ate?: string;
+                /** @description Faturadas lançadas a partir desta data (AAAA-MM-DD). */
+                faturada_de?: string;
                 forma_pagamento?: "boleto" | "cheque" | "credito" | "debito" | "dinheiro" | "outro" | "pix" | "transferencia";
                 /** @description Padrão: `a_faturar`. */
-                situacao?: "a_faturar" | "faturadas" | "previsao";
-                tipo_condicao?: "a_vista" | "parcelado" | "recorrente";
+                situacao?: "a_faturar" | "faturadas" | "previsao" | "todas";
+                tipo_condicao?: "a_vista" | "parcelado";
             };
             header?: never;
             path?: never;
@@ -4815,6 +5341,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Cobrancas"];
+                };
+            };
+        };
+    };
+    financeiro_conferencia_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conferencia"];
+                };
+            };
+        };
+    };
+    financeiro_conferencia_corrigir_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Correcao"];
                 };
             };
         };
@@ -4906,7 +5470,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço Operacional. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -4928,7 +5492,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço Operacional. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -4956,7 +5520,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço Operacional. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -4977,7 +5541,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço Operacional. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -5005,7 +5569,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço Operacional. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço Operacional. */
                 id: number;
             };
             cookie?: never;
@@ -5044,13 +5608,13 @@ export interface operations {
                 cobranca_realizada?: "false" | "true";
                 /** @description Filtrar por conclusão. */
                 concluida?: "false" | "true";
-                /** @description OS com ao menos um serviço na etapa (ex.: `na_fila` = vendas com algo ainda não distribuído). */
-                etapa?: "cancelado" | "concluido" | "distribuido" | "em_execucao" | "na_fila";
+                /** @description OS com ao menos um serviço na etapa (ex.: `novo` = vendas com algo que o setor ainda não recebeu). */
+                etapa?: "a_distribuir" | "cancelado" | "concluido" | "distribuido" | "em_execucao" | "novo";
                 /** @description Filtrar por liberação para cobrança. */
                 liberada?: "false" | "true";
                 /** @description Se "true", só as vendas registradas pelo usuário. */
                 minhas?: "true";
-                /** @description Busca por nome do cliente ou observação (parcial). */
+                /** @description Busca por nome do cliente ou, para quem vê valores, pela observação (parcial). */
                 q?: string;
             };
             header?: never;
@@ -5099,7 +5663,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5121,7 +5685,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5149,7 +5713,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5170,7 +5734,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5198,7 +5762,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5233,7 +5797,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5255,7 +5819,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Ordem de Serviço. */
+                /** @description Um valor inteiro único que identifica este Ordem de Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5336,7 +5900,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Serviço. */
+                /** @description Um valor inteiro único que identifica este Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5358,7 +5922,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Serviço. */
+                /** @description Um valor inteiro único que identifica este Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5386,7 +5950,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Serviço. */
+                /** @description Um valor inteiro único que identifica este Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5407,7 +5971,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Serviço. */
+                /** @description Um valor inteiro único que identifica este Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5435,7 +5999,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Serviço. */
+                /** @description Um valor inteiro único que identifica este Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5457,7 +6021,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Serviço. */
+                /** @description Um valor inteiro único que identifica este Serviço. */
                 id: number;
             };
             cookie?: never;
@@ -5536,7 +6100,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Tarefa. */
+                /** @description Um valor inteiro único que identifica este Tarefa. */
                 id: number;
             };
             cookie?: never;
@@ -5558,7 +6122,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Tarefa. */
+                /** @description Um valor inteiro único que identifica este Tarefa. */
                 id: number;
             };
             cookie?: never;
@@ -5586,7 +6150,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Tarefa. */
+                /** @description Um valor inteiro único que identifica este Tarefa. */
                 id: number;
             };
             cookie?: never;
@@ -5607,7 +6171,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Tarefa. */
+                /** @description Um valor inteiro único que identifica este Tarefa. */
                 id: number;
             };
             cookie?: never;
@@ -5688,7 +6252,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Função. */
+                /** @description Um valor inteiro único que identifica este Função. */
                 id: number;
             };
             cookie?: never;
@@ -5710,7 +6274,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Função. */
+                /** @description Um valor inteiro único que identifica este Função. */
                 id: number;
             };
             cookie?: never;
@@ -5738,7 +6302,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Função. */
+                /** @description Um valor inteiro único que identifica este Função. */
                 id: number;
             };
             cookie?: never;
@@ -5759,7 +6323,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Função. */
+                /** @description Um valor inteiro único que identifica este Função. */
                 id: number;
             };
             cookie?: never;
@@ -5857,7 +6421,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Membro de setor. */
+                /** @description Um valor inteiro único que identifica este Membro de setor. */
                 id: number;
             };
             cookie?: never;
@@ -5879,7 +6443,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Membro de setor. */
+                /** @description Um valor inteiro único que identifica este Membro de setor. */
                 id: number;
             };
             cookie?: never;
@@ -5907,7 +6471,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Membro de setor. */
+                /** @description Um valor inteiro único que identifica este Membro de setor. */
                 id: number;
             };
             cookie?: never;
@@ -5928,7 +6492,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Membro de setor. */
+                /** @description Um valor inteiro único que identifica este Membro de setor. */
                 id: number;
             };
             cookie?: never;
@@ -6000,7 +6564,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Organização. */
+                /** @description Um valor inteiro único que identifica este Organização. */
                 id: number;
             };
             cookie?: never;
@@ -6022,7 +6586,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Organização. */
+                /** @description Um valor inteiro único que identifica este Organização. */
                 id: number;
             };
             cookie?: never;
@@ -6050,7 +6614,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Organização. */
+                /** @description Um valor inteiro único que identifica este Organização. */
                 id: number;
             };
             cookie?: never;
@@ -6127,7 +6691,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Setor. */
+                /** @description Um valor inteiro único que identifica este Setor. */
                 id: number;
             };
             cookie?: never;
@@ -6149,7 +6713,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Setor. */
+                /** @description Um valor inteiro único que identifica este Setor. */
                 id: number;
             };
             cookie?: never;
@@ -6177,7 +6741,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Setor. */
+                /** @description Um valor inteiro único que identifica este Setor. */
                 id: number;
             };
             cookie?: never;
@@ -6198,7 +6762,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique integer value identifying this Setor. */
+                /** @description Um valor inteiro único que identifica este Setor. */
                 id: number;
             };
             cookie?: never;
