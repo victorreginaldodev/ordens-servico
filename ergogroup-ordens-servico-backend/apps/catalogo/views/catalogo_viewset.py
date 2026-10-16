@@ -11,7 +11,7 @@ from apps.catalogo.serializers.catalogo_serializer import (
     MudarSetorDosCatalogosSerializer,
     ResultadoMudarSetorSerializer,
 )
-from apps.catalogo.services import com_servicos_em_aberto, mudar_setor_dos_catalogos
+from apps.catalogo.services import com_contagem_de_servicos, mudar_setor_dos_catalogos
 from apps.organizacoes.models import Setor
 from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin
 
@@ -47,9 +47,12 @@ from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin
     update=extend_schema(
         summary='Atualizar catálogo',
         description=(
-            'Substitui integralmente os dados de um catálogo. Ao mudar o setor, `mover_servicos_em_aberto=true` '
-            'leva junto os serviços em aberto e sem tarefas (`servicos_em_aberto`); a resposta traz '
-            '`servicos_movidos`. Catálogo ativo só em setor com quem receba tarefas.'
+            'Substitui integralmente os dados de um catálogo. Catálogo ativo só em setor com quem receba tarefas. '
+            'Duas caixas levam para o setor do catálogo (o novo, se mudou) os serviços ativos que estão em outro '
+            'setor: `mover_servicos_em_aberto` (novos ou a distribuir; voltam a "novo" e o setor recebe o aviso de '
+            'chegada) e `mover_servicos_com_tarefas` (distribuídos ou em andamento; vão com as tarefas e os '
+            'responsáveis). Valem também sem mudar o setor, para os que ficaram para trás numa mudança anterior '
+            '(`servicos_*_fora_do_setor`). Os concluídos e cancelados nunca mudam. A resposta traz `servicos_movidos`.'
         ),
     ),
     partial_update=extend_schema(
@@ -84,8 +87,10 @@ class CatalogoViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
         summary='Mudar o setor de vários catálogos',
         description=(
             'Passa os catálogos informados para o setor escolhido (ativo e, se algum catálogo for ativo, com quem '
-            'receba tarefas). Com `mover_servicos_em_aberto=true`, leva junto os serviços em aberto e sem tarefas; '
-            'eles voltam a "novo" no setor de destino, que recebe o aviso de chegada. Exige `catalogo.gerenciar`.'
+            'receba tarefas). `mover_servicos_em_aberto` leva junto os serviços em aberto e sem tarefas, que voltam '
+            'a "novo" no setor de destino (ele recebe o aviso de chegada); `mover_servicos_com_tarefas` leva os '
+            'distribuídos ou em andamento, com as tarefas e os responsáveis. Os concluídos e cancelados ficam no '
+            'setor antigo. Exige `catalogo.gerenciar`.'
         ),
         request=MudarSetorDosCatalogosSerializer,
         responses={200: ResultadoMudarSetorSerializer},
@@ -96,7 +101,8 @@ class CatalogoViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
         entrada.is_valid(raise_exception=True)
         setor = entrada.validated_data['setor']
         alterados, movidos = mudar_setor_dos_catalogos(
-            entrada.validated_data['catalogos'], setor, entrada.validated_data['mover_servicos_em_aberto'],
+            entrada.validated_data['catalogos'], setor,
+            entrada.validated_data['mover_servicos_em_aberto'], entrada.validated_data['mover_servicos_com_tarefas'],
         )
         return Response({
             'catalogos_alterados': alterados, 'servicos_movidos': movidos, 'avisos': self._avisos_do_setor(setor),
@@ -127,7 +133,7 @@ class CatalogoViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
         return response
 
     def get_queryset(self):
-        queryset = com_servicos_em_aberto(super().get_queryset())
+        queryset = com_contagem_de_servicos(super().get_queryset())
         q = self.request.query_params.get('q', '').strip()
         setor_id = self.request.query_params.get('setor', '').strip()
         ativo = self.request.query_params.get('ativo', '').strip().lower()

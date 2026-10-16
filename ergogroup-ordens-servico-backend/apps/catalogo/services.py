@@ -1,36 +1,64 @@
-"""Setor dos catálogos (revisão de permissões e setores, P5).
+"""Setor dos catálogos (revisão de permissões e setores, P5; revisão de 16/10/2026).
 
-O serviço vendido guarda uma cópia do setor do catálogo (`Servico.setor`): mudar o catálogo de setor não move o
-que já foi vendido. Quem muda o setor escolhe se os serviços em aberto ainda sem tarefas (novos ou a distribuir)
-vão junto; os que já têm tarefas ficam, porque os responsáveis são do setor antigo.
+O serviço vendido guarda uma cópia do setor do catálogo (`Servico.setor`): mudar o catálogo de setor não move
+sozinho o que já foi vendido. Quem muda o setor escolhe, em duas caixas, o que vai junto:
+- os serviços em aberto, ainda sem tarefas (novos ou a distribuir): voltam a "novo" no setor de destino;
+- os já distribuídos ou em andamento: vão com as tarefas e os responsáveis como estão.
+Os concluídos e cancelados ficam no setor que fez o trabalho. As mesmas caixas trazem para o setor do catálogo os
+serviços ativos que ficaram em outro setor numa mudança anterior.
 """
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef, Subquery
+from django.db.models import Count, Exists, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce
 from rest_framework.exceptions import ValidationError
 
 
-def _abertos_sem_tarefas():
-    from apps.ordens_servico.models import Servico, Tarefa
+def _ativos():
+    from apps.ordens_servico.models import Servico
     from apps.ordens_servico.models.servico import StatusServico
 
-    return Servico.objects.filter(status=StatusServico.ABERTO).exclude(
-        Exists(Tarefa.objects.filter(servico=OuterRef('pk'))),
-    )
+    return Servico.objects.filter(status__in=(StatusServico.ABERTO, StatusServico.EM_ANDAMENTO))
 
 
-def servicos_que_podem_mudar(catalogos):
-    """Serviços abertos, ainda sem tarefas, dos catálogos informados (objetos, IDs ou queryset)."""
-    return _abertos_sem_tarefas().filter(catalogo__in=catalogos)
+def _tem_tarefas():
+    from apps.ordens_servico.models import Tarefa
+
+    return Exists(Tarefa.objects.filter(servico=OuterRef('pk')))
 
 
-def com_servicos_em_aberto(queryset):
-    """Anota `servicos_em_aberto` nos catálogos: quantos serviços mudariam de setor junto com o catálogo."""
-    contagem = (
-        _abertos_sem_tarefas().filter(catalogo=OuterRef('pk')).order_by().values('catalogo')
-        .annotate(total=Count('pk')).values('total')
-    )
-    return queryset.annotate(servicos_em_aberto=Coalesce(Subquery(contagem), 0))
+def _em_aberto(servicos):
+    """Novos ou a distribuir: abertos e ainda sem tarefas."""
+    from apps.ordens_servico.models.servico import StatusServico
+
+    return servicos.filter(status=StatusServico.ABERTO).exclude(_tem_tarefas())
+
+
+def _com_tarefas(servicos):
+    """Distribuídos ou em andamento: os ativos que já têm tarefas."""
+    from apps.ordens_servico.models.servico import StatusServico
+
+    return servicos.filter(Q(status=StatusServico.EM_ANDAMENTO) | Q(_tem_tarefas()))
+
+
+# Contadores do catálogo: cada grupo, no total e só os que estão fora do setor do catálogo.
+CONTADORES = {
+    'servicos_em_aberto': (_em_aberto, False),
+    'servicos_com_tarefas': (_com_tarefas, False),
+    'servicos_em_aberto_fora_do_setor': (_em_aberto, True),
+    'servicos_com_tarefas_fora_do_setor': (_com_tarefas, True),
+}
+
+
+def com_contagem_de_servicos(queryset):
+    """Anota nos catálogos os `CONTADORES`: quantos serviços ativos de cada grupo podem ir junto com o catálogo."""
+    anotacoes = {}
+    for nome, (grupo, fora_do_setor) in CONTADORES.items():
+        servicos = grupo(_ativos()).filter(catalogo=OuterRef('pk'))
+        if fora_do_setor:
+            servicos = servicos.exclude(setor=OuterRef('setor'))
+        contagem = servicos.order_by().values('catalogo').annotate(total=Count('pk')).values('total')
+        anotacoes[nome] = Coalesce(Subquery(contagem), 0)
+    return queryset.annotate(**anotacoes)
 
 
 def validar_setor_que_recebe(setor):
@@ -91,8 +119,8 @@ def avisos_de_setores_que_ficaram_sem_quem_receba(antes):
 
 def motivo_para_nao_trocar_o_catalogo(servico, catalogo):
     """Trocar o catálogo de um serviço já vendido (revisão do catálogo, item 3). No mesmo setor, sempre pode. Para
-    outro setor, só o serviço em aberto e ainda sem tarefas, como na mudança de setor do catálogo: as tarefas têm
-    responsáveis do setor atual. Devolve a mensagem, ou `None` quando pode trocar."""
+    outro setor, só o serviço em aberto e ainda sem tarefas: as tarefas têm responsáveis do setor atual. Devolve a
+    mensagem, ou `None` quando pode trocar."""
     from apps.ordens_servico.models.servico import StatusServico
 
     if catalogo.pk == servico.catalogo_id or catalogo.setor_id == servico.setor_id:
@@ -107,30 +135,45 @@ def motivo_para_nao_trocar_o_catalogo(servico, catalogo):
     return None
 
 
-def mover_servicos_em_aberto(catalogos, setor):
-    """Leva para `setor` os serviços em aberto e sem tarefas dos catálogos. O recebimento volta a zero: o setor
-    novo precisa confirmar que recebeu (ADR 0009), e quem o organiza recebe o aviso de chegada."""
+@transaction.atomic
+def mover_servicos(catalogos, setor, em_aberto=False, com_tarefas=False):
+    """Leva para `setor` os serviços ativos dos catálogos que estão em outro setor, nos grupos escolhidos. Devolve
+    quantos foram.
+    - Em aberto: o recebimento volta a zero, porque o setor novo precisa confirmar que recebeu (ADR 0009), e quem o
+      organiza recebe o aviso de chegada.
+    - Com tarefas: vão com as tarefas e os responsáveis; o recebimento e a última movimentação ficam como estavam
+      (o trabalho já foi distribuído e não andou com a mudança), e não há aviso de chegada (ADR 0010: só avisa quem
+      tem algo a fazer). Quem organiza o setor novo pode redistribuir."""
     from apps.auditoria.models import AcaoAuditoria
     from apps.auditoria.utils import registrar_update_direto
     from apps.ordens_servico.models import Servico
     from apps.ordens_servico.services.venda import avisar_chegada
 
-    movidos = list(servicos_que_podem_mudar(catalogos).exclude(setor=setor).select_related('setor'))
-    for servico in movidos:
+    servicos = _ativos().filter(catalogo__in=catalogos).exclude(setor=setor).select_related('setor')
+    abertos = list(_em_aberto(servicos)) if em_aberto else []
+    distribuidos = list(_com_tarefas(servicos)) if com_tarefas else []
+    for servico in abertos:
         updates = {'setor_id': setor.pk, 'recebido_em': None, 'recebido_por_id': None}
         registrar_update_direto(
             servico, updates, acao=AcaoAuditoria.ATUALIZACAO,
-            motivo=f'Catálogo passou para o setor "{setor}": serviço em aberto movido junto.',
+            motivo=f'Serviço em aberto levado ao setor "{setor}", responsável pelo catálogo: volta a "novo".',
         )
         Servico.objects.filter(pk=servico.pk).update(**updates)
         servico.setor, servico.recebido_em, servico.recebido_por_id = setor, None, None
         servico.registrar_movimentacao()
-    avisar_chegada(movidos)
-    return len(movidos)
+    for servico in distribuidos:
+        updates = {'setor_id': setor.pk}
+        registrar_update_direto(
+            servico, updates, acao=AcaoAuditoria.ATUALIZACAO,
+            motivo=f'Serviço distribuído levado ao setor "{setor}", responsável pelo catálogo, com as tarefas.',
+        )
+        Servico.objects.filter(pk=servico.pk).update(**updates)
+    avisar_chegada(abertos)
+    return len(abertos) + len(distribuidos)
 
 
 @transaction.atomic
-def mudar_setor_dos_catalogos(catalogos, setor, mover_servicos=False):
+def mudar_setor_dos_catalogos(catalogos, setor, mover_em_aberto=False, mover_com_tarefas=False):
     """Muda o setor de vários catálogos de uma vez. Devolve `(catalogos alterados, servicos movidos)`."""
     from apps.catalogo.models import Catalogo
 
@@ -141,5 +184,5 @@ def mudar_setor_dos_catalogos(catalogos, setor, mover_servicos=False):
         validar_setor_que_recebe(setor)
     alterados = [catalogo for catalogo in catalogos if catalogo.setor_id != setor.pk]
     Catalogo.objects.filter(pk__in=[catalogo.pk for catalogo in alterados]).update(setor=setor)
-    movidos = mover_servicos_em_aberto(catalogos, setor) if mover_servicos else 0
+    movidos = mover_servicos(catalogos, setor, mover_em_aberto, mover_com_tarefas)
     return len(alterados), movidos

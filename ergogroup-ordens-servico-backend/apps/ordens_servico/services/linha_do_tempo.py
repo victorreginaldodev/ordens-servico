@@ -60,6 +60,9 @@ class _Contexto:
             if isinstance(troca, dict):
                 ids_usuarios.update((troca.get('antes'), troca.get('depois')))
             ids_setores.add(registro.snapshot.get('setor_id'))
+            mudanca_de_setor = registro.alteracoes.get('setor_id')
+            if isinstance(mudanca_de_setor, dict):
+                ids_setores.update((mudanca_de_setor.get('antes'), mudanca_de_setor.get('depois')))
             ids_catalogos.add(registro.snapshot.get('catalogo_id'))
             ids_servicos.add(registro.servico_id)
             if registro.entidade == EntidadeAuditada.SERVICO:
@@ -169,17 +172,23 @@ def _eventos_do_servico(registro, ctx):
         quem = ctx.pessoa(snap.get('recebido_por_id'))
         texto = f'{nome} recebido por {setor} ({quem})' if setor else f'{nome} recebido por {quem}'
         return [_evento(registro, 'recebimento', texto)]
+    eventos = []
+    setor = _mudou(registro, 'setor_id')
+    if setor:
+        de = ctx.setores.get(setor['antes'], 'sem setor')
+        para = ctx.setores.get(setor['depois'], 'sem setor')
+        eventos.append(_evento(registro, 'setor_alterado', f'{nome} passou de {de} para {para}'))
     status = _mudou(registro, 'status')
     if not status:
-        return []
+        return eventos
     if status['depois'] == 'concluida':
         quem = ctx.pessoa(snap.get('terminado_por_id'))
-        return [_evento(registro, 'servico_concluido', f'{nome} concluído por {quem}')]
+        return [*eventos, _evento(registro, 'servico_concluido', f'{nome} concluído por {quem}')]
     if status['depois'] == 'cancelado':
-        return [_evento(registro, 'servico_cancelado', f'{nome} cancelado')]
+        return [*eventos, _evento(registro, 'servico_cancelado', f'{nome} cancelado')]
     if status['antes'] in ('concluida', 'cancelado'):
-        return [_evento(registro, 'servico_reaberto', f'{nome} reaberto')]
-    return []
+        return [*eventos, _evento(registro, 'servico_reaberto', f'{nome} reaberto')]
+    return eventos
 
 
 def _eventos_da_tarefa(registro, ctx):
