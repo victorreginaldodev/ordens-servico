@@ -12,14 +12,15 @@ import { mensagemDeErro } from '@/lib/api-errors';
 import { useSetores } from '@/features/organizacao/hooks';
 import { useMudarSetorDosCatalogos } from '../hooks';
 import type { CatalogoItem } from '../services';
+import { CaixasDeServicosVendidos, type MoverServicos } from './CaixasDeServicosVendidos';
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 const normalizar = (texto: string) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /**
  * Mudar o setor de vários serviços do catálogo de uma vez (revisão de permissões, P5): escolhe o setor de origem,
- * marca os serviços (a busca ajuda a pegar, por exemplo, todos os "ERGONOMIA - …"), escolhe o destino e decide se
- * os serviços em aberto e sem tarefas vão junto.
+ * marca os serviços (a busca ajuda a pegar, por exemplo, todos os "ERGONOMIA - …"), escolhe o destino e decide, em
+ * duas caixas, se os serviços já vendidos vão junto: os ainda não distribuídos e os distribuídos ou em andamento.
  */
 export function MudarSetorEmLoteModal({
   aberto,
@@ -50,14 +51,16 @@ function Conteudo({ catalogos, onFechar }: { catalogos: CatalogoItem[]; onFechar
   const [destino, setDestino] = useState('');
   const [busca, setBusca] = useState('');
   const [marcados, setMarcados] = useState<Set<number>>(new Set());
-  const [mover, setMover] = useState(true);
+  const [mover, setMover] = useState<MoverServicos>({ emAberto: false, comTarefas: false });
   const [erro, setErro] = useState<string | null>(null);
 
   const doSetor = catalogos.filter((c) => String(c.setor) === origem);
   const visiveis = doSetor.filter((c) => !busca || normalizar(c.nome).includes(normalizar(busca)));
   const selecionados = doSetor.filter((c) => marcados.has(c.id));
   const servicosEmAberto = selecionados.reduce((total, c) => total + c.servicosEmAberto, 0);
+  const servicosComTarefas = selecionados.reduce((total, c) => total + c.servicosComTarefas, 0);
   const setorDestino = setores.find((s) => String(s.id) === destino);
+  const setorOrigem = setores.find((s) => String(s.id) === origem);
   const todosVisiveisMarcados = visiveis.length > 0 && visiveis.every((c) => marcados.has(c.id));
 
   const alternar = (id: number, marcar: boolean) =>
@@ -77,10 +80,15 @@ function Conteudo({ catalogos, onFechar }: { catalogos: CatalogoItem[]; onFechar
   const confirmar = () => {
     setErro(null);
     mudar.mutate(
-      { catalogos: selecionados.map((c) => c.id), setor: Number(destino), mover_servicos_em_aberto: mover && servicosEmAberto > 0 },
+      {
+        catalogos: selecionados.map((c) => c.id),
+        setor: Number(destino),
+        mover_servicos_em_aberto: mover.emAberto && servicosEmAberto > 0,
+        mover_servicos_com_tarefas: mover.comTarefas && servicosComTarefas > 0,
+      },
       {
         onSuccess: (r) => {
-          const movidos = r.servicos_movidos ? ` ${plural(r.servicos_movidos, 'serviço em aberto foi junto', 'serviços em aberto foram junto')}.` : '';
+          const movidos = r.servicos_movidos ? ` ${plural(r.servicos_movidos, 'serviço já vendido foi junto', 'serviços já vendidos foram junto')}.` : '';
           toast({
             title: `${plural(r.catalogos_alterados, 'serviço passou', 'serviços passaram')} para ${setorDestino?.nome}`,
             description: [movidos.trim(), ...r.avisos].filter(Boolean).join(' ') || undefined,
@@ -98,8 +106,8 @@ function Conteudo({ catalogos, onFechar }: { catalogos: CatalogoItem[]; onFechar
       <DialogHeader className="text-left">
         <DialogTitle>Mudar o setor de vários serviços</DialogTitle>
         <DialogDescription>
-          O setor do catálogo decide em que fila cai o serviço vendido. Os serviços já distribuídos, em andamento ou concluídos
-          continuam no setor antigo.
+          O setor do catálogo decide em que fila cai o serviço vendido. Os serviços já vendidos só vão junto se você marcar as caixas
+          abaixo; os concluídos continuam no setor antigo.
         </DialogDescription>
       </DialogHeader>
 
@@ -163,8 +171,8 @@ function Conteudo({ catalogos, onFechar }: { catalogos: CatalogoItem[]; onFechar
               <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-muted/40">
                 <Checkbox checked={marcados.has(c.id)} onCheckedChange={(v) => alternar(c.id, v === true)} />
                 <span className="min-w-0 flex-1 truncate">{c.nome}</span>
-                {c.servicosEmAberto > 0 && (
-                  <span className="shrink-0 text-xs text-muted-foreground">{plural(c.servicosEmAberto, 'em aberto', 'em aberto')}</span>
+                {c.servicosEmAberto + c.servicosComTarefas > 0 && (
+                  <span className="shrink-0 text-xs text-muted-foreground">{plural(c.servicosEmAberto + c.servicosComTarefas, 'ativo', 'ativos')}</span>
                 )}
                 {!c.ativo && <AtivoBadge ativo={false} />}
               </label>
@@ -175,14 +183,18 @@ function Conteudo({ catalogos, onFechar }: { catalogos: CatalogoItem[]; onFechar
         <p className="text-xs text-muted-foreground">{plural(selecionados.length, 'serviço marcado', 'serviços marcados')}</p>
       </div>
 
-      {servicosEmAberto > 0 && (
-        <label className="flex items-start gap-2 rounded-md border bg-muted/30 px-3 py-2.5 text-sm">
-          <Checkbox className="mt-0.5" checked={mover} onCheckedChange={(v) => setMover(v === true)} />
-          <span>
-            Mover também {servicosEmAberto === 1 ? 'o serviço em aberto' : `os ${servicosEmAberto} serviços em aberto`} (novos ou a
-            distribuir){setorDestino ? ` para ${setorDestino.nome}` : ''}. Eles voltam a "novo" e o setor recebe o aviso de chegada.
-          </span>
-        </label>
+      {servicosEmAberto + servicosComTarefas > 0 && (
+        <div className="space-y-2.5 rounded-md bg-muted/30 px-3 py-2.5">
+          <p className="text-sm">O que fazer com os serviços já vendidos destes catálogos?</p>
+          <CaixasDeServicosVendidos
+            emAberto={servicosEmAberto}
+            comTarefas={servicosComTarefas}
+            destino={setorDestino?.nome}
+            origem={setorOrigem?.nome}
+            valor={mover}
+            onMudar={setMover}
+          />
+        </div>
       )}
 
       {erro && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}

@@ -585,10 +585,14 @@ paths:
           description: ''
     put:
       operationId: catalogo_catalogos_update
-      description: Substitui integralmente os dados de um catálogo. Ao mudar o setor,
-        `mover_servicos_em_aberto=true` leva junto os serviços em aberto e sem tarefas
-        (`servicos_em_aberto`); a resposta traz `servicos_movidos`. Catálogo ativo
-        só em setor com quem receba tarefas.
+      description: 'Substitui integralmente os dados de um catálogo. Catálogo ativo
+        só em setor com quem receba tarefas. Duas caixas levam para o setor do catálogo
+        (o novo, se mudou) os serviços ativos que estão em outro setor: `mover_servicos_em_aberto`
+        (novos ou a distribuir; voltam a "novo" e o setor recebe o aviso de chegada)
+        e `mover_servicos_com_tarefas` (distribuídos ou em andamento; vão com as tarefas
+        e os responsáveis). Valem também sem mudar o setor, para os que ficaram para
+        trás numa mudança anterior (`servicos_*_fora_do_setor`). Os concluídos e cancelados
+        nunca mudam. A resposta traz `servicos_movidos`.'
       summary: Atualizar catálogo
       parameters:
       - in: path
@@ -683,9 +687,11 @@ paths:
     post:
       operationId: catalogo_catalogos_mudar_setor_create
       description: Passa os catálogos informados para o setor escolhido (ativo e,
-        se algum catálogo for ativo, com quem receba tarefas). Com `mover_servicos_em_aberto=true`,
-        leva junto os serviços em aberto e sem tarefas; eles voltam a "novo" no setor
-        de destino, que recebe o aviso de chegada. Exige `catalogo.gerenciar`.
+        se algum catálogo for ativo, com quem receba tarefas). `mover_servicos_em_aberto`
+        leva junto os serviços em aberto e sem tarefas, que voltam a "novo" no setor
+        de destino (ele recebe o aviso de chegada); `mover_servicos_com_tarefas` leva
+        os distribuídos ou em andamento, com as tarefas e os responsáveis. Os concluídos
+        e cancelados ficam no setor antigo. Exige `catalogo.gerenciar`.
       summary: Mudar o setor de vários catálogos
       tags:
       - catalogo
@@ -4268,12 +4274,30 @@ components:
         servicos_em_aberto:
           type: integer
           readOnly: true
-          description: 'Serviços deste catálogo abertos e ainda sem tarefas (novos
-            ou a distribuir): os que podem mudar de setor junto com o catálogo.'
+          description: Serviços deste catálogo abertos e ainda sem tarefas (novos
+            ou a distribuir), em qualquer setor.
+        servicos_com_tarefas:
+          type: integer
+          readOnly: true
+          description: Serviços deste catálogo já distribuídos ou em andamento, em
+            qualquer setor.
+        servicos_em_aberto_fora_do_setor:
+          type: integer
+          readOnly: true
+          description: Dos `servicos_em_aberto`, os que estão em outro setor que não
+            o do catálogo.
+        servicos_com_tarefas_fora_do_setor:
+          type: integer
+          readOnly: true
+          description: Dos `servicos_com_tarefas`, os que estão em outro setor que
+            não o do catálogo.
       required:
       - id
       - nome
+      - servicos_com_tarefas
+      - servicos_com_tarefas_fora_do_setor
       - servicos_em_aberto
+      - servicos_em_aberto_fora_do_setor
       - setor
       - setor_nome
       - subitens
@@ -4351,8 +4375,16 @@ components:
           type: boolean
           writeOnly: true
           default: false
-          description: 'Ao mudar o setor: leva junto os serviços em aberto e sem tarefas
-            (os demais ficam no setor antigo).'
+          description: Leva para o setor do catálogo os serviços em aberto e sem tarefas
+            (novos ou a distribuir) que estão em outro setor. Eles voltam a "novo"
+            e o setor recebe o aviso de chegada.
+        mover_servicos_com_tarefas:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: Leva para o setor do catálogo os serviços já distribuídos ou
+            em andamento que estão em outro setor, com as tarefas e os responsáveis
+            como estão.
       required:
       - nome
       - setor
@@ -5185,6 +5217,7 @@ components:
       - servico_cancelado
       - servico_reaberto
       - servico_excluido
+      - setor_alterado
       - os_concluida
       - os_cancelada
       - os_reaberta
@@ -5212,6 +5245,7 @@ components:
         * `servico_cancelado` - servico_cancelado
         * `servico_reaberto` - servico_reaberto
         * `servico_excluido` - servico_excluido
+        * `setor_alterado` - setor_alterado
         * `os_concluida` - os_concluida
         * `os_cancelada` - os_cancelada
         * `os_reaberta` - os_reaberta
@@ -6038,8 +6072,15 @@ components:
         mover_servicos_em_aberto:
           type: boolean
           default: false
-          description: Leva junto os serviços em aberto e sem tarefas desses catálogos
-            (os demais ficam no setor antigo).
+          description: Leva para o setor do catálogo os serviços em aberto e sem tarefas
+            (novos ou a distribuir) que estão em outro setor. Eles voltam a "novo"
+            e o setor recebe o aviso de chegada.
+        mover_servicos_com_tarefas:
+          type: boolean
+          default: false
+          description: Leva para o setor do catálogo os serviços já distribuídos ou
+            em andamento que estão em outro setor, com as tarefas e os responsáveis
+            como estão.
       required:
       - catalogos
       - setor
@@ -7074,8 +7115,16 @@ components:
           type: boolean
           writeOnly: true
           default: false
-          description: 'Ao mudar o setor: leva junto os serviços em aberto e sem tarefas
-            (os demais ficam no setor antigo).'
+          description: Leva para o setor do catálogo os serviços em aberto e sem tarefas
+            (novos ou a distribuir) que estão em outro setor. Eles voltam a "novo"
+            e o setor recebe o aviso de chegada.
+        mover_servicos_com_tarefas:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: Leva para o setor do catálogo os serviços já distribuídos ou
+            em andamento que estão em outro setor, com as tarefas e os responsáveis
+            como estão.
     PatchedClienteRequest:
       type: object
       properties:

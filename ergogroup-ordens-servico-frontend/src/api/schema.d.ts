@@ -218,7 +218,7 @@ export interface paths {
         get: operations["catalogo_catalogos_retrieve"];
         /**
          * Atualizar catálogo
-         * @description Substitui integralmente os dados de um catálogo. Ao mudar o setor, `mover_servicos_em_aberto=true` leva junto os serviços em aberto e sem tarefas (`servicos_em_aberto`); a resposta traz `servicos_movidos`. Catálogo ativo só em setor com quem receba tarefas.
+         * @description Substitui integralmente os dados de um catálogo. Catálogo ativo só em setor com quem receba tarefas. Duas caixas levam para o setor do catálogo (o novo, se mudou) os serviços ativos que estão em outro setor: `mover_servicos_em_aberto` (novos ou a distribuir; voltam a "novo" e o setor recebe o aviso de chegada) e `mover_servicos_com_tarefas` (distribuídos ou em andamento; vão com as tarefas e os responsáveis). Valem também sem mudar o setor, para os que ficaram para trás numa mudança anterior (`servicos_*_fora_do_setor`). Os concluídos e cancelados nunca mudam. A resposta traz `servicos_movidos`.
          */
         put: operations["catalogo_catalogos_update"];
         post?: never;
@@ -247,7 +247,7 @@ export interface paths {
         put?: never;
         /**
          * Mudar o setor de vários catálogos
-         * @description Passa os catálogos informados para o setor escolhido (ativo e, se algum catálogo for ativo, com quem receba tarefas). Com `mover_servicos_em_aberto=true`, leva junto os serviços em aberto e sem tarefas; eles voltam a "novo" no setor de destino, que recebe o aviso de chegada. Exige `catalogo.gerenciar`.
+         * @description Passa os catálogos informados para o setor escolhido (ativo e, se algum catálogo for ativo, com quem receba tarefas). `mover_servicos_em_aberto` leva junto os serviços em aberto e sem tarefas, que voltam a "novo" no setor de destino (ele recebe o aviso de chegada); `mover_servicos_com_tarefas` leva os distribuídos ou em andamento, com as tarefas e os responsáveis. Os concluídos e cancelados ficam no setor antigo. Exige `catalogo.gerenciar`.
          */
         post: operations["catalogo_catalogos_mudar_setor_create"];
         delete?: never;
@@ -1671,8 +1671,14 @@ export interface components {
              */
             ativo: boolean;
             readonly subitens: components["schemas"]["SubitemCatalogo"][];
-            /** @description Serviços deste catálogo abertos e ainda sem tarefas (novos ou a distribuir): os que podem mudar de setor junto com o catálogo. */
+            /** @description Serviços deste catálogo abertos e ainda sem tarefas (novos ou a distribuir), em qualquer setor. */
             readonly servicos_em_aberto: number;
+            /** @description Serviços deste catálogo já distribuídos ou em andamento, em qualquer setor. */
+            readonly servicos_com_tarefas: number;
+            /** @description Dos `servicos_em_aberto`, os que estão em outro setor que não o do catálogo. */
+            readonly servicos_em_aberto_fora_do_setor: number;
+            /** @description Dos `servicos_com_tarefas`, os que estão em outro setor que não o do catálogo. */
+            readonly servicos_com_tarefas_fora_do_setor: number;
         };
         CatalogoOperacional: {
             readonly id: number;
@@ -1703,10 +1709,15 @@ export interface components {
              */
             ativo: boolean;
             /**
-             * @description Ao mudar o setor: leva junto os serviços em aberto e sem tarefas (os demais ficam no setor antigo).
+             * @description Leva para o setor do catálogo os serviços em aberto e sem tarefas (novos ou a distribuir) que estão em outro setor. Eles voltam a "novo" e o setor recebe o aviso de chegada.
              * @default false
              */
             mover_servicos_em_aberto: boolean;
+            /**
+             * @description Leva para o setor do catálogo os serviços já distribuídos ou em andamento que estão em outro setor, com as tarefas e os responsáveis como estão.
+             * @default false
+             */
+            mover_servicos_com_tarefas: boolean;
         };
         /**
          * @description * `financeiro` - financeiro
@@ -2039,6 +2050,7 @@ export interface components {
          *     * `servico_cancelado` - servico_cancelado
          *     * `servico_reaberto` - servico_reaberto
          *     * `servico_excluido` - servico_excluido
+         *     * `setor_alterado` - setor_alterado
          *     * `os_concluida` - os_concluida
          *     * `os_cancelada` - os_cancelada
          *     * `os_reaberta` - os_reaberta
@@ -2048,7 +2060,7 @@ export interface components {
          *     * `tarefa_recebida` - tarefa_recebida
          * @enum {string}
          */
-        EventoDaLinhaDoTempoTipoEnum: "historico_anterior" | "venda" | "venda_alterada" | "condicao_alterada" | "chegada" | "distribuicao" | "reatribuicao" | "prazo_alterado" | "tarefa_iniciada" | "tarefa_concluida" | "tarefa_cancelada" | "tarefa_reaberta" | "tarefa_excluida" | "ciencia" | "servico_concluido" | "servico_cancelado" | "servico_reaberto" | "servico_excluido" | "os_concluida" | "os_cancelada" | "os_reaberta" | "liberacao" | "lancamento" | "recebimento" | "tarefa_recebida";
+        EventoDaLinhaDoTempoTipoEnum: "historico_anterior" | "venda" | "venda_alterada" | "condicao_alterada" | "chegada" | "distribuicao" | "reatribuicao" | "prazo_alterado" | "tarefa_iniciada" | "tarefa_concluida" | "tarefa_cancelada" | "tarefa_reaberta" | "tarefa_excluida" | "ciencia" | "servico_concluido" | "servico_cancelado" | "servico_reaberto" | "servico_excluido" | "setor_alterado" | "os_concluida" | "os_cancelada" | "os_reaberta" | "liberacao" | "lancamento" | "recebimento" | "tarefa_recebida";
         EventoDoResumo: {
             /** Format: date-time */
             quando: string;
@@ -2368,10 +2380,15 @@ export interface components {
             catalogos: number[];
             setor: number;
             /**
-             * @description Leva junto os serviços em aberto e sem tarefas desses catálogos (os demais ficam no setor antigo).
+             * @description Leva para o setor do catálogo os serviços em aberto e sem tarefas (novos ou a distribuir) que estão em outro setor. Eles voltam a "novo" e o setor recebe o aviso de chegada.
              * @default false
              */
             mover_servicos_em_aberto: boolean;
+            /**
+             * @description Leva para o setor do catálogo os serviços já distribuídos ou em andamento que estão em outro setor, com as tarefas e os responsáveis como estão.
+             * @default false
+             */
+            mover_servicos_com_tarefas: boolean;
         };
         /** @enum {unknown} */
         NullEnum: null;
@@ -2728,10 +2745,15 @@ export interface components {
              */
             ativo: boolean;
             /**
-             * @description Ao mudar o setor: leva junto os serviços em aberto e sem tarefas (os demais ficam no setor antigo).
+             * @description Leva para o setor do catálogo os serviços em aberto e sem tarefas (novos ou a distribuir) que estão em outro setor. Eles voltam a "novo" e o setor recebe o aviso de chegada.
              * @default false
              */
             mover_servicos_em_aberto: boolean;
+            /**
+             * @description Leva para o setor do catálogo os serviços já distribuídos ou em andamento que estão em outro setor, com as tarefas e os responsáveis como estão.
+             * @default false
+             */
+            mover_servicos_com_tarefas: boolean;
         };
         PatchedClienteRequest: {
             nome?: string;

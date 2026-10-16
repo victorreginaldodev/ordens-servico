@@ -14,6 +14,7 @@ import {
   Trash2,
   Unlock,
   MailOpen,
+  Network,
   UserCheck,
   type LucideIcon,
 } from 'lucide-react';
@@ -43,6 +44,7 @@ const EVENTO: Record<TipoDeEvento, { icon: LucideIcon; tone: Tone }> = {
   servico_cancelado: { icon: CircleSlash, tone: 'neutral' },
   servico_reaberto: { icon: RotateCcw, tone: 'warning' },
   servico_excluido: { icon: Trash2, tone: 'neutral' },
+  setor_alterado: { icon: Network, tone: 'info' },
   os_concluida: { icon: CircleCheck, tone: 'success' },
   os_cancelada: { icon: CircleSlash, tone: 'neutral' },
   os_reaberta: { icon: RotateCcw, tone: 'warning' },

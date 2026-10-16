@@ -26,8 +26,14 @@ export interface CatalogoItem {
   setorNome: string | null;
   /** Inativo: continua nos serviços já vendidos, mas não pode ser usado em serviços novos. */
   ativo: boolean;
-  /** Serviços abertos e ainda sem tarefas (novos ou a distribuir): os que podem mudar de setor junto com o catálogo. */
+  /** Serviços ativos ainda sem tarefas (novos ou a distribuir), em qualquer setor: a primeira caixa ao mudar o setor. */
   servicosEmAberto: number;
+  /** Serviços já distribuídos ou em andamento, em qualquer setor: a segunda caixa (vão com as tarefas). */
+  servicosComTarefas: number;
+  /** Dos em aberto, os que ficaram em outro setor que não o do catálogo (numa mudança anterior). */
+  servicosEmAbertoForaDoSetor: number;
+  /** Dos com tarefas, os que ficaram em outro setor que não o do catálogo. */
+  servicosComTarefasForaDoSetor: number;
   /** Só na resposta de editar: quantos serviços foram junto para o setor novo. */
   servicosMovidos?: number;
   /**
@@ -42,8 +48,10 @@ export interface CatalogoPayload {
   descricao?: string | null;
   setor: number;
   ativo?: boolean;
-  /** Ao mudar o setor: leva junto os serviços em aberto e sem tarefas. */
+  /** Leva para o setor do catálogo os serviços em aberto e sem tarefas que estão em outro setor. */
   moverServicosEmAberto?: boolean;
+  /** Leva para o setor do catálogo os distribuídos ou em andamento que estão em outro setor, com as tarefas. */
+  moverServicosComTarefas?: boolean;
 }
 
 type CatalogoDTO = {
@@ -54,6 +62,9 @@ type CatalogoDTO = {
   setor_nome?: string | null;
   ativo?: boolean;
   servicos_em_aberto?: number;
+  servicos_com_tarefas?: number;
+  servicos_em_aberto_fora_do_setor?: number;
+  servicos_com_tarefas_fora_do_setor?: number;
   servicos_movidos?: number;
   avisos?: string[];
 };
@@ -68,6 +79,9 @@ const catalogoToFrontend = (dto: CatalogoDTO): CatalogoItem => ({
   setorNome: dto.setor_nome ?? null,
   ativo: dto.ativo ?? true,
   servicosEmAberto: dto.servicos_em_aberto ?? 0,
+  servicosComTarefas: dto.servicos_com_tarefas ?? 0,
+  servicosEmAbertoForaDoSetor: dto.servicos_em_aberto_fora_do_setor ?? 0,
+  servicosComTarefasForaDoSetor: dto.servicos_com_tarefas_fora_do_setor ?? 0,
   ...(dto.servicos_movidos ? { servicosMovidos: dto.servicos_movidos } : {}),
   ...(dto.avisos?.length ? { avisos: dto.avisos } : {}),
 });
@@ -78,6 +92,7 @@ const catalogoToBackend = (payload: Partial<CatalogoPayload>) => ({
   ...(payload.setor !== undefined ? { setor: payload.setor } : {}),
   ...(payload.ativo !== undefined ? { ativo: payload.ativo } : {}),
   ...(payload.moverServicosEmAberto ? { mover_servicos_em_aberto: true } : {}),
+  ...(payload.moverServicosComTarefas ? { mover_servicos_com_tarefas: true } : {}),
 });
 
 export const getCatalogos = async (params: { q?: string } = {}): Promise<CatalogoItem[]> => {

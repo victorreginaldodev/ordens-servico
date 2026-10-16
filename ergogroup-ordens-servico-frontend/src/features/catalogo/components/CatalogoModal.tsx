@@ -7,7 +7,6 @@ import { isAxiosError } from 'axios';
 import { Network, TriangleAlert } from 'lucide-react';
 import { AtivoBadge } from '@/components/kit';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -20,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { useSetores } from '@/features/organizacao/hooks';
 import { useDeleteCatalogo, useUpsertCatalogo } from '../hooks';
 import type { CatalogoItem } from '../services';
+import { CaixasDeServicosVendidos } from './CaixasDeServicosVendidos';
 
 /**
  * Etapas do modal do catálogo: um único modal troca de conteúdo, nunca um sobre o outro.
@@ -82,7 +82,7 @@ const schema = z.object({
   descricao: z.string().trim().max(2000, 'Use no máximo 2000 caracteres'),
   setor: z.string().min(1, 'Escolha o setor que executa este serviço'),
   ativo: z.boolean(),
-  moverServicos: z.boolean(),
+  mover: z.object({ emAberto: z.boolean(), comTarefas: z.boolean() }),
 });
 
 type Valores = z.infer<typeof schema>;
@@ -106,14 +106,19 @@ function EtapaForm({
       descricao: item?.descricao ?? '',
       setor: item?.setor ? String(item.setor) : '',
       ativo: item?.ativo ?? true,
-      moverServicos: false,
+      mover: { emAberto: false, comTarefas: false },
     },
   });
 
   const setorEscolhido = form.watch('setor');
   const nomeSetor = setores.find((s) => String(s.id) === setorEscolhido)?.nome;
-  // Mudar o setor não move os serviços já vendidos (eles guardam o setor da época).
+  // Os serviços já vendidos guardam o setor da época. Ao mudar o setor, as caixas dizem o que vai junto; sem mudar,
+  // trazem os que ficaram em outro setor numa mudança anterior.
   const mudouSetor = !!item?.setor && setorEscolhido !== '' && setorEscolhido !== String(item.setor);
+  const noSetorAtual = !!item?.setor && setorEscolhido === String(item.setor);
+  const emAberto = !item ? 0 : mudouSetor ? item.servicosEmAberto : noSetorAtual ? item.servicosEmAbertoForaDoSetor : 0;
+  const comTarefas = !item ? 0 : mudouSetor ? item.servicosComTarefas : noSetorAtual ? item.servicosComTarefasForaDoSetor : 0;
+  const ficaramParaTras = noSetorAtual && emAberto + comTarefas > 0;
   // Setor inativo só aparece se já for o atual (o backend não aceita escolher um setor inativo).
   const opcoesSetor = setores.filter((s) => s.ativo || s.id === item?.setor);
 
@@ -126,14 +131,15 @@ function EtapaForm({
           descricao: v.descricao || null,
           setor: Number(v.setor),
           ativo: v.ativo,
-          moverServicosEmAberto: mudouSetor && v.moverServicos,
+          moverServicosEmAberto: emAberto > 0 && v.mover.emAberto,
+          moverServicosComTarefas: comTarefas > 0 && v.mover.comTarefas,
         },
       },
       {
         onSuccess: (salvo) => {
           const titulo = item ? 'Serviço atualizado' : 'Serviço adicionado ao catálogo';
           const movidos = salvo.servicosMovidos
-            ? `${salvo.servicosMovidos} ${salvo.servicosMovidos === 1 ? 'serviço em aberto foi junto' : 'serviços em aberto foram junto'} para o novo setor.`
+            ? `${salvo.servicosMovidos} ${salvo.servicosMovidos === 1 ? 'serviço já vendido foi' : 'serviços já vendidos foram'} para ${salvo.setorNome ?? 'o setor do catálogo'}.`
             : '';
           // O backend salva, mas avisa quando o setor não tem quem organize (a fila ficaria sem responsável).
           // Um aviso só, no lugar da confirmação: o toast mostra uma mensagem por vez.
@@ -199,27 +205,24 @@ function EtapaForm({
                 </SelectContent>
               </Select>
               <FormMessage />
-              {mudouSetor ? (
-                <div className="space-y-2 rounded-md bg-warning-subtle px-3 py-2 text-xs text-warning-strong">
+              {mudouSetor || ficaramParaTras ? (
+                <div className="space-y-2.5 rounded-md bg-warning-subtle px-3 py-2.5 text-xs text-warning-strong">
                   <p className="flex items-start gap-2">
                     <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
-                    {item.servicosEmAberto
-                      ? 'As próximas OS usam o novo setor. Os serviços já distribuídos, em andamento ou concluídos continuam no setor antigo.'
-                      : 'Só as próximas OS usam o novo setor. Os serviços já vendidos continuam com o setor antigo.'}
+                    {ficaramParaTras
+                      ? `${emAberto + comTarefas === 1 ? '1 serviço ativo deste catálogo ainda está' : `${emAberto + comTarefas} serviços ativos deste catálogo ainda estão`} em outro setor. Escolha o que trazer para ${nomeSetor ?? 'o setor do catálogo'}:`
+                      : emAberto + comTarefas
+                        ? `As próximas vendas já vão para ${nomeSetor ?? 'o novo setor'}. Escolha o que fazer com os serviços já vendidos que estão em ${item?.setorNome ?? 'outro setor'}:`
+                        : 'Só as próximas vendas usam o novo setor. Os serviços concluídos continuam no setor em que foram feitos.'}
                   </p>
-                  {item.servicosEmAberto > 0 && (
-                    <label className="flex items-start gap-2 text-foreground">
-                      <Checkbox
-                        className="mt-0.5"
-                        checked={form.watch('moverServicos')}
-                        onCheckedChange={(v) => form.setValue('moverServicos', v === true)}
-                      />
-                      <span>
-                        Mover também {item.servicosEmAberto === 1 ? 'o serviço em aberto' : `os ${item.servicosEmAberto} serviços em aberto`} (novos
-                        ou a distribuir) para {nomeSetor}. Eles voltam a "novo" e o setor recebe o aviso de chegada.
-                      </span>
-                    </label>
-                  )}
+                  <CaixasDeServicosVendidos
+                    emAberto={emAberto}
+                    comTarefas={comTarefas}
+                    destino={nomeSetor}
+                    origem={mudouSetor ? item?.setorNome : null}
+                    valor={{ emAberto: !!form.watch('mover.emAberto'), comTarefas: !!form.watch('mover.comTarefas') }}
+                    onMudar={(valor) => form.setValue('mover', valor)}
+                  />
                 </div>
               ) : (
                 <p className="flex items-start gap-2 text-xs text-muted-foreground">
