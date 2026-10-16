@@ -80,7 +80,7 @@ Modelo proposto: **permissão** (lista fixa no código) → **função** (nome l
 |---|---|---|---|---|
 | Listar catálogos, subitens e catálogo operacional | `GET /api/catalogo/...` | Autenticado | Base | global |
 | Criar, editar e excluir catálogo e subitens | `/catalogos/`, `/subitens/` | Autenticado | `catalogo.gerenciar` | global |
-| Definir o setor de um catálogo | `PATCH /catalogos/<id>/` (`setor`, `mover_servicos_em_aberto`) | Autenticado | `catalogo.gerenciar` | global |
+| Definir o setor de um catálogo | `PATCH /catalogos/<id>/` (`setor`, `mover_servicos_em_aberto`, `mover_servicos_com_tarefas`) | Autenticado | `catalogo.gerenciar` | global |
 | Mudar o setor de vários catálogos (14/10/2026) | `POST /catalogos/mudar-setor/` | — | `catalogo.gerenciar` | global |
 | Criar, editar e excluir catálogo operacional | `/catalogos-operacionais/` | Autenticado | `catalogo.gerenciar` | global |
 

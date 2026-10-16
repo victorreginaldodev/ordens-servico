@@ -21,11 +21,12 @@ Definições usadas no código e nas conversas sobre o sistema. Quando uma regra
 | **Catálogo** | Tipo de serviço que a empresa vende (ex.: PGR, LTCAT, AET). | `catalogo.Catalogo` |
 | **Setor do catálogo** | **O setor responsável por executar aquele serviço.** É obrigatório. É ele que define em qual fila o serviço cai quando uma OS é vendida. | `Catalogo.setor` |
 | **Papel do setor** | Derivado do catálogo: o setor **executa serviços** quando tem catálogo ativo; senão, "não executa serviços". Só setor que executa cobra quem organize e quem receba tarefas. | `catalogos_ativos`, `executa_servicos`, `sem_quem_receba` na API de setores |
-| **Serviço em aberto (para mudar de setor)** | Serviço aberto e ainda sem tarefas (novo ou a distribuir). É o único que pode ir junto quando o catálogo muda de setor. | `servicos_em_aberto` no catálogo |
+| **Serviço em aberto (para mudar de setor)** | Serviço aberto e ainda sem tarefas (novo ou a distribuir). Ao ir junto quando o catálogo muda de setor, volta a "novo". | `servicos_em_aberto` no catálogo |
+| **Serviço com tarefas (para mudar de setor)** | Serviço ativo já distribuído ou em andamento. Desde 16/10/2026 também pode ir junto quando o catálogo muda de setor, com as tarefas e os responsáveis. | `servicos_com_tarefas` no catálogo |
 | **Catálogo inativo** | Catálogo aposentado: continua nos serviços já vendidos, mas não pode ser usado em serviços novos. | `Catalogo.ativo` |
 | **Ordem de Serviço (OS)** | A venda: cliente, valor e condições de pagamento. Agrega os serviços vendidos. | `ordens_servico.OrdemServico` |
 | **Serviço** | Um item vendido na OS, de um tipo do catálogo. | `ordens_servico.Servico` |
-| **Setor do serviço** | Cópia do setor do catálogo no momento em que o serviço recebe o catálogo. Não pode ser editado diretamente. Se o catálogo mudar de setor depois, os serviços já vendidos continuam no setor original, preservando o histórico; desde 14/10/2026, quem muda pode levar junto os serviços em aberto e sem tarefas. | `Servico.setor` |
+| **Setor do serviço** | Cópia do setor do catálogo no momento em que o serviço recebe o catálogo. Não pode ser editado diretamente. Se o catálogo mudar de setor depois, os serviços já vendidos continuam no setor original, preservando o histórico; quem muda escolhe, em duas caixas, se os ativos vão junto: os em aberto e sem tarefas (desde 14/10/2026) e os distribuídos ou em andamento (desde 16/10/2026). Concluídos e cancelados nunca mudam. | `Servico.setor` |
 | **Tarefa** | Uma parte do trabalho de um serviço, atribuída a uma pessoa responsável. | `ordens_servico.Tarefa` |
 
 ## Execução nos setores

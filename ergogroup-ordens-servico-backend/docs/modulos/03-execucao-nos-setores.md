@@ -65,10 +65,10 @@ Se o catálogo mudar de setor depois, os serviços já vendidos **ficam onde est
 
 | Situação | Como | Regra |
 |---|---|---|
-| O catálogo inteiro mudou de setor (reorganização) | No Catálogo, ao mudar o setor, marcar **"levar os serviços em aberto"**. Também dá para mudar vários catálogos de uma vez. | Só vão os serviços **em aberto e sem tarefas**. Os que já têm tarefa ficam no setor antigo até terminar, porque as tarefas têm responsáveis de lá. |
+| O catálogo inteiro mudou de setor (reorganização) | No Catálogo, ao mudar o setor, marcar as caixas **"Mover os serviços ainda não distribuídos"** e/ou **"Mover os serviços já distribuídos ou em andamento"**. Também dá para mudar vários catálogos de uma vez, ou trazer depois os que ficaram para trás. | Os sem tarefas voltam a **Novo**; os com tarefas vão com as tarefas e os responsáveis, na mesma etapa. Os concluídos e cancelados ficam no setor antigo. Detalhes no módulo 05, seção 3.3. |
 | Um serviço específico foi vendido no item errado | Trocar o catálogo do serviço por um de outro setor. | Só com o serviço **em aberto e sem tarefas**. Quem troca precisa de `os.gerenciar`, ou de `servicos.gerenciar` no setor de destino. |
 
-Nos dois casos, o serviço movido **volta para "Novo"** (a ciência de recebimento é apagada), e o organizador do setor novo recebe o **e-mail de chegada**. A mudança fica na linha do tempo.
+O serviço sem tarefas que muda de setor **volta para "Novo"** (a ciência de recebimento é apagada), e o organizador do setor novo recebe o **e-mail de chegada**. O já distribuído vai com as tarefas, sem e-mail. A mudança fica na linha do tempo.
 
 ### 2.3 Proteções nos dois lados
 

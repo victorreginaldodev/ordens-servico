@@ -25,6 +25,22 @@ Na mesma época, a gestora da área técnica decidiu que horas estimadas e compl
 - **Papel do setor** (derivado, sem campo novo): `catalogos_ativos`, `executa_servicos`, `recebem_tarefas` e `sem_quem_receba` na API de setores; a tela de Setores mostra "Executa N catálogos" ou "Não executa serviços" e os avisos.
 - **Pendente:** mover os 9 catálogos "ERGONOMIA - …" para Ergonomia depende de Ergonomia ter quem receba tarefas (hoje não tem ninguém); depois disso, é feito na tela do catálogo ("Mudar setor em lote").
 
+### Revisão de 16/10/2026: serviços com tarefas também vão junto
+Contexto: em produção, os catálogos de Ergonomia foram passados para o setor Ergonomia, mas os serviços ativos vendidos antes continuaram em Segurança do Trabalho (a cópia do item 2), e o gestor de Segurança seguia vendo esses serviços no painel. Pela regra de 14/10, só os abertos e sem tarefas podiam ir junto.
+
+Aprovado pelo usuário:
+- **Duas caixas de seleção explícitas** ao mudar o setor do catálogo (um a um e em lote), que substituem a opção única "levar os serviços em aberto":
+  - **"Mover os serviços ainda não distribuídos"** (novos ou a distribuir; `mover_servicos_em_aberto`): voltam a "novo" no setor de destino, como antes;
+  - **"Mover os serviços já distribuídos ou em andamento"** (`mover_servicos_com_tarefas`): vão com as tarefas e os responsáveis como estão. O setor novo passa a vê-los e pode redistribuir (só para quem recebe tarefas lá); o antigo deixa de vê-los. O responsável segue atualizando a própria tarefa, porque a exigência de receber tarefas do setor só vale ao trocar o responsável.
+- **Concluídos e cancelados nunca mudam:** ficam no setor que fez o trabalho, preservando o histórico e os indicadores (o motivo do item 2 continua valendo para eles).
+- **Serviços que ficaram para trás:** o catálogo que já está no setor certo, mas tem serviços ativos em outro setor, mostra quantos são (`servicos_em_aberto_fora_do_setor`, `servicos_com_tarefas_fora_do_setor`) e as mesmas duas caixas para trazê-los, sem mudar o setor.
+- **A mudança aparece na linha do tempo** do serviço ("passou de Segurança do Trabalho para Ergonomia", evento `setor_alterado`), além da auditoria.
+- **Correção única em produção:** a migração `ordens_servico/0051` leva para Ergonomia os serviços ativos dos catálogos que já estão em Ergonomia e ficaram em outro setor, com as regras acima. Grava na auditoria e não envia e-mails.
+
+Proposta, a confirmar (escolhas feitas na implementação):
+- No serviço com tarefas que muda de setor, a ciência de recebimento e a última movimentação ficam como estavam (o trabalho já foi distribuído e não andou com a mudança), e **não há e-mail de chegada** (ADR 0010: só avisa quem tem algo a fazer; o e-mail diz que os serviços "aguardam distribuição").
+- As duas caixas começam **desmarcadas** também na mudança em lote (antes, a opção do lote vinha marcada).
+
 ## Alternativas consideradas
 - **Setor definido na venda:** rejeitado, porque quem vende não precisaria conhecer a estrutura técnica e haveria divergência entre vendedores.
 - **Setor do serviço sempre lido do catálogo, sem cópia:** rejeitado, porque mudar o catálogo de setor reescreveria o histórico.

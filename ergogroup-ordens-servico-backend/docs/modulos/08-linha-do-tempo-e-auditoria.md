@@ -56,7 +56,7 @@ Cada registro guarda:
 | Grupo | Eventos |
 |---|---|
 | Venda | Venda registrada; venda alterada (lista os campos); condições de pagamento alteradas*; OS liberada para o financeiro (na venda ou na conclusão)*; lançamento registrado*; OS concluída, cancelada ou reaberta. |
-| Serviço | Chegada ao setor; ciência de recebimento do setor; serviço concluído (por quem), cancelado, reaberto ou excluído da venda; pausa explicada (motivo e observação). |
+| Serviço | Chegada ao setor; ciência de recebimento do setor; mudança de setor ("passou de Segurança do Trabalho para Ergonomia"); serviço concluído (por quem), cancelado, reaberto ou excluído da venda; pausa explicada (motivo e observação). |
 | Tarefa | Distribuído para Fulano, com prazo; responsável confirmou o recebimento; passou de Fulano para Beltrano; prazo definido ou alterado; iniciou; concluiu; tarefa cancelada, reaberta ou excluída. |
 
 \* Só para quem tem `financeiro.ver_valores`. Para os demais, esses eventos não aparecem, e "venda alterada" não cita a observação.
