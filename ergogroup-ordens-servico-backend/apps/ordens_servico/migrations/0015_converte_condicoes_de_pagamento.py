@@ -4,7 +4,8 @@
   a observação: contratos registrados como "12 parcelas" ficam como parcelado até o financeiro reclassificar.
 - ``intervalo_parcelas_dias``: 30 (mensal) nas parceladas.
 - ``liberar_em``: ``venda`` onde havia ``cobranca_imediata``; ``conclusao`` nos demais.
-- ``referencia_lancamento``: cópia do ``numero_nf``; ``origem_lancamento`` = manual nas OS já cobradas.
+- ``referencia_lancamento``: cópia do ``numero_nf``; NF 0 (sem número, comum em produção) fica vazia;
+  ``origem_lancamento`` = manual nas OS já cobradas.
 - Contrato: objeto, vigência e gestor são acrescentados à observação, porque os campos de contrato saem
   nas migrações seguintes.
 
@@ -17,6 +18,11 @@ CAMPOS_CONTRATO = (
     'objeto_contrato', 'contrato_data_inicio', 'contrato_data_fim',
     'gestor_contrato_nome', 'gestor_contrato_email', 'gestor_contrato_telefone',
 )
+
+
+def _referencia(numero_nf):
+    """O número da NF como referência do lançamento. 0 não é número de nota: fica sem referência."""
+    return str(numero_nf) if numero_nf else None
 
 
 def _data(valor):
@@ -44,8 +50,15 @@ def converter(apps, schema_editor):
     OrdemServico.objects.filter(cobranca_imediata=True).update(liberar_em='venda')
     OrdemServico.objects.filter(cobranca_realizada=True).update(origem_lancamento='manual')
 
+    sem_numero = []
     for os in OrdemServico.objects.filter(numero_nf__isnull=False).only('pk', 'numero_nf'):
-        OrdemServico.objects.filter(pk=os.pk).update(referencia_lancamento=str(os.numero_nf))
+        referencia = _referencia(os.numero_nf)
+        if referencia is None:
+            sem_numero.append(os.pk)
+            continue
+        OrdemServico.objects.filter(pk=os.pk).update(referencia_lancamento=referencia)
+    if sem_numero:
+        print(f'\n  OS com NF 0, que ficam sem referência do lançamento: {len(sem_numero)}')
 
     com_contrato = Q(contrato=True) | Q(contrato_data_inicio__isnull=False) | Q(contrato_data_fim__isnull=False)
     for campo in CAMPOS_CONTRATO:

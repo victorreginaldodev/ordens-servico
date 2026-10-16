@@ -28,7 +28,8 @@ Detalhada na seção 4b de `docs/faturamento/02-proposta-condicoes-de-pagamento.
 - **5 campos novos:** `tipo_condicao` (à vista, parcelado, recorrente), `intervalo_parcelas_dias`, `dia_fechamento`, `dia_vencimento` e `origem_lancamento` (manual ou integração).
 - **2 campos alterados:**
   - `cobranca_imediata` vira `liberar_em` (venda ou conclusão);
-  - `numero_nf` vira `referencia_lancamento`, em texto.
+  - `numero_nf` vira `referencia_lancamento`, em texto. NF 0 (sem número) fica sem referência (decidido em
+    15/10/2026, na auditoria do dump de produção: 73 OS faturadas têm NF 0).
 - **2 campos que passam a ser usados de verdade:**
   - `data_acordada_cobranca` como primeiro vencimento, incluída no formulário;
   - `quantidade_parcelas` sem o limite de 12 e, no recorrente, como número de meses.

@@ -369,3 +369,14 @@ class TextoDoContratoNaObservacaoTestCase(APITestCase):
         self.assertIn('Objeto: Gestão de SST', texto)
         self.assertIn('Vigência: 01/01/2026 a 31/12/2027', texto)
         self.assertIn('Gestor do contrato: Fulana de Tal · fulana@cliente.test', texto)
+
+
+class ReferenciaDoLancamentoTestCase(APITestCase):
+    """A migração 0015 copia o número da NF para a referência; NF 0 (sem número) fica sem referência."""
+
+    def test_copia_o_numero_da_nf(self):
+        self.assertEqual(conversao._referencia(2449), '2449')
+
+    def test_nf_zero_fica_sem_referencia(self):
+        self.assertIsNone(conversao._referencia(0))
+        self.assertIsNone(conversao._referencia(None))

@@ -77,7 +77,7 @@ Como os padrões encontrados ficariam registrados:
 | Hoje | Passa a ser |
 |---|---|
 | `cobranca_imediata` (sim/não) | `liberar_em`: `venda` ou `conclusao` (a migração converte) |
-| `numero_nf` (inteiro) | `referencia_lancamento` (texto; a migração copia os números) |
+| `numero_nf` (inteiro) | `referencia_lancamento` (texto; a migração copia os números; NF 0 fica sem referência) |
 | `data_acordada_cobranca` | mesmo campo, usado como "primeiro vencimento" e incluído no formulário |
 | `quantidade_parcelas` | mesmo campo; no recorrente vale como número de meses; sem o limite de 12 no formulário |
 
