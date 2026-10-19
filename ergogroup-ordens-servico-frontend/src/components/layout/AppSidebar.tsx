@@ -175,12 +175,7 @@ export function AppSidebar({ collapsed: collapsedProp, onToggle, variant = 'rail
               )}
             >
               <Sparkles className="size-4 shrink-0" aria-hidden />
-              {!collapsed ? (
-                <>
-                  <span className="flex-1 text-left">Novidades</span>
-                  <span className="rounded-full bg-primary px-1.5 text-2xs font-bold text-primary-foreground">EV2</span>
-                </>
-              ) : null}
+              {!collapsed ? <span className="flex-1 text-left">Novidades</span> : null}
             </button>
           </TooltipTrigger>
           {collapsed ? <TooltipContent side="right">Novidades</TooltipContent> : null}

@@ -4,7 +4,6 @@ import {
   Building2,
   CirclePlus,
   Handshake,
-  KeyRound,
   LayoutDashboard,
   LayoutGrid,
   ListChecks,
@@ -40,7 +39,7 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Quem administra a organização: vê Time, Setores e Funções no menu do usuário. */
+/** Quem administra a organização: vê Time e Setores no menu do usuário. */
 export const ADMIN_ORGANIZACAO: Permissao[] = ['organizacao.configurar', 'usuarios.gerenciar'];
 
 /** Menu lateral, na ordem do fluxo: vende, executa, cobra; depois análise e cadastros. */
@@ -101,7 +100,6 @@ export const NAV_ORGANIZACAO: NavGroup = {
   items: [
     { title: 'Time', url: '/time', icon: Users, permissoes: ADMIN_ORGANIZACAO },
     { title: 'Setores', url: '/organizacao/setores', icon: Network, permissoes: ADMIN_ORGANIZACAO },
-    { title: 'Funções e permissões', url: '/organizacao/funcoes', icon: KeyRound, permissoes: ADMIN_ORGANIZACAO },
   ],
 };
 

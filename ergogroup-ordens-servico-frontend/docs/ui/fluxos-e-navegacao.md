@@ -151,7 +151,9 @@ Frequência: diária, na fila do que pode ser faturado.
 | | Catálogo | `/catalogo` | como hoje |
 | | Catálogo operacional *(fora de escopo, sem mudança na tela)* | `/catalogo/operacional` | como hoje |
 
-**Menu do usuário (rodapé da sidebar):** Meu perfil, Abrir sempre em…, Tema, a seção **Organização** e Sair. A seção Organização (Time, Setores, Funções e permissões) só aparece para quem administra (`organizacao.configurar` ou `usuarios.gerenciar`). A rota `/time` passou a exigir uma dessas permissões.
+**Menu do usuário (rodapé da sidebar):** Meu perfil, Abrir sempre em…, Tema, a seção **Organização** e Sair. A seção Organização (Time e Setores) só aparece para quem administra (`organizacao.configurar` ou `usuarios.gerenciar`). A rota `/time` passou a exigir uma dessas permissões.
+
+**Funções e permissões removidas do acesso (18/10/2026, pedido do usuário):** o item saiu da navegação central e a rota `/organizacao/funcoes` foi removida. Isso retira a página do menu do usuário, da busca global e do acesso direto para todas as pessoas. As funções continuam sendo usadas internamente em Time e Setores para vincular pessoas e organizar os setores. O marcador de versão que aparecia ao lado de **Novidades** também foi removido da sidebar.
 
 **Ordem na Execução (14/10/2026, pedido do usuário):** Visão geral (ou Painel do setor) primeiro, depois Meus serviços e OS operacionais.
 
@@ -642,7 +644,7 @@ Vendido por e Outros na OS são P2 (somem abaixo de 1280px; voltam pelo menu Col
 - Contatos. (Clientes passou ao padrão de listagem em 14/10/2026, §6.9.)
 - Catálogo: mostrar os `avisos` ao salvar.
 - Time e Setores: mostrar "sem organizador".
-- Funções e permissões, Dados da empresa.
+- Dados da empresa.
 
 ### 6.9 Clientes — `/clientes` no padrão de listagem (14/10/2026, wireframe aprovado)
 
