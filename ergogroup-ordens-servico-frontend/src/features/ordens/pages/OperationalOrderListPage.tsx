@@ -27,7 +27,7 @@ const SITUACAO_DE_COBRANCA: { value: SituacaoDeCobranca; label: string }[] = [
   { value: 'cobrada', label: 'Cobrada' },
 ];
 
-/** A regra de cobrança vem fotografada do catálogo operacional (ADR 0011); a liberação acontece ao finalizar. */
+/** A regra de cobrança vem do catálogo operacional (ADR 0011) até a OSO ser faturada; a liberação acontece ao finalizar. */
 const situacaoDeCobranca = (o: OperationalOrderItem): SituacaoDeCobranca =>
   o.geraCobranca
     ? getCobrancaSituacao({ liberada: !!o.dataLiberacaoCobranca, cobrada: o.cobrancaRealizada })

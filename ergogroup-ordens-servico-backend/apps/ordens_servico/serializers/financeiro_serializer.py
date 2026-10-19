@@ -182,7 +182,7 @@ class MarcoDaOperacionalSerializer(serializers.Serializer):
 
 
 class SituacaoFinanceiraOperacionalSerializer(LinhaDeCobrancaOperacionalSerializer):
-    gera_cobranca = serializers.BooleanField(help_text='A regra aplicada na criação (catálogo e clientes isentos).')
+    gera_cobranca = serializers.BooleanField(help_text='A regra atual do catálogo e dos clientes isentos; não muda depois de faturada.')
     cliente = ClienteDoResumoSerializer()
     detalhe_pendencias = PendenciaDaOrdemSerializer(many=True)
     historico = MarcoDaOperacionalSerializer(many=True, help_text='Do mais recente ao mais antigo.')

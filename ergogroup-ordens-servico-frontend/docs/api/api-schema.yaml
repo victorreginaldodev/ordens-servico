@@ -469,7 +469,9 @@ paths:
           description: ''
     put:
       operationId: catalogo_catalogos_operacionais_update
-      description: Substitui integralmente os dados de um catálogo operacional.
+      description: Substitui integralmente os dados de um catálogo operacional. Se
+        a regra de cobrança mudar, ela é aplicada às OS operacionais deste serviço
+        ainda não faturadas.
       summary: Atualizar catálogo operacional
       parameters:
       - in: path
@@ -505,7 +507,10 @@ paths:
           description: ''
     patch:
       operationId: catalogo_catalogos_operacionais_partial_update
-      description: Atualiza um ou mais campos de um catálogo operacional.
+      description: 'Atualiza um ou mais campos de um catálogo operacional. Se `gera_cobranca`
+        ou `clientes_isentos_cobranca` forem enviados, a regra é aplicada às OS operacionais
+        deste serviço ainda não faturadas: as finalizadas que passam a cobrar são
+        liberadas para o financeiro.'
       summary: Atualizar catálogo operacional parcialmente
       parameters:
       - in: path
@@ -2324,10 +2329,10 @@ paths:
           description: ''
     post:
       operationId: ordens_servico_operacionais_create
-      description: Cria uma nova Ordem de Serviço Operacional. `gera_cobranca` é fotografado
-        automaticamente a partir da regra do catálogo e das exceções do cliente. Ao
-        finalizar, `data_liberacao_cobranca` e `liberada_cobranca_por` são preenchidos
-        automaticamente.
+      description: Cria uma nova Ordem de Serviço Operacional. `gera_cobranca` vem
+        da regra do catálogo e dos clientes isentos, e acompanha essa regra até a
+        OS ser faturada; `revisao_cliente` não influencia. Ao finalizar, `data_liberacao_cobranca`
+        e `liberada_cobranca_por` são preenchidos automaticamente.
       summary: Criar Ordem de Serviço Operacional
       tags:
       - ordens-servico
@@ -8986,7 +8991,8 @@ components:
             $ref: '#/components/schemas/CodigoDaConferenciaEnum'
         gera_cobranca:
           type: boolean
-          description: A regra aplicada na criação (catálogo e clientes isentos).
+          description: A regra atual do catálogo e dos clientes isentos; não muda
+            depois de faturada.
         cliente:
           $ref: '#/components/schemas/ClienteDoResumo'
         detalhe_pendencias:

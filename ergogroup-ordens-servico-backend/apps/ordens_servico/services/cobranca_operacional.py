@@ -1,6 +1,6 @@
 """Cobrança das OS operacionais no financeiro (19/10/2026, wireframe `lote7-cobrancas-oso` aprovado).
 
-A OSO entra nas Cobranças quando gera cobrança (regra fotografada do catálogo operacional, ADR 0011). As situações
+A OSO entra nas Cobranças quando gera cobrança (regra do catálogo operacional, ADR 0011). As situações
 seguem as da venda:
 
 - **previsão** (Em execução): gera cobrança e ainda não foi finalizada;

@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -8,6 +10,7 @@ from apps.organizacoes.apoio_testes import Perfil, criar_usuario, setor_padrao
 from apps.organizacoes.models import Funcao, FuncaoPermissao, Organizacao
 from apps.organizacoes.permissoes import Permissao
 from apps.ordens_servico.models import OrdemServicoOperacional
+from apps.ordens_servico.models.ordem_servico_operacional import StatusOrdemServicoOperacional as S
 
 
 class RegraDeCobrancaDoCatalogoOperacionalTestCase(APITestCase):
@@ -43,7 +46,8 @@ class RegraDeCobrancaDoCatalogoOperacionalTestCase(APITestCase):
 
         self.assertFalse(oso.gera_cobranca)
 
-    def test_mudanca_da_regra_nao_altera_oso_existente(self):
+    def test_oso_nao_faturada_segue_a_regra_atual_ao_salvar(self):
+        # Revisão de 19/10/2026 do ADR 0011: a regra do catálogo vale até a OSO ser faturada.
         oso = self.criar_oso(self.cliente)
         self.catalogo.gera_cobranca = False
         self.catalogo.save(update_fields=['gera_cobranca'])
@@ -52,7 +56,96 @@ class RegraDeCobrancaDoCatalogoOperacionalTestCase(APITestCase):
         oso.save()
         oso.refresh_from_db()
 
+        self.assertFalse(oso.gera_cobranca)
+
+    def test_oso_faturada_nao_muda(self):
+        oso = self.criar_oso(self.cliente)
+        OrdemServicoOperacional.objects.filter(pk=oso.pk).update(cobranca_realizada=True)
+        oso.refresh_from_db()
+        self.catalogo.gera_cobranca = False
+        self.catalogo.save(update_fields=['gera_cobranca'])
+
+        oso.descricao = 'Ajuste posterior'
+        oso.save()
+        oso.refresh_from_db()
+
         self.assertTrue(oso.gera_cobranca)
+
+    def test_revisao_do_cliente_nao_decide_a_cobranca(self):
+        self.catalogo.gera_cobranca = False
+        self.catalogo.save(update_fields=['gera_cobranca'])
+
+        oso = OrdemServicoOperacional.objects.create(
+            cliente=self.cliente, catalogo_operacional=self.catalogo, responsavel=self.tecnico,
+            revisao_cliente=True, status=S.FINALIZADA,
+        )
+
+        self.assertFalse(oso.gera_cobranca)
+        self.assertIsNone(oso.data_liberacao_cobranca)
+
+
+class RegraDoCatalogoNasOsosExistentesTestCase(APITestCase):
+    """Mudar a regra no catálogo recalcula as OS operacionais ainda não faturadas (ADR 0011, 19/10/2026)."""
+
+    def setUp(self):
+        self.diretor = criar_usuario(Perfil.DIRETOR)
+        self.tecnico = criar_usuario(Perfil.TECNICO)
+        self.cliente = Cliente.objects.create(nome='Cliente padrão')
+        self.outro = Cliente.objects.create(nome='Outro cliente')
+        self.catalogo = CatalogoOperacional.objects.create(nome='Revisão')
+        self.url = reverse('catalogos-operacionais-detail', args=[self.catalogo.pk])
+        self.finalizada = self.oso(status=S.FINALIZADA)
+        self.em_aberto = self.oso(status=S.EM_ANDAMENTO)
+        self.do_outro = self.oso(status=S.FINALIZADA, cliente=self.outro)
+        self.faturada = self.oso(status=S.FINALIZADA)
+        OrdemServicoOperacional.objects.filter(pk=self.faturada.pk).update(cobranca_realizada=True)
+        self.client.force_authenticate(user=self.diretor)
+
+    def oso(self, **campos):
+        dados = {'cliente': self.cliente, 'catalogo_operacional': self.catalogo, 'responsavel': self.tecnico, **campos}
+        return OrdemServicoOperacional.objects.create(**dados)
+
+    def estado(self, oso):
+        oso.refresh_from_db()
+        return oso.gera_cobranca, oso.data_liberacao_cobranca is not None
+
+    def test_passar_a_cobrar_libera_as_finalizadas_sem_mandar_email(self):
+        with mock.patch('apps.ordens_servico.signals.notificar_liberacao_cobranca') as email:
+            response = self.client.patch(self.url, {'gera_cobranca': True}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(self.estado(self.finalizada), (True, True))
+        self.assertEqual(self.estado(self.em_aberto), (True, False))
+        self.assertEqual(self.estado(self.do_outro), (True, True))
+        self.finalizada.refresh_from_db()
+        self.assertEqual(self.finalizada.liberada_cobranca_por, self.tecnico)
+        self.assertEqual(self.estado(self.faturada), (False, False))
+        email.assert_not_called()
+
+    def test_cliente_isento_sai_da_fila(self):
+        self.client.patch(self.url, {'gera_cobranca': True}, format='json')
+
+        self.client.patch(self.url, {'clientes_isentos_cobranca': [self.outro.pk]}, format='json')
+
+        self.assertEqual(self.estado(self.do_outro), (False, False))
+        self.assertEqual(self.estado(self.finalizada), (True, True))
+
+    def test_deixar_de_cobrar_tira_as_nao_faturadas(self):
+        self.client.patch(self.url, {'gera_cobranca': True}, format='json')
+        OrdemServicoOperacional.objects.filter(pk=self.faturada.pk).update(gera_cobranca=True)
+
+        self.client.patch(self.url, {'gera_cobranca': False}, format='json')
+
+        self.assertEqual(self.estado(self.finalizada), (False, False))
+        self.assertEqual(self.estado(self.em_aberto), (False, False))
+        self.faturada.refresh_from_db()
+        self.assertTrue(self.faturada.gera_cobranca)
+
+    def test_mudar_so_a_descricao_nao_recalcula(self):
+        with mock.patch.object(CatalogoOperacional, 'reaplicar_regra_de_cobranca') as reaplicar:
+            self.client.patch(self.url, {'descricao': 'Outra'}, format='json')
+
+        reaplicar.assert_not_called()
 
 
 class PermissaoDaRegraDeCobrancaOperacionalTestCase(APITestCase):

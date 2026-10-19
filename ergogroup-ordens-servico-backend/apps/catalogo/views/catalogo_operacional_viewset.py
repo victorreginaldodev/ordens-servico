@@ -24,11 +24,18 @@ from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin, TemP
     ),
     update=extend_schema(
         summary='Atualizar catálogo operacional',
-        description='Substitui integralmente os dados de um catálogo operacional.',
+        description=(
+            'Substitui integralmente os dados de um catálogo operacional. Se a regra de cobrança mudar, ela é '
+            'aplicada às OS operacionais deste serviço ainda não faturadas.'
+        ),
     ),
     partial_update=extend_schema(
         summary='Atualizar catálogo operacional parcialmente',
-        description='Atualiza um ou mais campos de um catálogo operacional.',
+        description=(
+            'Atualiza um ou mais campos de um catálogo operacional. Se `gera_cobranca` ou '
+            '`clientes_isentos_cobranca` forem enviados, a regra é aplicada às OS operacionais deste serviço ainda '
+            'não faturadas: as finalizadas que passam a cobrar são liberadas para o financeiro.'
+        ),
     ),
     destroy=extend_schema(
         summary='Remover catálogo operacional',
@@ -54,6 +61,12 @@ class CatalogoOperacionalViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
         ):
             permissoes.append(TemPermissao(Permissao.CATALOGO_OPERACIONAL_CONFIGURAR_COBRANCA))
         return permissoes
+
+    def perform_update(self, serializer):
+        catalogo = serializer.save()
+        # Mudou a regra de cobrança: vale também para as OS operacionais ainda não faturadas (ADR 0011).
+        if self.campos_de_cobranca.intersection(self.request.data):
+            catalogo.reaplicar_regra_de_cobranca()
 
     def get_queryset(self):
         queryset = super().get_queryset()

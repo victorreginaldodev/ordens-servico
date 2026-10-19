@@ -72,9 +72,9 @@ class OrdemServicoOperacional(models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        # A regra do catálogo é fotografada apenas na criação. Mudanças posteriores no
-        # catálogo ou nas exceções do cliente não alteram OSOs que já existiam.
-        if self._state.adding and self.catalogo_operacional_id and self.cliente_id:
+        # Enquanto não é faturada, a OSO segue a regra atual do catálogo e dos clientes isentos (revisão de
+        # 19/10/2026 do ADR 0011). Depois de faturada, a cobrança não muda mais. `revisao_cliente` não entra.
+        if not self.cobranca_realizada and self.catalogo_operacional_id and self.cliente_id:
             self.gera_cobranca = self.catalogo_operacional.gera_cobranca_para(self.cliente_id)
         if self.gera_cobranca and self.status == StatusOrdemServicoOperacional.FINALIZADA:
             if self.data_liberacao_cobranca is None:

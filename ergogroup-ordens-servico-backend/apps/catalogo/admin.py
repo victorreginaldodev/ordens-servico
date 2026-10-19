@@ -59,3 +59,9 @@ class CatalogoOperacionalAdmin(admin.ModelAdmin):
     list_display = ['nome', 'descricao', 'gera_cobranca']
     list_filter = ['gera_cobranca']
     search_fields = ['nome']
+
+    def save_related(self, request, form, formsets, change):
+        # Depois de gravar os clientes isentos: a regra vale para as OS operacionais ainda não faturadas.
+        super().save_related(request, form, formsets, change)
+        if change:
+            form.instance.reaplicar_regra_de_cobranca()

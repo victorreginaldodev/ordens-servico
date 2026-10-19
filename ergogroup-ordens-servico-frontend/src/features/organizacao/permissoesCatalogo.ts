@@ -72,7 +72,7 @@ export const AJUDA_PERMISSAO: Partial<Record<Permissao, string>> = {
   'catalogo_operacional.gerenciar':
     'Cria, edita e exclui os serviços do catálogo operacional. A regra de cobrança exige também "Configurar a cobrança do catálogo operacional".',
   'catalogo_operacional.configurar_cobranca':
-    'Define se cada serviço do catálogo operacional gera cobrança e quais clientes são isentos. Vale só para as OS operacionais criadas depois da alteração.',
+    'Define se cada serviço do catálogo operacional gera cobrança e quais clientes são isentos. Vale também para as OS operacionais ainda não faturadas desse serviço.',
   'tarefas.receber':
     'A pessoa aparece na lista de responsáveis do setor. Quem é de outro setor recebe pelo "Também executa em", na pessoa. "Atuar em todos os setores" não estende esta permissão.',
   'servicos.ver_setor': 'Vê o Painel do setor: a fila, o andamento, a equipe e a produtividade das pessoas. Com "Distribuir", organiza o setor e recebe o aviso de chegada.',

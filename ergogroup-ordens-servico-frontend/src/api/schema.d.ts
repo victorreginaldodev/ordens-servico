@@ -186,7 +186,7 @@ export interface paths {
         get: operations["catalogo_catalogos_operacionais_retrieve"];
         /**
          * Atualizar catálogo operacional
-         * @description Substitui integralmente os dados de um catálogo operacional.
+         * @description Substitui integralmente os dados de um catálogo operacional. Se a regra de cobrança mudar, ela é aplicada às OS operacionais deste serviço ainda não faturadas.
          */
         put: operations["catalogo_catalogos_operacionais_update"];
         post?: never;
@@ -199,7 +199,7 @@ export interface paths {
         head?: never;
         /**
          * Atualizar catálogo operacional parcialmente
-         * @description Atualiza um ou mais campos de um catálogo operacional.
+         * @description Atualiza um ou mais campos de um catálogo operacional. Se `gera_cobranca` ou `clientes_isentos_cobranca` forem enviados, a regra é aplicada às OS operacionais deste serviço ainda não faturadas: as finalizadas que passam a cobrar são liberadas para o financeiro.
          */
         patch: operations["catalogo_catalogos_operacionais_partial_update"];
         trace?: never;
@@ -1019,7 +1019,7 @@ export interface paths {
         put?: never;
         /**
          * Criar Ordem de Serviço Operacional
-         * @description Cria uma nova Ordem de Serviço Operacional. `gera_cobranca` é fotografado automaticamente a partir da regra do catálogo e das exceções do cliente. Ao finalizar, `data_liberacao_cobranca` e `liberada_cobranca_por` são preenchidos automaticamente.
+         * @description Cria uma nova Ordem de Serviço Operacional. `gera_cobranca` vem da regra do catálogo e dos clientes isentos, e acompanha essa regra até a OS ser faturada; `revisao_cliente` não influencia. Ao finalizar, `data_liberacao_cobranca` e `liberada_cobranca_por` são preenchidos automaticamente.
          */
         post: operations["ordens_servico_operacionais_create"];
         delete?: never;
@@ -3474,7 +3474,7 @@ export interface components {
             /** Format: date-time */
             criada_em: string;
             pendencias: components["schemas"]["CodigoDaConferenciaEnum"][];
-            /** @description A regra aplicada na criação (catálogo e clientes isentos). */
+            /** @description A regra atual do catálogo e dos clientes isentos; não muda depois de faturada. */
             gera_cobranca: boolean;
             cliente: components["schemas"]["ClienteDoResumo"];
             detalhe_pendencias: components["schemas"]["PendenciaDaOrdem"][];

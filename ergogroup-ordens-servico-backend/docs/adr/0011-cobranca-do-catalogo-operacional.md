@@ -17,8 +17,18 @@ por aquele serviço formam uma lista menor de exceções.
 2. Um item cobrável pode indicar `clientes_isentos_cobranca`.
 3. Na criação da OS operacional, `gera_cobranca` é calculado assim: o catálogo cobra e o cliente não está na
    lista de exceções.
-4. O resultado é fotografado na OS operacional. Mudar depois o catálogo ou suas exceções não altera OSOs
-   existentes.
+4. ~~O resultado é fotografado na OS operacional. Mudar depois o catálogo ou suas exceções não altera OSOs
+   existentes.~~ **Revisto em 19/10/2026 (decisão do usuário):** a OSO segue a regra **atual** do catálogo e dos
+   clientes isentos enquanto não for faturada. Ao mudar `gera_cobranca` ou `clientes_isentos_cobranca`, o sistema
+   recalcula todas as OSOs desse serviço ainda não faturadas (`CatalogoOperacional.reaplicar_regra_de_cobranca`,
+   chamado na edição pela API e pelo admin):
+   - passou a cobrar: a OSO gera cobrança; se já foi finalizada, é liberada na hora e entra em "Para faturar"
+     (inclusive as finalizadas antigas);
+   - deixou de cobrar, ou o cliente ficou isento: a OSO não gera cobrança e sai da fila (a liberação é desfeita);
+   - as já faturadas nunca mudam.
+
+   O recálculo grava direto no banco, sem um e-mail de liberação por OSO. Qualquer gravação de uma OSO não
+   faturada também aplica a regra atual. O fluxo não usa `revisao_cliente` em nenhum ponto.
 5. `revisao_cliente` deixa de controlar a cobrança e é somente leitura na API, preservado por compatibilidade e
    pelo histórico existente.
 6. Quando uma OSO cobrada é finalizada, a liberação para cobrança continua automática. O registro posterior da
@@ -63,4 +73,6 @@ Enviar qualquer um desses campos em criação ou edição exige
 `catalogo_operacional.configurar_cobranca`, além da permissão operacional exigida pela ação.
 
 Na API de OS operacional, `revisao_cliente` e `gera_cobranca` são somente leitura. `gera_cobranca` devolve a regra
-que foi aplicada quando o registro foi criado.
+atual (ou, se a OSO já foi faturada, a que valia no faturamento). `revisao_cliente` existe só como histórico e não
+aparece no formulário; o card de revisões do Painel operacional ainda conta por ele (revisão futura, fora deste
+fluxo).

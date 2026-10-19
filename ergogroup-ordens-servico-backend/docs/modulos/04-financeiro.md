@@ -125,7 +125,7 @@ A **Conferência do faturamento** (seção 5) roda na hora em que é aberta. O r
 
 ### 4.4 OS operacionais (19/10/2026)
 
-As **OS operacionais que geram cobrança** (regra do catálogo operacional, ADR 0011) entram nas mesmas abas de Cobranças, junto das vendas:
+As **OS operacionais que geram cobrança** (regra do catálogo operacional, ADR 0011) entram nas mesmas abas de Cobranças, junto das vendas. A regra é a **atual** do catálogo e dos clientes isentos: quando ela muda, as OSOs ainda não faturadas desse serviço são recalculadas (as finalizadas que passam a cobrar entram em "Para faturar"; as que deixam de cobrar saem). O campo "Revisão do cliente" não influencia:
 
 - **Em execução:** gera cobrança e ainda não foi finalizada;
 - **Para faturar:** finalizada e liberada (a liberação é automática ao finalizar);

@@ -283,8 +283,9 @@ const CatalogoOperacionalFormPage = () => {
             <div className="flex gap-2 rounded-md border border-warning bg-warning-subtle px-4 py-3 text-sm text-warning-strong">
               <Info className="size-4 mt-0.5 shrink-0" aria-hidden />
               <span>
-                Alterações valem só para OS operacionais criadas a partir de agora. As OS já existentes mantêm a regra
-                com que foram criadas.
+                A regra vale também para as OS operacionais deste serviço ainda não faturadas: as finalizadas que
+                passarem a cobrar vão para "Para faturar", e as que deixarem de cobrar saem da fila. As já faturadas
+                não mudam.
               </span>
             </div>
 

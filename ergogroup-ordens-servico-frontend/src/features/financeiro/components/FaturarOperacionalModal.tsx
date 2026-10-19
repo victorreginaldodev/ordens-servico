@@ -19,7 +19,7 @@ import { OrigemDaCobranca } from './OrigemDaCobranca';
 
 const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
 
-/** A regra de cobrança fotografada na criação (ADR 0011) e os avisos da conferência. */
+/** A regra de cobrança do catálogo (ADR 0011) e os avisos da conferência. */
 export function RegraEAvisos({ s }: { s: SituacaoFinanceiraOperacional }) {
   return (
     <div className="grid gap-2">
@@ -33,7 +33,9 @@ export function RegraEAvisos({ s }: { s: SituacaoFinanceiraOperacional }) {
           ) : (
             <b>Não gera cobrança pela regra do catálogo.</b>
           )}{' '}
-          Regra aplicada quando a OS operacional foi criada, em {formatDate(s.criada_em)}.
+          {s.situacao === 'faturadas'
+            ? 'A regra não muda mais: a OS operacional já foi faturada.'
+            : 'É a regra atual do catálogo; ela vale até a OS operacional ser faturada.'}
         </span>
       </p>
       {s.liberada_para_cobranca_em ? (
