@@ -122,6 +122,8 @@ export interface CatalogoOperacionalItem {
   id: number;
   nome: string;
   descricao: string | null;
+  geraCobranca: boolean;
+  clientesIsentosCobranca: number[];
 }
 
 export interface CatalogoOperacionalPayload {
@@ -133,6 +135,8 @@ type CatalogoOperacionalDTO = {
   id: number;
   nome: string;
   descricao: string | null;
+  gera_cobranca?: boolean;
+  clientes_isentos_cobranca?: number[];
 };
 
 const CATALOGO_OPERACIONAL_ENDPOINT = '/api/catalogo/catalogos-operacionais/';
@@ -141,6 +145,8 @@ const catalogoOperacionalToFrontend = (dto: CatalogoOperacionalDTO): CatalogoOpe
   id: dto.id,
   nome: dto.nome,
   descricao: dto.descricao ?? null,
+  geraCobranca: Boolean(dto.gera_cobranca),
+  clientesIsentosCobranca: dto.clientes_isentos_cobranca ?? [],
 });
 
 const catalogoOperacionalToBackend = (payload: Partial<CatalogoOperacionalPayload>) => ({
