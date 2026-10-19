@@ -78,9 +78,6 @@ class TempoPorCatalogoSerializer(serializers.Serializer):
     """Reutilizado tanto para Serviço/Catálogo quanto para OSO/CatalogoOperacional."""
     catalogo_id = serializers.IntegerField()
     catalogo_nome = serializers.CharField()
-    # Só o catálogo operacional tem horas e complexidade; para o catálogo de serviços vêm nulos.
-    horas_estimadas = serializers.DecimalField(max_digits=6, decimal_places=2, allow_null=True)
-    complexidade = serializers.IntegerField(allow_null=True)
     total_concluidos = serializers.IntegerField()
     media_dias = serializers.FloatField()
 

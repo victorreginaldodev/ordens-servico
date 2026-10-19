@@ -75,10 +75,6 @@ def calcular_tempo_por_catalogo() -> list[dict]:
             {
                 'catalogo_id': cat_id,
                 'catalogo_nome': data['nome'],
-                # Horas e complexidade saíram do catálogo; as chaves ficam por compatibilidade
-                # com o formato compartilhado com o catálogo operacional.
-                'horas_estimadas': None,
-                'complexidade': None,
                 'total_concluidos': len(data['dias']),
                 'media_dias': round(sum(data['dias']) / len(data['dias']), 1),
             }

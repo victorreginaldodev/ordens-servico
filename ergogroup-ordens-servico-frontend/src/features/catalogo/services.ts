@@ -1,20 +1,6 @@
 import type { Esquemas } from '@/api/tipos';
 import api from '@/services/api';
 
-export type Complexidade = 1 | 2 | 3;
-
-export const COMPLEXIDADE_LABEL: Record<Complexidade, string> = {
-  1: 'Baixa',
-  2: 'Média',
-  3: 'Alta',
-};
-
-export const COMPLEXIDADE_DOT: Record<Complexidade, string> = {
-  1: 'bg-muted-foreground',
-  2: 'bg-yellow-500',
-  3: 'bg-red-600',
-};
-
 // ── Catálogo (serviços de Ordem de Serviço) ───────────────────────────────────
 
 export interface CatalogoItem {
@@ -136,23 +122,17 @@ export interface CatalogoOperacionalItem {
   id: number;
   nome: string;
   descricao: string | null;
-  horasEstimadas: string | null;
-  complexidade: Complexidade | null;
 }
 
 export interface CatalogoOperacionalPayload {
   nome: string;
   descricao?: string | null;
-  horasEstimadas?: string | null;
-  complexidade?: Complexidade | null;
 }
 
 type CatalogoOperacionalDTO = {
   id: number;
   nome: string;
   descricao: string | null;
-  horas_estimadas: string | null;
-  complexidade: Complexidade | null;
 };
 
 const CATALOGO_OPERACIONAL_ENDPOINT = '/api/catalogo/catalogos-operacionais/';
@@ -161,15 +141,11 @@ const catalogoOperacionalToFrontend = (dto: CatalogoOperacionalDTO): CatalogoOpe
   id: dto.id,
   nome: dto.nome,
   descricao: dto.descricao ?? null,
-  horasEstimadas: dto.horas_estimadas ?? null,
-  complexidade: dto.complexidade ?? null,
 });
 
 const catalogoOperacionalToBackend = (payload: Partial<CatalogoOperacionalPayload>) => ({
   ...(payload.nome !== undefined ? { nome: payload.nome } : {}),
   ...(payload.descricao !== undefined ? { descricao: payload.descricao } : {}),
-  ...(payload.horasEstimadas !== undefined ? { horas_estimadas: payload.horasEstimadas } : {}),
-  ...(payload.complexidade !== undefined ? { complexidade: payload.complexidade } : {}),
 });
 
 export const getCatalogosOperacionais = async (params: { q?: string } = {}): Promise<CatalogoOperacionalItem[]> => {

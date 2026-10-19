@@ -17,7 +17,7 @@ Na mesma época, a gestora da área técnica decidiu que horas estimadas e compl
 4. **Classificação inicial:** todos os 123 catálogos foram vinculados a **Segurança do Trabalho**, e os 1.526 serviços com catálogo receberam esse setor (migrações `catalogo/0007` e `ordens_servico/0007`). A classificação fina fica para depois.
 5. **`Catalogo.ativo`:** catálogo aposentado continua nos serviços já vendidos, mas não pode ser usado em serviços novos (validação em `ServicoSerializer`). Filtro `?ativo=true` para a criação de OS. Excluir catálogo em uso responde 409 sugerindo desativar.
 6. **API do catálogo:** os campos são listados explicitamente (sem `fields = '__all__'`) e a resposta inclui `setor_nome`.
-7. **Horas estimadas e complexidade saíram do catálogo** (migrações `catalogo/0004` e `0005`). Antes de remover as colunas, os valores foram copiados para os serviços que ainda os herdavam. O catálogo operacional manteve esses campos porque a OS operacional está fora desta sprint. Para serviço e tarefa, ver ADR 0005.
+7. **Horas estimadas e complexidade saíram dos dois catálogos.** No catálogo comercial, a remoção ocorreu nas migrações `catalogo/0004` e `0005`; no catálogo operacional, em `catalogo/0010` e `0011`. Para serviços, tarefas e OS operacional, ver ADR 0005.
 
 ### Revisão de 14/10/2026 (aprovada pelo usuário; P5 e P6 de `docs/revisao-permissoes-e-setores.md`)
 - **Catálogo ativo só em setor com quem receba tarefas:** criar, mudar de setor ou reativar um catálogo ativo num setor sem ninguém que receba tarefas é recusado (400). O aviso de "setor sem quem organize" continua só como aviso.
@@ -49,5 +49,5 @@ Proposta, a confirmar (escolhas feitas na implementação):
 ## Consequências
 - A fila de cada setor é definida pelos catálogos sob sua responsabilidade.
 - Exceções ("este serviço será feito por outro setor") são resolvidas criando outro item de catálogo, e não ajustando a venda.
-- Pendente decidir: juntar os nomes duplicados ("ERGONOMIA - ELABORAÇÃO DE AEP" e "TREINAMENTO PCA" aparecem duas vezes cada), manter ou remover os subitens de catálogo (sem uso) e o futuro das horas e complexidade no catálogo operacional.
+- Pendente decidir: juntar os nomes duplicados ("ERGONOMIA - ELABORAÇÃO DE AEP" e "TREINAMENTO PCA" aparecem duas vezes cada) e manter ou remover os subitens de catálogo (sem uso).
 - Substitui o ADR 0001 no que diz respeito ao catálogo.

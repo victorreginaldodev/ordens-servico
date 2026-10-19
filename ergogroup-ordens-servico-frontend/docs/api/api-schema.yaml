@@ -1432,7 +1432,9 @@ paths:
     patch:
       operationId: contas_usuarios_partial_update
       description: Atualiza um ou mais campos cadastrais de um usuário. Cada usuário
-        pode editar o próprio cadastro; gestores podem editar qualquer usuário.
+        pode editar o próprio cadastro; gestores podem editar qualquer usuário. A
+        resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem
+        quem receba tarefas.
       summary: Atualizar usuário parcialmente
       parameters:
       - in: path
@@ -1560,6 +1562,8 @@ paths:
       operationId: contas_usuarios_desativar_partial_update
       description: Marca um usuário como inativo, bloqueando o acesso ao sistema.
         Requer perfil Gestor ou superior. Não é possível desativar o próprio usuário.
+        A resposta traz `avisos` se algum setor que executa catálogos ativos ficar
+        sem quem receba tarefas.
       summary: Desativar usuário
       parameters:
       - in: path
@@ -2291,9 +2295,10 @@ paths:
           description: ''
     post:
       operationId: ordens_servico_operacionais_create
-      description: Cria uma nova Ordem de Serviço Operacional. Se `revisao_cliente=true`,
-        `gera_cobranca` é definido automaticamente como `true` e, ao finalizar, `data_liberacao_cobranca`
-        e `liberada_cobranca_por` são preenchidos automaticamente.
+      description: Cria uma nova Ordem de Serviço Operacional. `gera_cobranca` é fotografado
+        automaticamente a partir da regra do catálogo e das exceções do cliente. Ao
+        finalizar, `data_liberacao_cobranca` e `liberada_cobranca_por` são preenchidos
+        automaticamente.
       summary: Criar Ordem de Serviço Operacional
       tags:
       - ordens-servico
@@ -2568,7 +2573,9 @@ paths:
         é a data combinada (`data_acordada_cobranca`) ou os dias após a nota (`vencimento_dias_apos_nota`),
         nunca os dois; no parcelado ele é o da 1ª parcela, as parcelas são mensais
         e são pelo menos 2, e `dia_vencimento_demais` (1 a 31, opcional) fixa o dia
-        das parcelas da 2ª em diante.'
+        das parcelas da 2ª em diante. Catálogo inativo ou de setor inativo dá 400.
+        A resposta traz `avisos` quando algum serviço foi para um setor sem quem receba
+        tarefas (a venda é registrada mesmo assim).'
       summary: Criar ordem de serviço
       tags:
       - ordens-servico
@@ -2887,7 +2894,9 @@ paths:
       description: Cria um novo serviço vinculado a uma OS. Campos calculados (`status`,
         `data_inicio`, `data_termino`, `data_conclusao`, `terminado_por`) são somente
         leitura e gerenciados automaticamente pelas tarefas. `setor` é somente leitura
-        e copiado do catálogo.
+        e copiado do catálogo. `catalogo` é obrigatório (ativo e de setor ativo).
+        A resposta traz `avisos` quando o setor não tem quem receba tarefas (o serviço
+        é criado mesmo assim).
       summary: Criar serviço
       tags:
       - ordens-servico
@@ -2942,7 +2951,9 @@ paths:
     put:
       operationId: ordens_servico_servicos_update
       description: Substitui integralmente os dados de um serviço. Campos calculados
-        são somente leitura e ignorados no body.
+        são somente leitura e ignorados no body. Trocar o `catalogo` por um de outro
+        setor só vale para serviço em aberto e sem tarefas (400 nos demais casos);
+        ele passa ao setor novo.
       summary: Atualizar serviço
       parameters:
       - in: path
@@ -2979,7 +2990,8 @@ paths:
     patch:
       operationId: ordens_servico_servicos_partial_update
       description: Atualiza um ou mais campos de um serviço. Campos calculados são
-        somente leitura e ignorados no body.
+        somente leitura e ignorados no body. Mesmas regras de troca de `catalogo`
+        da atualização completa.
       summary: Atualizar serviço parcialmente
       parameters:
       - in: path
@@ -3384,9 +3396,7 @@ paths:
   /api/organizacoes/funcoes/{id}/:
     get:
       operationId: organizacoes_funcoes_retrieve
-      description: |-
-        Para viewsets: ``permissoes_por_acao = {'create': (Permissao.X,), ...}``. Ações fora do mapa
-        exigem só autenticação; ações no mapa exigem ao menos uma das permissões listadas.
+      description: Acrescenta `avisos` às respostas de criar e editar do viewset.
       summary: Detalhar função
       parameters:
       - in: path
@@ -3447,6 +3457,8 @@ paths:
     patch:
       operationId: organizacoes_funcoes_partial_update
       description: Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`.
+        A resposta traz `avisos` se algum setor que executa catálogos ativos ficar
+        sem quem receba tarefas.
       summary: Atualizar função parcialmente
       parameters:
       - in: path
@@ -3592,9 +3604,7 @@ paths:
   /api/organizacoes/membros/{id}/:
     get:
       operationId: organizacoes_membros_retrieve
-      description: |-
-        Para viewsets: ``permissoes_por_acao = {'create': (Permissao.X,), ...}``. Ações fora do mapa
-        exigem só autenticação; ações no mapa exigem ao menos uma das permissões listadas.
+      description: Acrescenta `avisos` às respostas de criar e editar do viewset.
       summary: Detalhar vínculo
       parameters:
       - in: path
@@ -4313,18 +4323,16 @@ components:
         descricao:
           type: string
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+        gera_cobranca:
+          type: boolean
+          description: Indica se novas OS operacionais deste serviço geram cobrança
+            por padrão.
+        clientes_isentos_cobranca:
+          type: array
+          items:
+            type: integer
+          description: Clientes que não geram cobrança para este serviço, mesmo quando
+            a regra padrão cobra.
       required:
       - id
       - nome
@@ -4338,18 +4346,16 @@ components:
         descricao:
           type: string
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+        gera_cobranca:
+          type: boolean
+          description: Indica se novas OS operacionais deste serviço geram cobrança
+            por padrão.
+        clientes_isentos_cobranca:
+          type: array
+          items:
+            type: integer
+          description: Clientes que não geram cobrança para este serviço, mesmo quando
+            a regra padrão cobra.
       required:
       - nome
     CatalogoRequest:
@@ -4772,16 +4778,6 @@ components:
         * `aguardando_lancamento` - aguardando_lancamento
         * `mudou_apos_liberacao` - mudou_apos_liberacao
         * `mudou_apos_lancamento` - mudou_apos_lancamento
-    ComplexidadeEnum:
-      enum:
-      - 1
-      - 2
-      - 3
-      type: integer
-      description: |-
-        * `1` - Baixa
-        * `2` - Média
-        * `3` - Alta
     Concluidos:
       type: object
       properties:
@@ -6467,32 +6463,6 @@ components:
           type: string
           format: date
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        horas_estimadas_efetivas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          readOnly: true
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        complexidade_display:
-          type: string
-          nullable: true
-          readOnly: true
-        complexidade_efetiva:
-          type: integer
-          readOnly: true
-          nullable: true
         data_recebimento:
           type: string
           format: date
@@ -6512,6 +6482,7 @@ components:
           readOnly: true
         revisao_cliente:
           type: boolean
+          readOnly: true
         gera_cobranca:
           type: boolean
           readOnly: true
@@ -6560,12 +6531,9 @@ components:
       - cobranca_realizada
       - cobranca_realizada_por
       - cobranca_realizada_por_nome
-      - complexidade_display
-      - complexidade_efetiva
       - criada_em
       - data_liberacao_cobranca
       - gera_cobranca
-      - horas_estimadas_efetivas
       - id
       - liberada_cobranca_por
       - liberada_cobranca_por_nome
@@ -6573,6 +6541,7 @@ components:
       - prioridade_display
       - responsavel
       - responsavel_nome
+      - revisao_cliente
       - status_display
     OrdemServicoOperacionalList:
       type: object
@@ -6608,32 +6577,6 @@ components:
         prazo:
           type: string
           format: date
-          nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        horas_estimadas_efetivas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          readOnly: true
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        complexidade_display:
-          type: string
-          nullable: true
-          readOnly: true
-        complexidade_efetiva:
-          type: integer
-          readOnly: true
           nullable: true
         revisao_cliente:
           type: boolean
@@ -6690,10 +6633,7 @@ components:
       - cliente
       - cliente_nome
       - cobranca_realizada_por_nome
-      - complexidade_display
-      - complexidade_efetiva
       - criada_em
-      - horas_estimadas_efetivas
       - id
       - liberada_cobranca_por_nome
       - prioridade_display
@@ -6723,18 +6663,6 @@ components:
           type: string
           format: date
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
         data_recebimento:
           type: string
           format: date
@@ -6749,8 +6677,6 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/StatusMiniOSEnum'
-        revisao_cliente:
-          type: boolean
       required:
       - catalogo_operacional
       - cliente
@@ -7080,18 +7006,16 @@ components:
         descricao:
           type: string
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+        gera_cobranca:
+          type: boolean
+          description: Indica se novas OS operacionais deste serviço geram cobrança
+            por padrão.
+        clientes_isentos_cobranca:
+          type: array
+          items:
+            type: integer
+          description: Clientes que não geram cobrança para este serviço, mesmo quando
+            a regra padrão cobra.
     PatchedCatalogoRequest:
       type: object
       properties:
@@ -7229,18 +7153,6 @@ components:
           type: string
           format: date
           nullable: true
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          nullable: true
-          minimum: 0
-          maximum: 65535
-          oneOf:
-          - $ref: '#/components/schemas/ComplexidadeEnum'
-          - $ref: '#/components/schemas/NullEnum'
         data_recebimento:
           type: string
           format: date
@@ -7255,8 +7167,6 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/StatusMiniOSEnum'
-        revisao_cliente:
-          type: boolean
     PatchedOrdemServicoRequest:
       type: object
       description: |-
@@ -7399,7 +7309,9 @@ components:
           type: integer
         catalogo:
           type: integer
-          nullable: true
+          description: Obrigatório na criação. Na edição, troca por catálogo do mesmo
+            setor sempre; de outro setor, só com o serviço em aberto e sem tarefas
+            (ele passa ao setor novo, que recebe o aviso de chegada).
         descricao:
           type: string
           minLength: 1
@@ -7520,6 +7432,7 @@ components:
       - os.gerenciar
       - os.excluir
       - os_operacional.gerenciar
+      - catalogo_operacional.configurar_cobranca
       - financeiro.ver_valores
       - financeiro.registrar_cobranca
       - clientes.gerenciar
@@ -7542,6 +7455,7 @@ components:
         * `os.gerenciar` - Criar e editar OS e seus serviços
         * `os.excluir` - Excluir OS
         * `os_operacional.gerenciar` - Criar e editar OS operacionais e o catálogo operacional
+        * `catalogo_operacional.configurar_cobranca` - Configurar cobrança e exceções por cliente no catálogo operacional
         * `financeiro.ver_valores` - Ver valores e condições de pagamento
         * `financeiro.registrar_cobranca` - Registrar cobrança e nota fiscal
         * `clientes.gerenciar` - Criar, editar e excluir clientes
@@ -7855,7 +7769,9 @@ components:
           type: integer
         catalogo:
           type: integer
-          nullable: true
+          description: Obrigatório na criação. Na edição, troca por catálogo do mesmo
+            setor sempre; de outro setor, só com o serviço em aberto e sem tarefas
+            (ele passa ao setor novo, que recebe o aviso de chegada).
         catalogo_detail:
           allOf:
           - $ref: '#/components/schemas/Catalogo'
@@ -8413,7 +8329,9 @@ components:
           type: integer
         catalogo:
           type: integer
-          nullable: true
+          description: Obrigatório na criação. Na edição, troca por catálogo do mesmo
+            setor sempre; de outro setor, só com o serviço em aberto e sem tarefas
+            (ele passa ao setor novo, que recebe o aviso de chegada).
         descricao:
           type: string
           minLength: 1
@@ -9231,14 +9149,6 @@ components:
           type: integer
         catalogo_nome:
           type: string
-        horas_estimadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
-          nullable: true
-        complexidade:
-          type: integer
-          nullable: true
         total_concluidos:
           type: integer
         media_dias:
@@ -9247,8 +9157,6 @@ components:
       required:
       - catalogo_id
       - catalogo_nome
-      - complexidade
-      - horas_estimadas
       - media_dias
       - total_concluidos
     TemposMedios:

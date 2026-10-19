@@ -17,7 +17,6 @@ import { useClients } from '@/features/clientes/hooks';
 import { useUsers } from '@/features/time/hooks';
 import { opcoesDePessoas } from '@/features/time/utils';
 import { useCatalogosOperacionais } from '@/features/catalogo/hooks';
-import { COMPLEXIDADE_LABEL } from '@/features/catalogo/services';
 import {
   useOperationalOrderDetail,
   useCreateOperationalOrder,
@@ -38,8 +37,6 @@ interface FormState {
   prioridade: OperationalOrderPrioridade;
   status: OperationalOrderStatus;
   revisaoCliente: boolean;
-  horasEstimadas: string;
-  complexidade: string;
 }
 
 const defaultForm: FormState = {
@@ -55,8 +52,6 @@ const defaultForm: FormState = {
   prioridade: 'baixa',
   status: 'nao_iniciado',
   revisaoCliente: false,
-  horasEstimadas: '',
-  complexidade: '',
 };
 
 interface OperationalOrderFormProps {
@@ -96,20 +91,15 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
         prioridade: detail.prioridade,
         status: detail.status,
         revisaoCliente: detail.revisaoCliente,
-        horasEstimadas: detail.horasEstimadas ?? '',
-        complexidade: detail.complexidade ? String(detail.complexidade) : '',
       });
     }
   }, [open, isEdit, detail]);
-
-  const horasEstimadasValida = !form.horasEstimadas || /^\d+$/.test(form.horasEstimadas.trim());
 
   const isValid =
     form.cliente > 0 &&
     form.catalogoOperacional > 0 &&
     form.quantidade > 0 &&
-    !!form.dataRecebimento &&
-    horasEstimadasValida;
+    !!form.dataRecebimento;
   const isPending = createOrder.isPending || updateOrder.isPending;
 
   const handleSubmit = () => {
@@ -127,8 +117,6 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
       prioridade: form.prioridade,
       status: form.status,
       revisaoCliente: form.revisaoCliente,
-      horasEstimadas: form.horasEstimadas || null,
-      complexidade: form.complexidade ? Number(form.complexidade) : null,
     };
 
     if (isEdit && editId) {
@@ -310,41 +298,6 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
                   onChange={(e) => setForm({ ...form, prazo: e.target.value })}
                   className="bg-background border-border"
                 />
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Horas estimadas</p>
-                <Input
-                  inputMode="numeric"
-                  placeholder="Ex.: 6, 9, 10"
-                  value={form.horasEstimadas}
-                  onChange={(e) => setForm({ ...form, horasEstimadas: e.target.value })}
-                  className="bg-background border-border"
-                  aria-invalid={!horasEstimadasValida}
-                />
-                {!horasEstimadasValida && (
-                  <p className="text-xs text-destructive mt-1">
-                    Informe um número inteiro de horas (ex.: 6, 9, 10) — não use "06:00".
-                  </p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Complexidade</p>
-                <Select
-                  value={form.complexidade}
-                  onValueChange={(v) => setForm({ ...form, complexidade: v })}
-                >
-                  <SelectTrigger className="bg-background border-border">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(COMPLEXIDADE_LABEL).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 

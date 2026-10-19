@@ -92,8 +92,8 @@ class OperacionalAnaliseViewProdutividadeTests(AnaliseTestCase):
             for item in response.data['tempos_medios']['tempo_por_catalogo_servico']
         }
         entrada = entradas[self.catalogo.id]
-        self.assertIsNone(entrada['horas_estimadas'])
-        self.assertIsNone(entrada['complexidade'])
+        self.assertNotIn('horas_estimadas', entrada)
+        self.assertNotIn('complexidade', entrada)
 
     def test_taxa_cumprimento_prazo_global(self):
         self._login(self.usuarios[Perfil.GESTOR_TECNICO])

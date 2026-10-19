@@ -1,5 +1,4 @@
 from datetime import timedelta
-from decimal import Decimal
 
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -9,7 +8,7 @@ from apps.contas.models import Usuario
 from apps.organizacoes.apoio_testes import Perfil, criar_usuario_com_perfil, setor_padrao
 from apps.ordens_servico.models import OrdemServico, Prioridade
 from apps.ordens_servico.models import Servico
-from apps.catalogo.models.catalogo import Catalogo, Complexidade
+from apps.catalogo.models.catalogo import Catalogo
 from apps.ordens_servico.models.servico import StatusServico
 from apps.ordens_servico.models import Tarefa, OrdemServicoOperacional
 from apps.catalogo.models import CatalogoOperacional
@@ -169,7 +168,7 @@ class AnaliseTestCase(APITestCase):
         # catalogo (percentual, tempo medio, cancelamento) realmente discriminam grupos.
         self.catalogo_secundario = Catalogo.objects.create(setor=setor_padrao(), nome='Catalogo Secundario')
         self.catalogo_operacional_secundario = CatalogoOperacional.objects.create(
-            nome='Catalogo Operacional Secundario', horas_estimadas=Decimal('1.00'), complexidade=Complexidade.BAIXA,
+            nome='Catalogo Operacional Secundario',
         )
 
         os_secundario = OrdemServico.objects.create(cliente=self.cliente, data_venda=self.hoje, valor=0)

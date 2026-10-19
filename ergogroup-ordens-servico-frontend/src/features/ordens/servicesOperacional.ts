@@ -21,10 +21,6 @@ export interface OperationalOrderItem {
   prioridade: OperationalOrderPrioridade;
   prioridadeDisplay: string;
   prazo: string | null;
-  horasEstimadas: string | null;
-  horasEstimadasEfetivas: string | null;
-  complexidade: number | null;
-  complexidadeDisplay: string | null;
   revisaoCliente: boolean;
   geraCobranca: boolean;
   cobrancaRealizada: boolean;
@@ -59,8 +55,6 @@ export interface CreateOperationalOrderPayload {
   prioridade?: OperationalOrderPrioridade;
   status?: OperationalOrderStatus;
   revisaoCliente?: boolean;
-  horasEstimadas?: string | null;
-  complexidade?: number | null;
 }
 
 export interface UpdateOperationalOrderPayload {
@@ -76,8 +70,6 @@ export interface UpdateOperationalOrderPayload {
   prioridade?: OperationalOrderPrioridade;
   status?: OperationalOrderStatus;
   revisaoCliente?: boolean;
-  horasEstimadas?: string | null;
-  complexidade?: number | null;
 }
 
 export interface OperationalOrderListParams {
@@ -108,10 +100,6 @@ const normalizeItem = (dto: any): OperationalOrderItem => ({
   prioridade: dto.prioridade ?? 'baixa',
   prioridadeDisplay: dto.prioridade_display ?? '',
   prazo: dto.prazo ?? null,
-  horasEstimadas: dto.horas_estimadas ?? null,
-  horasEstimadasEfetivas: dto.horas_estimadas_efetivas ?? null,
-  complexidade: dto.complexidade ?? null,
-  complexidadeDisplay: dto.complexidade_display ?? null,
   revisaoCliente: Boolean(dto.revisao_cliente),
   geraCobranca: Boolean(dto.gera_cobranca),
   cobrancaRealizada: Boolean(dto.cobranca_realizada),
@@ -214,8 +202,6 @@ export const createOperationalOrder = async (
     prioridade: payload.prioridade ?? 'baixa',
     status: payload.status ?? 'nao_iniciado',
     revisao_cliente: payload.revisaoCliente ?? false,
-    horas_estimadas: payload.horasEstimadas ?? null,
-    complexidade: payload.complexidade ?? null,
   });
   return normalizeDetail(data);
 };
@@ -237,8 +223,6 @@ export const updateOperationalOrder = async (
   if (payload.prioridade !== undefined) body.prioridade = payload.prioridade;
   if (payload.status !== undefined) body.status = payload.status;
   if (payload.revisaoCliente !== undefined) body.revisao_cliente = payload.revisaoCliente;
-  if (payload.horasEstimadas !== undefined) body.horas_estimadas = payload.horasEstimadas;
-  if (payload.complexidade !== undefined) body.complexidade = payload.complexidade;
   const { data } = await api.patch(`${ENDPOINT}${id}/`, body);
   return normalizeDetail(data);
 };

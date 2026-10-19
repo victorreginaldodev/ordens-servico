@@ -59,10 +59,10 @@ class TarefaAdmin(admin.ModelAdmin):
 class OrdemServicoOperacionalAdmin(admin.ModelAdmin):
     list_display = [
         'id', 'cliente', 'catalogo_operacional', 'responsavel', 'status',
-        'prioridade', 'prazo', 'horas_estimadas', 'complexidade',
+        'prioridade', 'prazo',
         'gera_cobranca', 'cobranca_realizada', 'cobranca_realizada_por', 'data_recebimento',
     ]
-    list_filter = ['status', 'prioridade', 'complexidade', 'cobranca_realizada', 'revisao_cliente', 'gera_cobranca']
+    list_filter = ['status', 'prioridade', 'cobranca_realizada', 'revisao_cliente', 'gera_cobranca']
     search_fields = ['cliente__nome', 'catalogo_operacional__nome', 'responsavel__nome_completo']
     raw_id_fields = ['cliente', 'catalogo_operacional', 'responsavel', 'liberada_cobranca_por', 'cobranca_realizada_por']
     readonly_fields = [

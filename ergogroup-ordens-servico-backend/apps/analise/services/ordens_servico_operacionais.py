@@ -89,19 +89,16 @@ def calcular_tempo_por_catalogo_operacional() -> list[dict]:
         )
         .values_list(
             'catalogo_operacional_id', 'catalogo_operacional__nome',
-            'catalogo_operacional__horas_estimadas', 'catalogo_operacional__complexidade',
             'data_inicio', 'data_termino',
         )
     )
     mapa: dict[int, dict] = {}
-    for cat_id, cat_nome, horas_estimadas, complexidade, inicio, termino in rows:
+    for cat_id, cat_nome, inicio, termino in rows:
         dias = (termino - inicio).days
         if dias < 0:
             continue
         entry = mapa.setdefault(cat_id, {
             'nome': cat_nome,
-            'horas_estimadas': horas_estimadas,
-            'complexidade': complexidade,
             'dias': [],
         })
         entry['dias'].append(dias)
@@ -110,8 +107,6 @@ def calcular_tempo_por_catalogo_operacional() -> list[dict]:
             {
                 'catalogo_id': cat_id,
                 'catalogo_nome': data['nome'],
-                'horas_estimadas': data['horas_estimadas'],
-                'complexidade': data['complexidade'],
                 'total_concluidos': len(data['dias']),
                 'media_dias': round(sum(data['dias']) / len(data['dias']), 1),
             }

@@ -25,7 +25,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ListChecks, MoreVertical, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useCatalogosOperacionais, useDeleteCatalogoOperacional } from '../hooks';
-import { COMPLEXIDADE_DOT, COMPLEXIDADE_LABEL } from '../services';
 
 const PAGE_SIZE = 10;
 
@@ -40,13 +39,6 @@ function buildPageEntries(current: number, total: number): (number | 'ellipsis')
   entries.push(total);
   return entries;
 }
-
-const dotBadge = (dotColorClass: string, label: string) => (
-  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground">
-    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColorClass}`} />
-    {label}
-  </span>
-);
 
 const CatalogoOperacionalListPage = () => {
   const navigate = useNavigate();
@@ -124,8 +116,6 @@ const CatalogoOperacionalListPage = () => {
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="text-[11px] font-semibold tracking-widest uppercase text-muted-foreground py-2 px-3 w-[300px]">Nome</TableHead>
                   <TableHead className="text-[11px] font-semibold tracking-widest uppercase text-muted-foreground py-2 px-3 w-[320px]">Descrição</TableHead>
-                  <TableHead className="text-[11px] font-semibold tracking-widest uppercase text-muted-foreground py-2 px-3 w-[110px]">Complexidade</TableHead>
-                  <TableHead className="text-[11px] font-semibold tracking-widest uppercase text-muted-foreground py-2 px-3 w-[110px]">Horas estimadas</TableHead>
                   <TableHead className="py-2 px-3 w-[40px]" />
                 </TableRow>
               </TableHeader>
@@ -136,8 +126,6 @@ const CatalogoOperacionalListPage = () => {
                       <TableRow key={`skeleton-${idx}`} className="border-border">
                         <TableCell className="py-3 px-3"><Skeleton className="h-4 w-48" /></TableCell>
                         <TableCell className="py-3 px-3"><Skeleton className="h-4 w-32" /></TableCell>
-                        <TableCell className="py-3 px-3"><Skeleton className="h-3 w-20" /></TableCell>
-                        <TableCell className="py-3 px-3"><Skeleton className="h-3 w-16" /></TableCell>
                         <TableCell className="py-3 px-3" />
                       </TableRow>
                     ))
@@ -153,17 +141,6 @@ const CatalogoOperacionalListPage = () => {
 
                         <TableCell className="py-3 px-3 max-w-[320px]">
                           <span className="text-sm text-muted-foreground truncate block" title={item.descricao ?? undefined}>{item.descricao || '—'}</span>
-                        </TableCell>
-
-                        <TableCell className="py-3 px-3">
-                          {item.complexidade
-                            ? dotBadge(COMPLEXIDADE_DOT[item.complexidade], COMPLEXIDADE_LABEL[item.complexidade])
-                            : <span className="text-[11px] text-muted-foreground">—</span>
-                          }
-                        </TableCell>
-
-                        <TableCell className="py-3 px-3">
-                          <span className="text-sm tabular-nums">{item.horasEstimadas ?? '—'}</span>
                         </TableCell>
 
                         <TableCell className="py-3 px-3" onClick={(e) => e.stopPropagation()}>

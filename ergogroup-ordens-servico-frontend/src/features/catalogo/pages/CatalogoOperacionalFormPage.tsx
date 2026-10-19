@@ -6,25 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Save } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useCatalogoOperacional, useUpsertCatalogoOperacional } from '../hooks';
-import { Complexidade, COMPLEXIDADE_LABEL } from '../services';
 
 type FormValues = {
   nome: string;
   descricao: string;
-  horasEstimadas: string;
-  complexidade: string;
 };
 
 const CatalogoOperacionalFormPage = () => {
@@ -37,7 +27,7 @@ const CatalogoOperacionalFormPage = () => {
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
-    defaultValues: { nome: '', descricao: '', horasEstimadas: '', complexidade: '' },
+    defaultValues: { nome: '', descricao: '' },
   });
 
   useEffect(() => {
@@ -56,8 +46,6 @@ const CatalogoOperacionalFormPage = () => {
       form.reset({
         nome: catalogItem.nome ?? '',
         descricao: catalogItem.descricao ?? '',
-        horasEstimadas: catalogItem.horasEstimadas ?? '',
-        complexidade: catalogItem.complexidade ? String(catalogItem.complexidade) : '',
       });
     }
   }, [catalogItem]);
@@ -70,8 +58,6 @@ const CatalogoOperacionalFormPage = () => {
         payload: {
           nome: values.nome,
           descricao: values.descricao || null,
-          horasEstimadas: values.horasEstimadas || null,
-          complexidade: values.complexidade ? (Number(values.complexidade) as Complexidade) : null,
         },
       },
       {
@@ -132,33 +118,6 @@ const CatalogoOperacionalFormPage = () => {
                 {...form.register('descricao')}
                 className="bg-secondary border-border min-h-28"
               />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="horasEstimadas">Horas estimadas</Label>
-                <Input
-                  id="horasEstimadas"
-                  placeholder="Ex.: 2.5"
-                  {...form.register('horasEstimadas')}
-                  className="bg-secondary border-border"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Complexidade</Label>
-                <Select
-                  value={form.watch('complexidade')}
-                  onValueChange={(v) => form.setValue('complexidade', v)}
-                >
-                  <SelectTrigger className="bg-secondary border-border">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(COMPLEXIDADE_LABEL).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <Button
               type="submit"

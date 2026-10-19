@@ -56,6 +56,6 @@ class SubitemCatalogoAdmin(admin.ModelAdmin):
 
 @admin.register(CatalogoOperacional)
 class CatalogoOperacionalAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'descricao', 'horas_estimadas', 'complexidade']
-    list_filter = ['complexidade']
+    list_display = ['nome', 'descricao', 'gera_cobranca']
+    list_filter = ['gera_cobranca']
     search_fields = ['nome']

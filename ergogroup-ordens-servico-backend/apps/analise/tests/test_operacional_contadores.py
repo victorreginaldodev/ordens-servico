@@ -72,4 +72,5 @@ class OperacionalAnaliseViewContadoresTests(AnaliseTestCase):
         self.assertEqual(base['media_dias'], 0.0)
         self.assertEqual(secundario['total_concluidos'], 1)
         self.assertEqual(secundario['media_dias'], 2.0)
-        self.assertEqual(float(secundario['horas_estimadas']), 1.0)
+        self.assertNotIn('horas_estimadas', secundario)
+        self.assertNotIn('complexidade', secundario)

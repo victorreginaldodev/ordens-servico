@@ -559,7 +559,7 @@ export interface paths {
         head?: never;
         /**
          * Atualizar usuário parcialmente
-         * @description Atualiza um ou mais campos cadastrais de um usuário. Cada usuário pode editar o próprio cadastro; gestores podem editar qualquer usuário.
+         * @description Atualiza um ou mais campos cadastrais de um usuário. Cada usuário pode editar o próprio cadastro; gestores podem editar qualquer usuário. A resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.
          */
         patch: operations["contas_usuarios_partial_update"];
         trace?: never;
@@ -619,7 +619,7 @@ export interface paths {
         head?: never;
         /**
          * Desativar usuário
-         * @description Marca um usuário como inativo, bloqueando o acesso ao sistema. Requer perfil Gestor ou superior. Não é possível desativar o próprio usuário.
+         * @description Marca um usuário como inativo, bloqueando o acesso ao sistema. Requer perfil Gestor ou superior. Não é possível desativar o próprio usuário. A resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.
          */
         patch: operations["contas_usuarios_desativar_partial_update"];
         trace?: never;
@@ -999,7 +999,7 @@ export interface paths {
         put?: never;
         /**
          * Criar Ordem de Serviço Operacional
-         * @description Cria uma nova Ordem de Serviço Operacional. Se `revisao_cliente=true`, `gera_cobranca` é definido automaticamente como `true` e, ao finalizar, `data_liberacao_cobranca` e `liberada_cobranca_por` são preenchidos automaticamente.
+         * @description Cria uma nova Ordem de Serviço Operacional. `gera_cobranca` é fotografado automaticamente a partir da regra do catálogo e das exceções do cliente. Ao finalizar, `data_liberacao_cobranca` e `liberada_cobranca_por` são preenchidos automaticamente.
          */
         post: operations["ordens_servico_operacionais_create"];
         delete?: never;
@@ -1075,7 +1075,7 @@ export interface paths {
         put?: never;
         /**
          * Criar ordem de serviço
-         * @description Cria uma nova ordem de serviço. O campo `criado_por` é preenchido automaticamente com o usuário autenticado. Se `liberar_em=venda`, a OS já é criada com `liberada_para_cobranca=true`; com `liberar_em=conclusao`, é liberada quando todos os serviços terminam. A condição de pagamento é validada pelo `tipo_condicao` (à vista ou parcelado): o vencimento é obrigatório e é a data combinada (`data_acordada_cobranca`) ou os dias após a nota (`vencimento_dias_apos_nota`), nunca os dois; no parcelado ele é o da 1ª parcela, as parcelas são mensais e são pelo menos 2, e `dia_vencimento_demais` (1 a 31, opcional) fixa o dia das parcelas da 2ª em diante.
+         * @description Cria uma nova ordem de serviço. O campo `criado_por` é preenchido automaticamente com o usuário autenticado. Se `liberar_em=venda`, a OS já é criada com `liberada_para_cobranca=true`; com `liberar_em=conclusao`, é liberada quando todos os serviços terminam. A condição de pagamento é validada pelo `tipo_condicao` (à vista ou parcelado): o vencimento é obrigatório e é a data combinada (`data_acordada_cobranca`) ou os dias após a nota (`vencimento_dias_apos_nota`), nunca os dois; no parcelado ele é o da 1ª parcela, as parcelas são mensais e são pelo menos 2, e `dia_vencimento_demais` (1 a 31, opcional) fixa o dia das parcelas da 2ª em diante. Catálogo inativo ou de setor inativo dá 400. A resposta traz `avisos` quando algum serviço foi para um setor sem quem receba tarefas (a venda é registrada mesmo assim).
          */
         post: operations["ordens_servico_ordens_create"];
         delete?: never;
@@ -1191,7 +1191,7 @@ export interface paths {
         put?: never;
         /**
          * Criar serviço
-         * @description Cria um novo serviço vinculado a uma OS. Campos calculados (`status`, `data_inicio`, `data_termino`, `data_conclusao`, `terminado_por`) são somente leitura e gerenciados automaticamente pelas tarefas. `setor` é somente leitura e copiado do catálogo.
+         * @description Cria um novo serviço vinculado a uma OS. Campos calculados (`status`, `data_inicio`, `data_termino`, `data_conclusao`, `terminado_por`) são somente leitura e gerenciados automaticamente pelas tarefas. `setor` é somente leitura e copiado do catálogo. `catalogo` é obrigatório (ativo e de setor ativo). A resposta traz `avisos` quando o setor não tem quem receba tarefas (o serviço é criado mesmo assim).
          */
         post: operations["ordens_servico_servicos_create"];
         delete?: never;
@@ -1214,7 +1214,7 @@ export interface paths {
         get: operations["ordens_servico_servicos_retrieve"];
         /**
          * Atualizar serviço
-         * @description Substitui integralmente os dados de um serviço. Campos calculados são somente leitura e ignorados no body.
+         * @description Substitui integralmente os dados de um serviço. Campos calculados são somente leitura e ignorados no body. Trocar o `catalogo` por um de outro setor só vale para serviço em aberto e sem tarefas (400 nos demais casos); ele passa ao setor novo.
          */
         put: operations["ordens_servico_servicos_update"];
         post?: never;
@@ -1227,7 +1227,7 @@ export interface paths {
         head?: never;
         /**
          * Atualizar serviço parcialmente
-         * @description Atualiza um ou mais campos de um serviço. Campos calculados são somente leitura e ignorados no body.
+         * @description Atualiza um ou mais campos de um serviço. Campos calculados são somente leitura e ignorados no body. Mesmas regras de troca de `catalogo` da atualização completa.
          */
         patch: operations["ordens_servico_servicos_partial_update"];
         trace?: never;
@@ -1361,8 +1361,7 @@ export interface paths {
         };
         /**
          * Detalhar função
-         * @description Para viewsets: ``permissoes_por_acao = {'create': (Permissao.X,), ...}``. Ações fora do mapa
-         *     exigem só autenticação; ações no mapa exigem ao menos uma das permissões listadas.
+         * @description Acrescenta `avisos` às respostas de criar e editar do viewset.
          */
         get: operations["organizacoes_funcoes_retrieve"];
         /**
@@ -1380,7 +1379,7 @@ export interface paths {
         head?: never;
         /**
          * Atualizar função parcialmente
-         * @description Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`.
+         * @description Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`. A resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.
          */
         patch: operations["organizacoes_funcoes_partial_update"];
         trace?: never;
@@ -1438,8 +1437,7 @@ export interface paths {
         };
         /**
          * Detalhar vínculo
-         * @description Para viewsets: ``permissoes_por_acao = {'create': (Permissao.X,), ...}``. Ações fora do mapa
-         *     exigem só autenticação; ações no mapa exigem ao menos uma das permissões listadas.
+         * @description Acrescenta `avisos` às respostas de criar e editar do viewset.
          */
         get: operations["organizacoes_membros_retrieve"];
         /**
@@ -1684,16 +1682,18 @@ export interface components {
             readonly id: number;
             nome: string;
             descricao?: string | null;
-            /** Format: decimal */
-            horas_estimadas?: string | null;
-            complexidade?: (components["schemas"]["ComplexidadeEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Indica se novas OS operacionais deste serviço geram cobrança por padrão. */
+            gera_cobranca?: boolean;
+            /** @description Clientes que não geram cobrança para este serviço, mesmo quando a regra padrão cobra. */
+            clientes_isentos_cobranca?: number[];
         };
         CatalogoOperacionalRequest: {
             nome: string;
             descricao?: string | null;
-            /** Format: decimal */
-            horas_estimadas?: string | null;
-            complexidade?: (components["schemas"]["ComplexidadeEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Indica se novas OS operacionais deste serviço geram cobrança por padrão. */
+            gera_cobranca?: boolean;
+            /** @description Clientes que não geram cobrança para este serviço, mesmo quando a regra padrão cobra. */
+            clientes_isentos_cobranca?: number[];
         };
         CatalogoRequest: {
             nome: string;
@@ -1849,13 +1849,6 @@ export interface components {
          * @enum {string}
          */
         CodigoDaConferenciaEnum: "sync_conclusao" | "sync_venda" | "sync_servico" | "concluido_os_parada" | "sem_distribuir" | "vencimento_chegando" | "aguardando_lancamento" | "mudou_apos_liberacao" | "mudou_apos_lancamento";
-        /**
-         * @description * `1` - Baixa
-         *     * `2` - Média
-         *     * `3` - Alta
-         * @enum {integer}
-         */
-        ComplexidadeEnum: 1 | 2 | 3;
         Concluidos: {
             /** Format: date */
             de: string;
@@ -2512,13 +2505,6 @@ export interface components {
             readonly prioridade_display: string;
             /** Format: date */
             prazo?: string | null;
-            /** Format: decimal */
-            horas_estimadas?: string | null;
-            /** Format: decimal */
-            readonly horas_estimadas_efetivas: string | null;
-            complexidade?: (components["schemas"]["ComplexidadeEnum"] | components["schemas"]["NullEnum"]) | null;
-            readonly complexidade_display: string | null;
-            readonly complexidade_efetiva: number | null;
             /** Format: date */
             data_recebimento?: string | null;
             /** Format: date */
@@ -2527,7 +2513,7 @@ export interface components {
             data_termino?: string | null;
             status?: components["schemas"]["StatusMiniOSEnum"];
             readonly status_display: string;
-            revisao_cliente?: boolean;
+            readonly revisao_cliente: boolean;
             readonly gera_cobranca: boolean;
             /** Format: date-time */
             readonly data_liberacao_cobranca: string | null;
@@ -2556,13 +2542,6 @@ export interface components {
             readonly prioridade_display: string;
             /** Format: date */
             prazo?: string | null;
-            /** Format: decimal */
-            horas_estimadas?: string | null;
-            /** Format: decimal */
-            readonly horas_estimadas_efetivas: string | null;
-            complexidade?: (components["schemas"]["ComplexidadeEnum"] | components["schemas"]["NullEnum"]) | null;
-            readonly complexidade_display: string | null;
-            readonly complexidade_efetiva: number | null;
             revisao_cliente?: boolean;
             gera_cobranca?: boolean;
             /** Format: date-time */
@@ -2594,9 +2573,6 @@ export interface components {
             prioridade?: components["schemas"]["PrioridadeEnum"];
             /** Format: date */
             prazo?: string | null;
-            /** Format: decimal */
-            horas_estimadas?: string | null;
-            complexidade?: (components["schemas"]["ComplexidadeEnum"] | components["schemas"]["NullEnum"]) | null;
             /** Format: date */
             data_recebimento?: string | null;
             /** Format: date */
@@ -2604,7 +2580,6 @@ export interface components {
             /** Format: date */
             data_termino?: string | null;
             status?: components["schemas"]["StatusMiniOSEnum"];
-            revisao_cliente?: boolean;
         };
         /** @description Sem `financeiro.ver_valores`, valor e condições de pagamento não aparecem na resposta e
          *     são ignorados na edição. Na criação eles continuam aceitos, porque quem lança a venda informa o valor. */
@@ -2727,9 +2702,10 @@ export interface components {
         PatchedCatalogoOperacionalRequest: {
             nome?: string;
             descricao?: string | null;
-            /** Format: decimal */
-            horas_estimadas?: string | null;
-            complexidade?: (components["schemas"]["ComplexidadeEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Indica se novas OS operacionais deste serviço geram cobrança por padrão. */
+            gera_cobranca?: boolean;
+            /** @description Clientes que não geram cobrança para este serviço, mesmo quando a regra padrão cobra. */
+            clientes_isentos_cobranca?: number[];
         };
         PatchedCatalogoRequest: {
             nome?: string;
@@ -2795,9 +2771,6 @@ export interface components {
             prioridade?: components["schemas"]["PrioridadeEnum"];
             /** Format: date */
             prazo?: string | null;
-            /** Format: decimal */
-            horas_estimadas?: string | null;
-            complexidade?: (components["schemas"]["ComplexidadeEnum"] | components["schemas"]["NullEnum"]) | null;
             /** Format: date */
             data_recebimento?: string | null;
             /** Format: date */
@@ -2805,7 +2778,6 @@ export interface components {
             /** Format: date */
             data_termino?: string | null;
             status?: components["schemas"]["StatusMiniOSEnum"];
-            revisao_cliente?: boolean;
         };
         /** @description Sem `financeiro.ver_valores`, valor e condições de pagamento não aparecem na resposta e
          *     são ignorados na edição. Na criação eles continuam aceitos, porque quem lança a venda informa o valor. */
@@ -2862,7 +2834,8 @@ export interface components {
         };
         PatchedServicoRequest: {
             ordem_servico?: number;
-            catalogo?: number | null;
+            /** @description Obrigatório na criação. Na edição, troca por catálogo do mesmo setor sempre; de outro setor, só com o serviço em aberto e sem tarefas (ele passa ao setor novo, que recebe o aviso de chegada). */
+            catalogo?: number;
             descricao?: string;
             prioridade?: components["schemas"]["PrioridadeEnum"];
         };
@@ -2919,6 +2892,7 @@ export interface components {
          *     * `os.gerenciar` - Criar e editar OS e seus serviços
          *     * `os.excluir` - Excluir OS
          *     * `os_operacional.gerenciar` - Criar e editar OS operacionais e o catálogo operacional
+         *     * `catalogo_operacional.configurar_cobranca` - Configurar cobrança e exceções por cliente no catálogo operacional
          *     * `financeiro.ver_valores` - Ver valores e condições de pagamento
          *     * `financeiro.registrar_cobranca` - Registrar cobrança e nota fiscal
          *     * `clientes.gerenciar` - Criar, editar e excluir clientes
@@ -2937,7 +2911,7 @@ export interface components {
          *     * `setores.todos` - As permissões por setor valem em todos os setores
          * @enum {string}
          */
-        PermissoesEnum: "os.ver_todas" | "os.gerenciar" | "os.excluir" | "os_operacional.gerenciar" | "financeiro.ver_valores" | "financeiro.registrar_cobranca" | "clientes.gerenciar" | "catalogo.gerenciar" | "servicos.ver_setor" | "servicos.gerenciar" | "tarefas.distribuir" | "tarefas.editar_setor" | "tarefas.receber" | "usuarios.gerenciar" | "usuarios.gerenciar_diretoria" | "usuarios.redefinir_senha" | "organizacao.configurar" | "indicadores.ver_geral" | "auditoria.ver" | "setores.todos";
+        PermissoesEnum: "os.ver_todas" | "os.gerenciar" | "os.excluir" | "os_operacional.gerenciar" | "catalogo_operacional.configurar_cobranca" | "financeiro.ver_valores" | "financeiro.registrar_cobranca" | "clientes.gerenciar" | "catalogo.gerenciar" | "servicos.ver_setor" | "servicos.gerenciar" | "tarefas.distribuir" | "tarefas.editar_setor" | "tarefas.receber" | "usuarios.gerenciar" | "usuarios.gerenciar_diretoria" | "usuarios.redefinir_senha" | "organizacao.configurar" | "indicadores.ver_geral" | "auditoria.ver" | "setores.todos";
         PermissoesNoSetor: {
             setor: number;
             setor_nome: string;
@@ -3035,7 +3009,8 @@ export interface components {
         Servico: {
             readonly id: number;
             ordem_servico: number;
-            catalogo?: number | null;
+            /** @description Obrigatório na criação. Na edição, troca por catálogo do mesmo setor sempre; de outro setor, só com o serviço em aberto e sem tarefas (ele passa ao setor novo, que recebe o aviso de chegada). */
+            catalogo?: number;
             readonly catalogo_detail: components["schemas"]["Catalogo"];
             readonly setor: number | null;
             readonly setor_nome: string;
@@ -3220,7 +3195,8 @@ export interface components {
         };
         ServicoRequest: {
             ordem_servico: number;
-            catalogo?: number | null;
+            /** @description Obrigatório na criação. Na edição, troca por catálogo do mesmo setor sempre; de outro setor, só com o serviço em aberto e sem tarefas (ele passa ao setor novo, que recebe o aviso de chegada). */
+            catalogo?: number;
             descricao: string;
             prioridade?: components["schemas"]["PrioridadeEnum"];
         };
@@ -3543,9 +3519,6 @@ export interface components {
         TempoPorCatalogo: {
             catalogo_id: number;
             catalogo_nome: string;
-            /** Format: decimal */
-            horas_estimadas: string | null;
-            complexidade: number | null;
             total_concluidos: number;
             /** Format: double */
             media_dias: number;

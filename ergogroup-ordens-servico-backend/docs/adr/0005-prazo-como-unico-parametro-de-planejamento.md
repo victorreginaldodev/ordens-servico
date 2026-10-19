@@ -1,7 +1,7 @@
 # ADR 0005: Prazo como único parâmetro de planejamento
 
 ## Status
-Aceito e implementado (10/10/2026): migrações `ordens_servico/0025` a `0028` e `0035` (prazo do serviço calculado a partir das tarefas). Ver a fase 6 de `docs/plano-execucao-comercial-financeiro.md`.
+Aceito e implementado. Serviços e tarefas foram ajustados em 10/10/2026; catálogo operacional e OS operacional foram alinhados à mesma regra em 19/10/2026.
 
 ## Contexto
 O sistema tinha horas estimadas e complexidade no catálogo, no serviço, na tarefa e na OS operacional, com regras de cópia e herança entre eles (`docs/flows/horas-estimadas-prazos-e-indicadores.md` e ADR 0001).
@@ -17,11 +17,12 @@ Os dados do dev confirmam que as horas não são usadas: em 10/10/2026, só 2 da
 2. O **prazo** (data) é o único parâmetro de planejamento da execução. É definido por quem distribui o trabalho, no momento da distribuição (ADR 0006).
 3. Os indicadores de carga e de controle passam a se basear só em prazo, status e datas de movimentação (ADR 0006).
 4. Nenhum prazo padrão é calculado pelo sistema nem guardado no catálogo.
+5. A mesma regra vale para `CatalogoOperacional` e `OrdemServicoOperacional`: ambos deixam de armazenar e expor `horas_estimadas` e `complexidade`.
 
 ## Pontos de atenção para a implementação
 - Antes de remover as colunas, verificar no banco quantos registros têm valor. Em 10/10/2026 no dev: 2 tarefas com horas. O que existir se perde; registrar a contagem na migração.
-- A OS operacional e o catálogo operacional também têm horas e complexidade. A OS operacional está fora desta sprint; decidir junto com ela se seguem a mesma regra.
-- Indicadores e telas do frontend que mostram horas ou complexidade precisam ser ajustados.
+- A remoção das quatro colunas operacionais foi dividida em quatro migrações, uma alteração de schema por migração, por segurança no MySQL.
+- Os indicadores e as telas de catálogo operacional e OS operacional deixam de expor horas e complexidade.
 
 ## Consequências
 - Substitui o ADR 0001 e torna obsoleto `docs/flows/horas-estimadas-prazos-e-indicadores.md` no que diz respeito a horas e complexidade.

@@ -1,7 +1,6 @@
 import { ArrowRight, Receipt } from 'lucide-react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { avatarColor, initials } from '@/lib/avatar';
-import { COMPLEXIDADE_LABEL } from '@/features/catalogo/services';
 import { OperationalOrderItem } from '../servicesOperacional';
 import { STATUS_DOT, getStatusLabel } from '../utilsOperacional';
 import { formatDate } from '../utils';
@@ -44,16 +43,6 @@ export function OperationalOrderRow({ item, canManage, onEdit, onRegistrarCobran
             <span className="text-[11px] text-muted-foreground uppercase truncate max-w-[200px]">
               {item.catalogoOperacionalNome || '—'}
             </span>
-            {item.complexidade && (
-              <span className="text-[11px] text-muted-foreground">
-                · {COMPLEXIDADE_LABEL[item.complexidade as 1 | 2 | 3]}
-              </span>
-            )}
-            {item.horasEstimadas && (
-              <span className="text-[11px] text-muted-foreground">
-                · {item.horasEstimadas}h
-              </span>
-            )}
             {item.responsavelNome && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/60 py-0.5 pl-0.5 pr-2 text-[11px] font-medium text-foreground/80">
                 <span
