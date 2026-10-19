@@ -37,8 +37,9 @@ from apps.ordens_servico.serializers import (
     create=extend_schema(
         summary='Criar Ordem de Serviço Operacional',
         description=(
-            'Cria uma nova Ordem de Serviço Operacional. Se `revisao_cliente=true`, `gera_cobranca` é definido '
-            'automaticamente como `true` e, ao finalizar, `data_liberacao_cobranca` e '
+            'Cria uma nova Ordem de Serviço Operacional. `gera_cobranca` é fotografado automaticamente '
+            'a partir da regra do catálogo e das exceções do cliente. Ao finalizar, '
+            '`data_liberacao_cobranca` e '
             '`liberada_cobranca_por` são preenchidos automaticamente.'
         ),
     ),

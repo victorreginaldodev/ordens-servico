@@ -227,10 +227,12 @@ class NotificacoesEmailTestCase(APITestCase):
         self.assertEqual(mail.outbox[0].to, [self.comercial.email])
 
     def test_liberacao_e_cobranca_realizada_na_os_operacional(self):
-        catalogo_operacional = CatalogoOperacional.objects.create(nome='Catalogo Operacional Notif')
+        catalogo_operacional = CatalogoOperacional.objects.create(
+            nome='Catalogo Operacional Notif', gera_cobranca=True,
+        )
         oso = OrdemServicoOperacional.objects.create(
             cliente=self.cliente, catalogo_operacional=catalogo_operacional, responsavel=self.tecnico,
-            data_recebimento=timezone.localdate(), revisao_cliente=True,
+            data_recebimento=timezone.localdate(),
         )
 
         mail.outbox = []

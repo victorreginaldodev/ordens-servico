@@ -82,10 +82,12 @@ class OrdemServicoOperacional(models.Model):
 
     def clean(self):
         super().clean()
-        self.gera_cobranca = self.revisao_cliente
 
     def save(self, *args, **kwargs):
-        self.gera_cobranca = self.revisao_cliente
+        # A regra do catálogo é fotografada apenas na criação. Mudanças posteriores no
+        # catálogo ou nas exceções do cliente não alteram OSOs que já existiam.
+        if self._state.adding and self.catalogo_operacional_id and self.cliente_id:
+            self.gera_cobranca = self.catalogo_operacional.gera_cobranca_para(self.cliente_id)
         if self.gera_cobranca and self.status == StatusOrdemServicoOperacional.FINALIZADA:
             if self.data_liberacao_cobranca is None:
                 self.data_liberacao_cobranca = timezone.now()

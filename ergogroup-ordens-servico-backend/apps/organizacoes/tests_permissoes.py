@@ -20,12 +20,21 @@ class CatalogoDePermissoesTestCase(APITestCase):
     def test_usuario_sem_vinculo_nao_tem_permissoes(self):
         self.assertEqual(permissoes_do_usuario(criar_usuario(None)), frozenset())
 
-    def test_diretor_e_gestor_comercial_tem_todas_menos_receber_tarefas(self):
+    def test_diretor_tem_todas_menos_receber_tarefas(self):
         # Receber tarefas é por lotação ou por "também executa em", nunca por `setores.todos` (revisão, P2).
-        for tipo in (Perfil.DIRETOR, Perfil.GESTOR_COMERCIAL):
-            self.assertEqual(
-                permissoes_do_usuario(criar_usuario(tipo)), frozenset(Permissao) - {Permissao.TAREFAS_RECEBER},
-            )
+        self.assertEqual(
+            permissoes_do_usuario(criar_usuario(Perfil.DIRETOR)),
+            frozenset(Permissao) - {Permissao.TAREFAS_RECEBER},
+        )
+
+    def test_gestor_comercial_nao_configura_cobranca_do_catalogo_operacional(self):
+        self.assertEqual(
+            permissoes_do_usuario(criar_usuario(Perfil.GESTOR_COMERCIAL)),
+            frozenset(Permissao) - {
+                Permissao.TAREFAS_RECEBER,
+                Permissao.CATALOGO_OPERACIONAL_CONFIGURAR_COBRANCA,
+            },
+        )
 
     def test_superusuario_tem_todas(self):
         usuario = criar_usuario(Perfil.TECNICO, is_superuser=True)

@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 
 from apps.catalogo.models import CatalogoOperacional
 from apps.catalogo.serializers import CatalogoOperacionalSerializer
-from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin
+from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin, TemPermissao
 
 
 @extend_schema_view(
@@ -45,6 +45,15 @@ class CatalogoOperacionalViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
         'partial_update': (Permissao.OS_OPERACIONAL_GERENCIAR,),
         'destroy': (Permissao.OS_OPERACIONAL_GERENCIAR,),
     }
+    campos_de_cobranca = frozenset({'gera_cobranca', 'clientes_isentos_cobranca'})
+
+    def get_permissions(self):
+        permissoes = super().get_permissions()
+        if self.action in {'create', 'update', 'partial_update'} and (
+            self.campos_de_cobranca.intersection(self.request.data)
+        ):
+            permissoes.append(TemPermissao(Permissao.CATALOGO_OPERACIONAL_CONFIGURAR_COBRANCA))
+        return permissoes
 
     def get_queryset(self):
         queryset = super().get_queryset()

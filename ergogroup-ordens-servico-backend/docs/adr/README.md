@@ -14,6 +14,7 @@ Cada ADR registra uma decisão, o contexto em que foi tomada, as alternativas de
 | [0008](0008-acompanhamento-linha-do-tempo-comercial-e-financeiro.md) | Acompanhamento da execução, linha do tempo, visão comercial e controle financeiro | Aceito; backend implementado (fases 6 a 11); frontend pendente |
 | [0009](0009-ciencia-de-recebimento-no-servico-e-na-tarefa.md) | Ciência de recebimento no serviço e na tarefa (etapas Novo e A distribuir; Nova e A iniciar) | Aceito; backend implementado (fase 13); frontend pendente (fase 14) |
 | [0010](0010-notificacoes-por-email.md) | Notificações por e-mail: quatro e-mails de ação e um resumo diário de pendências | Aceito e implementado (15/10/2026); falta agendar o resumo diário no servidor |
+| [0011](0011-cobranca-do-catalogo-operacional.md) | Cobrança da OS operacional definida pelo catálogo, com exceções por cliente | Aceito; backend implementado, frontend pendente |
 
 Documentos relacionados:
 - `docs/conceitos-de-dominio.md` — glossário do domínio.

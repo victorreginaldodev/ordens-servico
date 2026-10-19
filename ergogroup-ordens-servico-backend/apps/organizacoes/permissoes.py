@@ -13,6 +13,10 @@ class Permissao(models.TextChoices):
     OS_GERENCIAR = 'os.gerenciar', 'Criar e editar OS e seus serviços'
     OS_EXCLUIR = 'os.excluir', 'Excluir OS'
     OS_OPERACIONAL_GERENCIAR = 'os_operacional.gerenciar', 'Criar e editar OS operacionais e o catálogo operacional'
+    CATALOGO_OPERACIONAL_CONFIGURAR_COBRANCA = (
+        'catalogo_operacional.configurar_cobranca',
+        'Configurar cobrança e exceções por cliente no catálogo operacional',
+    )
     FINANCEIRO_VER_VALORES = 'financeiro.ver_valores', 'Ver valores e condições de pagamento'
     FINANCEIRO_REGISTRAR_COBRANCA = 'financeiro.registrar_cobranca', 'Registrar cobrança e nota fiscal'
     CLIENTES_GERENCIAR = 'clientes.gerenciar', 'Criar, editar e excluir clientes'

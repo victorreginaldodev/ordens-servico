@@ -92,7 +92,7 @@ class OrdemServicoOperacionalSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'criada_em', 'atualizado_em',
-            'gera_cobranca', 'data_liberacao_cobranca',
+            'revisao_cliente', 'gera_cobranca', 'data_liberacao_cobranca',
             'liberada_cobranca_por', 'cobranca_realizada_por',
             # Cobrança só é registrada pelo endpoint dedicado, que valida a liberação.
             'cobranca_realizada', 'numero_nf',
