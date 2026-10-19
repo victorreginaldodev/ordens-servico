@@ -8,7 +8,7 @@ import {
   type DataTableRowAction,
   type DataTableView,
 } from '@/components/data-table';
-import { CobrancaBadge, PageHeader, PessoaChip, ToneBadge, getCobrancaSituacao } from '@/components/kit';
+import { COBRANCA_DEFS, CobrancaBadge, PageHeader, PessoaChip, ToneBadge, getCobrancaSituacao } from '@/components/kit';
 import { Button } from '@/components/ui/button';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { parseDate } from '@/lib/format';
@@ -16,7 +16,7 @@ import { AcaoComIcone } from '@/features/execucao/components/AcaoComIcone';
 import { useOperationalOrderList } from '../hooksOperacional';
 import type { OperationalOrderItem } from '../servicesOperacional';
 import { OperationalOrderForm } from '../components/OperationalOrderForm';
-import { OperationalOrderCobrancaDialog } from '../components/OperationalOrderCobrancaDialog';
+import { FaturarOperacionalModal } from '@/features/financeiro/components/FaturarOperacionalModal';
 
 type SituacaoDeCobranca = 'nao_gera' | 'nao_liberada' | 'liberada' | 'cobrada';
 
@@ -35,9 +35,14 @@ const situacaoDeCobranca = (o: OperationalOrderItem): SituacaoDeCobranca =>
 
 const NAO_GERA_COBRANCA = { tone: 'neutral', icon: CircleSlash, label: 'Não gera cobrança' } as const;
 
+/** A referência do lançamento; nas cobranças antigas, a NF do campo anterior ("0" não conta). */
+const referenciaDaCobranca = (o: OperationalOrderItem) =>
+  o.referenciaLancamento || (o.numeroNf && o.numeroNf.trim() !== '0' ? `NF ${o.numeroNf.trim()}` : undefined);
+
 function Cobranca({ item }: { item: OperationalOrderItem }) {
   if (!item.geraCobranca) return <ToneBadge def={NAO_GERA_COBRANCA} />;
-  return <CobrancaBadge liberada={!!item.dataLiberacaoCobranca} cobrada={item.cobrancaRealizada} nf={item.numeroNf} />;
+  if (item.cobrancaRealizada) return <ToneBadge def={COBRANCA_DEFS.cobrada} suffix={referenciaDaCobranca(item)} />;
+  return <CobrancaBadge liberada={!!item.dataLiberacaoCobranca} cobrada={false} />;
 }
 
 /** Nomes do cliente e do item do catálogo operacional aparecem sempre em maiúsculas, como no cadastro. */
@@ -83,7 +88,7 @@ const OperationalOrderListPage = () => {
 
   const [formAberto, setFormAberto] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
-  const [cobrancaItem, setCobrancaItem] = useState<OperationalOrderItem | null>(null);
+  const [faturar, setFaturar] = useState<number | null>(null);
 
   const nova = () => {
     setEditId(null);
@@ -122,7 +127,7 @@ const OperationalOrderListPage = () => {
 
   const acaoDaLinha = (o: OperationalOrderItem) =>
     podeRegistrarCobranca && situacaoDeCobranca(o) === 'liberada' ? (
-      <AcaoComIcone rotulo={`Registrar a cobrança da OSO ${o.id}`} icone={Receipt} onClick={() => setCobrancaItem(o)} />
+      <AcaoComIcone rotulo={`Registrar a cobrança da OSO ${o.id}`} icone={Receipt} onClick={() => setFaturar(o.id)} />
     ) : null;
   const acoesDoMenu = (o: OperationalOrderItem): DataTableRowAction<OperationalOrderItem>[] => [
     { label: 'Editar', icon: Pencil, onSelect: () => editar(o) },
@@ -152,7 +157,7 @@ const OperationalOrderListPage = () => {
         views={VIEWS}
         search={{
           placeholder: 'Buscar por cliente, serviço, responsável, número ou NF',
-          fields: (o) => [o.clienteNome, o.catalogoOperacionalNome, o.responsavelNome, o.id, `OSO ${o.id}`, o.numeroNf],
+          fields: (o) => [o.clienteNome, o.catalogoOperacionalNome, o.responsavelNome, o.id, `OSO ${o.id}`, referenciaDaCobranca(o)],
         }}
         facets={FACETS}
         periodFilter={PERIODOS}
@@ -186,12 +191,7 @@ const OperationalOrderListPage = () => {
         editId={editId}
       />
 
-      <OperationalOrderCobrancaDialog
-        item={cobrancaItem}
-        onOpenChange={(aberto) => {
-          if (!aberto) setCobrancaItem(null);
-        }}
-      />
+      <FaturarOperacionalModal id={faturar} onClose={() => setFaturar(null)} />
     </div>
   );
 };

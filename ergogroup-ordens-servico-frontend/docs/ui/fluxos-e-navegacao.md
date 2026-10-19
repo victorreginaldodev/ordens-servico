@@ -686,6 +686,15 @@ A tela saiu da tabela própria (filtros em dropdown, chips de filtros ativos e p
 - A lista vem inteira do backend (o endpoint não pagina) e a paginação, a busca e os filtros são do `DataTable`. Saíram `OperationalOrderFilters`, `OperationalOrderActiveFilters`, `OperationalOrderRow`, `OperationalOrderStatusBadge`, `utilsOperacional.ts`, `features/ordens/utils.ts` e a consulta paginada (`useOperationalOrderPage`).
 - O modal de criar e editar (`OperationalOrderForm`) e o de registrar cobrança não mudaram.
 
+### 6.11 Cobranças com as OS operacionais (19/10/2026, wireframe `lote7-cobrancas-oso.html` aprovado)
+
+- **Conferência:** a faixa grande do topo de Cobranças saiu. No lugar, um item pequeno no cabeçalho (`ResumoDaConferencia`): ponto colorido (verde, amarelo ou vermelho) e o resumo; ao abrir, as verificações com problema, "Verificar de novo" e "Abrir conferência".
+- **OS operacionais na mesma fila:** as três abas mostram vendas e OS operacionais. Coluna **Origem** (Venda em azul, OS operacional em roxo, com ícone) e coluna **Nº**; seletor **Todas · Vendas · OS operacionais** com a contagem da aba, na linha das abas ao lado do total da aba separado ("5 vendas · R$ … · 4 OS operacionais"), para a barra de filtros caber numa linha; a busca diz só "Buscar cliente, nº ou referência" para o texto não cortar.
+- **O que cobrar:** venda = quantos serviços; OS operacional = item do catálogo em maiúsculas e a quantidade. Para a OS operacional, Valor = "Definido no lançamento"; Condição, Vencimento, Falta, Vendido por e Forma = "—"; Liberação = "OS operacional finalizada"; Andamento = status da OSO; Com quem = responsável.
+- **Faturar a OS operacional:** modal único (regra de cobrança e liberação, cliente e o que cobrar com copiar, lançamento com referência e data). Abre em Cobranças, no resumo da OSO e na lista de OS operacionais (substitui o antigo "Registrar cobrança" só com a NF).
+- **Resumo da OS operacional:** `/cobrancas/operacionais/:id`, no padrão do resumo para faturar da venda.
+- **Conferência do faturamento:** os itens de OS operacional mostram o número com o selo "OS operacional" e abrem o resumo da OSO.
+
 ## 7. Como as telas se ligam
 
 ```

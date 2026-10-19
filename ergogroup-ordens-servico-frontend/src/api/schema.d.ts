@@ -913,7 +913,7 @@ export interface paths {
         };
         /**
          * Cobranças
-         * @description As OS de uma situação, com tudo o que o financeiro precisa para faturar: `a_faturar` (liberadas e ainda não lançadas, as mais antigas primeiro), `faturadas` (lançadas, as mais recentes primeiro) e `previsao` (ainda não liberadas, as mais perto de liberar primeiro; sem as canceladas). Com `todas`, as três numa chamada (a faturar, previsão e faturadas, nessa ordem). Traz os contadores das três situações sob os mesmos filtros, o que falta em cada OS da previsão (`pendentes`) e os códigos da conferência (`pendencias`). Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
+         * @description As OS de uma situação, com tudo o que o financeiro precisa para faturar: `a_faturar` (liberadas e ainda não lançadas, as mais antigas primeiro), `faturadas` (lançadas, as mais recentes primeiro) e `previsao` (ainda não liberadas, as mais perto de liberar primeiro; sem as canceladas). Com `todas`, as três numa chamada (a faturar, previsão e faturadas, nessa ordem). Traz os contadores das três situações sob os mesmos filtros, o que falta em cada OS da previsão (`pendentes`) e os códigos da conferência (`pendencias`). Em `operacionais`, as OS operacionais que geram cobrança, nas mesmas situações (sem valor nem condição; com `tipo_condicao` ou `forma_pagamento`, a lista vem vazia). Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
          */
         get: operations["financeiro_cobrancas_retrieve"];
         put?: never;
@@ -958,6 +958,26 @@ export interface paths {
          * @description Refaz a sincronização dos serviços e das OS ainda não liberadas (o mesmo que acontece quando uma tarefa é salva). Só aplica o que a regra manda; cada mudança fica na auditoria. Devolve quantos serviços mudaram de status e quantas OS foram liberadas.
          */
         post: operations["financeiro_conferencia_corrigir_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financeiro/operacionais/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Situação financeira da OS operacional
+         * @description O resumo para faturar a OS operacional: os dados do cliente, o que cobrar (item do catálogo, quantidade e descrição), a execução, a liberação, o lançamento, a regra de cobrança aplicada, as pendências da conferência e o histórico. Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
+         */
+        get: operations["financeiro_operacionais_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1055,7 +1075,7 @@ export interface paths {
         head?: never;
         /**
          * Registrar cobrança da Ordem de Serviço Operacional
-         * @description Marca a Ordem de Serviço Operacional como tendo a cobrança realizada, registrando o número da NF e o usuário responsável. Retorna 400 se ela não gerar cobrança ou ainda não estiver liberada para cobrança.
+         * @description Registra o lançamento da Ordem de Serviço Operacional no sistema financeiro externo: a referência (número da NF ou código), a data do lançamento (padrão: hoje) e quem registrou. Exige `financeiro.registrar_cobranca`. Retorna 400 se ela não gerar cobrança ou ainda não estiver liberada.
          */
         patch: operations["ordens_servico_operacionais_cobranca_partial_update"];
         trace?: never;
@@ -1835,6 +1855,11 @@ export interface components {
             /** @description A partir de quantos dias a OS liberada entra em alerta. */
             dias_alerta_sem_lancamento: number;
             ordens: components["schemas"]["LinhaDeCobranca"][];
+            /** @description As OS operacionais que geram cobrança, nas mesmas situações (19/10/2026). */
+            operacionais: components["schemas"]["LinhaDeCobrancaOperacional"][];
+            /** @description Quantas OS operacionais em cada situação. */
+            contadores_operacionais: components["schemas"]["ContadoresOperacionais"];
+            operacionais_em_alerta: number;
         };
         /**
          * @description * `sync_conclusao` - sync_conclusao
@@ -1846,9 +1871,12 @@ export interface components {
          *     * `aguardando_lancamento` - aguardando_lancamento
          *     * `mudou_apos_liberacao` - mudou_apos_liberacao
          *     * `mudou_apos_lancamento` - mudou_apos_lancamento
+         *     * `oso_sync_liberacao` - oso_sync_liberacao
+         *     * `oso_aguardando_lancamento` - oso_aguardando_lancamento
+         *     * `oso_sem_referencia` - oso_sem_referencia
          * @enum {string}
          */
-        CodigoDaConferenciaEnum: "sync_conclusao" | "sync_venda" | "sync_servico" | "concluido_os_parada" | "sem_distribuir" | "vencimento_chegando" | "aguardando_lancamento" | "mudou_apos_liberacao" | "mudou_apos_lancamento";
+        CodigoDaConferenciaEnum: "sync_conclusao" | "sync_venda" | "sync_servico" | "concluido_os_parada" | "sem_distribuir" | "vencimento_chegando" | "aguardando_lancamento" | "mudou_apos_liberacao" | "mudou_apos_lancamento" | "oso_sync_liberacao" | "oso_aguardando_lancamento" | "oso_sem_referencia";
         Concluidos: {
             /** Format: date */
             de: string;
@@ -1898,6 +1926,11 @@ export interface components {
             a_iniciar: number;
             em_andamento: number;
         };
+        ContadoresOperacionais: {
+            a_faturar: number;
+            faturadas: number;
+            previsao: number;
+        };
         /** @description Sem a observação da OS: ela é de pagamento e faturamento e fica só com quem vê valores. */
         ContextoDaOSDetalhe: {
             ordem_servico_id: number;
@@ -1911,6 +1944,7 @@ export interface components {
         Correcao: {
             servicos_corrigidos: number;
             ordens_liberadas: number;
+            operacionais_liberadas: number;
         };
         Detalhe: {
             detail: string;
@@ -2139,7 +2173,10 @@ export interface components {
             setores: number[];
         };
         ItemDaConferencia: {
-            ordem_servico_id: number;
+            /** @description Nulo nos itens de OS operacional. */
+            ordem_servico_id: number | null;
+            /** @description Só nos itens de OS operacional. */
+            ordem_servico_operacional_id: number | null;
             cliente_nome: string;
             servico_id: number | null;
             servico_nome: string | null;
@@ -2237,6 +2274,46 @@ export interface components {
             /** @description Códigos das verificações da conferência em que a OS aparece (faturamento/04). */
             pendencias: components["schemas"]["CodigoDaConferenciaEnum"][];
         };
+        LinhaDeCobrancaOperacional: {
+            ordem_servico_operacional_id: number;
+            situacao: (components["schemas"]["SituacaoEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Status da OS operacional. */
+            status: string;
+            cliente_id: number;
+            cliente_nome: string;
+            /** @description O item do catálogo operacional: o que cobrar. */
+            catalogo_operacional_nome: string;
+            quantidade: number;
+            descricao: string | null;
+            responsavel_nome: string | null;
+            /** Format: date */
+            data_recebimento: string | null;
+            /** Format: date */
+            data_inicio: string | null;
+            /** Format: date */
+            data_termino: string | null;
+            /** Format: date */
+            prazo: string | null;
+            /** Format: date-time */
+            liberada_para_cobranca_em: string | null;
+            liberada_para_cobranca_por_nome: string | null;
+            /** @description Referência do lançamento; nas cobranças antigas, a NF do campo anterior. */
+            referencia_lancamento: string | null;
+            /**
+             * Format: date
+             * @description Data do lançamento.
+             */
+            data_cobranca: string | null;
+            cobranca_realizada_por_nome: string | null;
+            /** @description Só nas OS operacionais a faturar. */
+            dias_aguardando_lancamento: number | null;
+            em_alerta: boolean;
+            /** @description Só na previsão. */
+            dias_sem_movimentacao: number | null;
+            /** Format: date-time */
+            criada_em: string;
+            pendencias: components["schemas"]["CodigoDaConferenciaEnum"][];
+        };
         LinhaDeTarefa: {
             tarefa_id: number;
             status: string;
@@ -2290,6 +2367,22 @@ export interface components {
         LogoutRequest: {
             refresh: string;
         };
+        MarcoDaOperacional: {
+            /** Format: date */
+            quando: string | null;
+            tipo: components["schemas"]["MarcoDaOperacionalTipoEnum"];
+            descricao: string;
+            pessoa_nome: string | null;
+        };
+        /**
+         * @description * `criada` - criada
+         *     * `iniciada` - iniciada
+         *     * `finalizada` - finalizada
+         *     * `liberacao` - liberacao
+         *     * `lancamento` - lancamento
+         * @enum {string}
+         */
+        MarcoDaOperacionalTipoEnum: "criada" | "iniciada" | "finalizada" | "liberacao" | "lancamento";
         MembroDaEquipe: {
             usuario_id: number;
             nome: string | null;
@@ -2521,6 +2614,9 @@ export interface components {
             readonly liberada_cobranca_por_nome: string | null;
             readonly cobranca_realizada: boolean;
             readonly numero_nf: string | null;
+            readonly referencia_lancamento: string | null;
+            /** Format: date */
+            readonly data_cobranca: string | null;
             readonly cobranca_realizada_por: number | null;
             readonly cobranca_realizada_por_nome: string | null;
             /** Format: date-time */
@@ -2550,6 +2646,9 @@ export interface components {
             readonly liberada_cobranca_por_nome: string | null;
             cobranca_realizada?: boolean;
             numero_nf?: string | null;
+            referencia_lancamento?: string | null;
+            /** Format: date */
+            data_cobranca?: string | null;
             cobranca_realizada_por?: number | null;
             readonly cobranca_realizada_por_nome: string | null;
             /** Format: date */
@@ -2824,6 +2923,14 @@ export interface components {
             uf?: string;
         };
         PatchedRegistrarCobrancaOSORequestRequest: {
+            /** @description Referência do lançamento no sistema financeiro externo (número da NF ou código). */
+            referencia_lancamento?: string | null;
+            /**
+             * Format: date
+             * @description Data do lançamento. Sem ela, vale a data de hoje.
+             */
+            data_cobranca?: string | null;
+            /** @description Campo anterior, mantido por compatibilidade. Use `referencia_lancamento`. */
             numero_nf?: string | null;
         };
         PatchedRegistrarCobrancaRequestRequest: {
@@ -3327,6 +3434,52 @@ export interface components {
             detalhe_pendencias: components["schemas"]["PendenciaDaOrdem"][];
             /** @description A linha do tempo da OS, do mais recente ao mais antigo. */
             eventos: components["schemas"]["EventoDoResumo"][];
+        };
+        SituacaoFinanceiraOperacional: {
+            ordem_servico_operacional_id: number;
+            situacao: (components["schemas"]["SituacaoEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Status da OS operacional. */
+            status: string;
+            cliente_id: number;
+            cliente_nome: string;
+            /** @description O item do catálogo operacional: o que cobrar. */
+            catalogo_operacional_nome: string;
+            quantidade: number;
+            descricao: string | null;
+            responsavel_nome: string | null;
+            /** Format: date */
+            data_recebimento: string | null;
+            /** Format: date */
+            data_inicio: string | null;
+            /** Format: date */
+            data_termino: string | null;
+            /** Format: date */
+            prazo: string | null;
+            /** Format: date-time */
+            liberada_para_cobranca_em: string | null;
+            liberada_para_cobranca_por_nome: string | null;
+            /** @description Referência do lançamento; nas cobranças antigas, a NF do campo anterior. */
+            referencia_lancamento: string | null;
+            /**
+             * Format: date
+             * @description Data do lançamento.
+             */
+            data_cobranca: string | null;
+            cobranca_realizada_por_nome: string | null;
+            /** @description Só nas OS operacionais a faturar. */
+            dias_aguardando_lancamento: number | null;
+            em_alerta: boolean;
+            /** @description Só na previsão. */
+            dias_sem_movimentacao: number | null;
+            /** Format: date-time */
+            criada_em: string;
+            pendencias: components["schemas"]["CodigoDaConferenciaEnum"][];
+            /** @description A regra aplicada na criação (catálogo e clientes isentos). */
+            gera_cobranca: boolean;
+            cliente: components["schemas"]["ClienteDoResumo"];
+            detalhe_pendencias: components["schemas"]["PendenciaDaOrdem"][];
+            /** @description Do mais recente ao mais antigo. */
+            historico: components["schemas"]["MarcoDaOperacional"][];
         };
         /**
          * @description * `atrasado` - atrasado
@@ -5375,6 +5528,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Correcao"];
+                };
+            };
+        };
+    };
+    financeiro_operacionais_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SituacaoFinanceiraOperacional"];
                 };
             };
         };

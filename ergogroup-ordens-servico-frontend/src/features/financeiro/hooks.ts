@@ -5,8 +5,11 @@ import {
   getConferencia,
   getIndicadoresFinanceiros,
   getSituacaoFinanceira,
+  getSituacaoFinanceiraOperacional,
   registrarLancamento,
+  registrarLancamentoOperacional,
   type FiltrosDeCobrancas,
+  type LancamentoOperacionalPayload,
   type LancamentoPayload,
 } from './services';
 
@@ -14,6 +17,7 @@ export const financeiroKeys = {
   todos: ['financeiro'] as const,
   cobrancas: (filtros: FiltrosDeCobrancas) => ['financeiro', 'cobrancas', filtros] as const,
   situacao: (ordemId: number) => ['financeiro', 'situacao', ordemId] as const,
+  situacaoOperacional: (id: number) => ['financeiro', 'situacao-operacional', id] as const,
   indicadores: ['financeiro', 'indicadores'] as const,
   conferencia: ['financeiro', 'conferencia'] as const,
 };
@@ -32,6 +36,25 @@ export const useSituacaoFinanceira = (ordemId: number | undefined) =>
     queryFn: () => getSituacaoFinanceira(ordemId!),
     enabled: !!ordemId,
   });
+
+export const useSituacaoFinanceiraOperacional = (id: number | undefined) =>
+  useQuery({
+    queryKey: financeiroKeys.situacaoOperacional(id ?? 0),
+    queryFn: () => getSituacaoFinanceiraOperacional(id!),
+    enabled: !!id,
+  });
+
+/** O lançamento da OS operacional muda as cobranças, a conferência e a lista de OS operacionais. */
+export const useRegistrarLancamentoOperacional = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: LancamentoOperacionalPayload }) => registrarLancamentoOperacional(id, payload),
+    onSuccess: () =>
+      Promise.all(
+        [financeiroKeys.todos, ['operational-order-list'], ['operational-order-detail']].map((queryKey) => qc.invalidateQueries({ queryKey })),
+      ),
+  });
+};
 
 export const useIndicadoresFinanceiros = (habilitado = true) =>
   useQuery({

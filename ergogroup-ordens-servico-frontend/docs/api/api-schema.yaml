@@ -2064,8 +2064,10 @@ paths:
         liberadas, as mais perto de liberar primeiro; sem as canceladas). Com `todas`,
         as três numa chamada (a faturar, previsão e faturadas, nessa ordem). Traz
         os contadores das três situações sob os mesmos filtros, o que falta em cada
-        OS da previsão (`pendentes`) e os códigos da conferência (`pendencias`). Exige
-        `financeiro.registrar_cobranca` e `financeiro.ver_valores`.'
+        OS da previsão (`pendentes`) e os códigos da conferência (`pendencias`). Em
+        `operacionais`, as OS operacionais que geram cobrança, nas mesmas situações
+        (sem valor nem condição; com `tipo_condicao` ou `forma_pagamento`, a lista
+        vem vazia). Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.'
       summary: Cobranças
       parameters:
       - in: query
@@ -2186,6 +2188,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Correcao'
+          description: ''
+  /api/financeiro/operacionais/{id}/:
+    get:
+      operationId: financeiro_operacionais_retrieve
+      description: 'O resumo para faturar a OS operacional: os dados do cliente, o
+        que cobrar (item do catálogo, quantidade e descrição), a execução, a liberação,
+        o lançamento, a regra de cobrança aplicada, as pendências da conferência e
+        o histórico. Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.'
+      summary: Situação financeira da OS operacional
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - financeiro
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SituacaoFinanceiraOperacional'
           description: ''
   /api/financeiro/ordens/{id}/:
     get:
@@ -2448,9 +2477,10 @@ paths:
   /api/ordens-servico/operacionais/{id}/cobranca/:
     patch:
       operationId: ordens_servico_operacionais_cobranca_partial_update
-      description: Marca a Ordem de Serviço Operacional como tendo a cobrança realizada,
-        registrando o número da NF e o usuário responsável. Retorna 400 se ela não
-        gerar cobrança ou ainda não estiver liberada para cobrança.
+      description: 'Registra o lançamento da Ordem de Serviço Operacional no sistema
+        financeiro externo: a referência (número da NF ou código), a data do lançamento
+        (padrão: hoje) e quem registrou. Exige `financeiro.registrar_cobranca`. Retorna
+        400 se ela não gerar cobrança ou ainda não estiver liberada.'
       summary: Registrar cobrança da Ordem de Serviço Operacional
       parameters:
       - in: path
@@ -4750,10 +4780,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LinhaDeCobranca'
+        operacionais:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinhaDeCobrancaOperacional'
+          description: As OS operacionais que geram cobrança, nas mesmas situações
+            (19/10/2026).
+        contadores_operacionais:
+          allOf:
+          - $ref: '#/components/schemas/ContadoresOperacionais'
+          description: Quantas OS operacionais em cada situação.
+        operacionais_em_alerta:
+          type: integer
       required:
       - contadores
+      - contadores_operacionais
       - dias_alerta_sem_lancamento
       - em_alerta
+      - operacionais
+      - operacionais_em_alerta
       - ordens
       - situacao
     CodigoDaConferenciaEnum:
@@ -4767,6 +4812,9 @@ components:
       - aguardando_lancamento
       - mudou_apos_liberacao
       - mudou_apos_lancamento
+      - oso_sync_liberacao
+      - oso_aguardando_lancamento
+      - oso_sem_referencia
       type: string
       description: |-
         * `sync_conclusao` - sync_conclusao
@@ -4778,6 +4826,9 @@ components:
         * `aguardando_lancamento` - aguardando_lancamento
         * `mudou_apos_liberacao` - mudou_apos_liberacao
         * `mudou_apos_lancamento` - mudou_apos_lancamento
+        * `oso_sync_liberacao` - oso_sync_liberacao
+        * `oso_aguardando_lancamento` - oso_aguardando_lancamento
+        * `oso_sem_referencia` - oso_sem_referencia
     Concluidos:
       type: object
       properties:
@@ -4899,6 +4950,19 @@ components:
       - a_iniciar
       - em_andamento
       - nova
+    ContadoresOperacionais:
+      type: object
+      properties:
+        a_faturar:
+          type: integer
+        faturadas:
+          type: integer
+        previsao:
+          type: integer
+      required:
+      - a_faturar
+      - faturadas
+      - previsao
     ContextoDaOSDetalhe:
       type: object
       description: 'Sem a observação da OS: ela é de pagamento e faturamento e fica
@@ -4932,7 +4996,10 @@ components:
           type: integer
         ordens_liberadas:
           type: integer
+        operacionais_liberadas:
+          type: integer
       required:
+      - operacionais_liberadas
       - ordens_liberadas
       - servicos_corrigidos
     Detalhe:
@@ -5462,6 +5529,12 @@ components:
       properties:
         ordem_servico_id:
           type: integer
+          nullable: true
+          description: Nulo nos itens de OS operacional.
+        ordem_servico_operacional_id:
+          type: integer
+          nullable: true
+          description: Só nos itens de OS operacional.
         cliente_nome:
           type: string
         servico_id:
@@ -5482,6 +5555,7 @@ components:
       - cliente_nome
       - detalhe
       - ordem_servico_id
+      - ordem_servico_operacional_id
       - responsavel_nome
       - servico_id
       - servico_nome
@@ -5709,6 +5783,111 @@ components:
       - vencimento_dias_apos_nota
       - vencimento_resumo
       - vendido_por_nome
+    LinhaDeCobrancaOperacional:
+      type: object
+      properties:
+        ordem_servico_operacional_id:
+          type: integer
+        situacao:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SituacaoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        status:
+          type: string
+          description: Status da OS operacional.
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        catalogo_operacional_nome:
+          type: string
+          description: 'O item do catálogo operacional: o que cobrar.'
+        quantidade:
+          type: integer
+        descricao:
+          type: string
+          nullable: true
+        responsavel_nome:
+          type: string
+          nullable: true
+        data_recebimento:
+          type: string
+          format: date
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        liberada_para_cobranca_em:
+          type: string
+          format: date-time
+          nullable: true
+        liberada_para_cobranca_por_nome:
+          type: string
+          nullable: true
+        referencia_lancamento:
+          type: string
+          nullable: true
+          description: Referência do lançamento; nas cobranças antigas, a NF do campo
+            anterior.
+        data_cobranca:
+          type: string
+          format: date
+          nullable: true
+          description: Data do lançamento.
+        cobranca_realizada_por_nome:
+          type: string
+          nullable: true
+        dias_aguardando_lancamento:
+          type: integer
+          nullable: true
+          description: Só nas OS operacionais a faturar.
+        em_alerta:
+          type: boolean
+        dias_sem_movimentacao:
+          type: integer
+          nullable: true
+          description: Só na previsão.
+        criada_em:
+          type: string
+          format: date-time
+        pendencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodigoDaConferenciaEnum'
+      required:
+      - catalogo_operacional_nome
+      - cliente_id
+      - cliente_nome
+      - cobranca_realizada_por_nome
+      - criada_em
+      - data_cobranca
+      - data_inicio
+      - data_recebimento
+      - data_termino
+      - descricao
+      - dias_aguardando_lancamento
+      - dias_sem_movimentacao
+      - em_alerta
+      - liberada_para_cobranca_em
+      - liberada_para_cobranca_por_nome
+      - ordem_servico_operacional_id
+      - pendencias
+      - prazo
+      - quantidade
+      - referencia_lancamento
+      - responsavel_nome
+      - situacao
+      - status
     LinhaDeTarefa:
       type: object
       properties:
@@ -5851,6 +6030,39 @@ components:
           minLength: 1
       required:
       - refresh
+    MarcoDaOperacional:
+      type: object
+      properties:
+        quando:
+          type: string
+          format: date
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/MarcoDaOperacionalTipoEnum'
+        descricao:
+          type: string
+        pessoa_nome:
+          type: string
+          nullable: true
+      required:
+      - descricao
+      - pessoa_nome
+      - quando
+      - tipo
+    MarcoDaOperacionalTipoEnum:
+      enum:
+      - criada
+      - iniciada
+      - finalizada
+      - liberacao
+      - lancamento
+      type: string
+      description: |-
+        * `criada` - criada
+        * `iniciada` - iniciada
+        * `finalizada` - finalizada
+        * `liberacao` - liberacao
+        * `lancamento` - lancamento
     MembroDaEquipe:
       type: object
       properties:
@@ -6506,6 +6718,15 @@ components:
           type: string
           readOnly: true
           nullable: true
+        referencia_lancamento:
+          type: string
+          readOnly: true
+          nullable: true
+        data_cobranca:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
         cobranca_realizada_por:
           type: integer
           readOnly: true
@@ -6532,6 +6753,7 @@ components:
       - cobranca_realizada_por
       - cobranca_realizada_por_nome
       - criada_em
+      - data_cobranca
       - data_liberacao_cobranca
       - gera_cobranca
       - id
@@ -6539,6 +6761,7 @@ components:
       - liberada_cobranca_por_nome
       - numero_nf
       - prioridade_display
+      - referencia_lancamento
       - responsavel
       - responsavel_nome
       - revisao_cliente
@@ -6599,6 +6822,14 @@ components:
           type: string
           nullable: true
           maxLength: 10
+        referencia_lancamento:
+          type: string
+          nullable: true
+          maxLength: 100
+        data_cobranca:
+          type: string
+          format: date
+          nullable: true
         cobranca_realizada_por:
           type: integer
           nullable: true
@@ -7284,10 +7515,21 @@ components:
     PatchedRegistrarCobrancaOSORequestRequest:
       type: object
       properties:
+        referencia_lancamento:
+          type: string
+          nullable: true
+          description: Referência do lançamento no sistema financeiro externo (número
+            da NF ou código).
+          maxLength: 100
+        data_cobranca:
+          type: string
+          format: date
+          nullable: true
+          description: Data do lançamento. Sem ela, vale a data de hoje.
         numero_nf:
           type: string
           nullable: true
-          minLength: 1
+          description: Campo anterior, mantido por compatibilidade. Use `referencia_lancamento`.
           maxLength: 10
     PatchedRegistrarCobrancaRequestRequest:
       type: object
@@ -8661,6 +8903,129 @@ components:
       - vencimento_dias_apos_nota
       - vencimento_resumo
       - vendido_por_nome
+    SituacaoFinanceiraOperacional:
+      type: object
+      properties:
+        ordem_servico_operacional_id:
+          type: integer
+        situacao:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/SituacaoEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        status:
+          type: string
+          description: Status da OS operacional.
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        catalogo_operacional_nome:
+          type: string
+          description: 'O item do catálogo operacional: o que cobrar.'
+        quantidade:
+          type: integer
+        descricao:
+          type: string
+          nullable: true
+        responsavel_nome:
+          type: string
+          nullable: true
+        data_recebimento:
+          type: string
+          format: date
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+        prazo:
+          type: string
+          format: date
+          nullable: true
+        liberada_para_cobranca_em:
+          type: string
+          format: date-time
+          nullable: true
+        liberada_para_cobranca_por_nome:
+          type: string
+          nullable: true
+        referencia_lancamento:
+          type: string
+          nullable: true
+          description: Referência do lançamento; nas cobranças antigas, a NF do campo
+            anterior.
+        data_cobranca:
+          type: string
+          format: date
+          nullable: true
+          description: Data do lançamento.
+        cobranca_realizada_por_nome:
+          type: string
+          nullable: true
+        dias_aguardando_lancamento:
+          type: integer
+          nullable: true
+          description: Só nas OS operacionais a faturar.
+        em_alerta:
+          type: boolean
+        dias_sem_movimentacao:
+          type: integer
+          nullable: true
+          description: Só na previsão.
+        criada_em:
+          type: string
+          format: date-time
+        pendencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodigoDaConferenciaEnum'
+        gera_cobranca:
+          type: boolean
+          description: A regra aplicada na criação (catálogo e clientes isentos).
+        cliente:
+          $ref: '#/components/schemas/ClienteDoResumo'
+        detalhe_pendencias:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendenciaDaOrdem'
+        historico:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarcoDaOperacional'
+          description: Do mais recente ao mais antigo.
+      required:
+      - catalogo_operacional_nome
+      - cliente
+      - cliente_id
+      - cliente_nome
+      - cobranca_realizada_por_nome
+      - criada_em
+      - data_cobranca
+      - data_inicio
+      - data_recebimento
+      - data_termino
+      - descricao
+      - detalhe_pendencias
+      - dias_aguardando_lancamento
+      - dias_sem_movimentacao
+      - em_alerta
+      - gera_cobranca
+      - historico
+      - liberada_para_cobranca_em
+      - liberada_para_cobranca_por_nome
+      - ordem_servico_operacional_id
+      - pendencias
+      - prazo
+      - quantidade
+      - referencia_lancamento
+      - responsavel_nome
+      - situacao
+      - status
     SituacaoPrazoEnum:
       enum:
       - atrasado

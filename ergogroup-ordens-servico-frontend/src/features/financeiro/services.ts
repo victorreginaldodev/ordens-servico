@@ -22,6 +22,10 @@ export type ItemDaConferencia = Esquemas['ItemDaConferencia'];
 export type Correcao = Esquemas['Correcao'];
 export type IndicadoresFinanceiros = Esquemas['FinanceiroAnaliseResponse'];
 export type LancamentoPayload = Esquemas['PatchedRegistrarCobrancaRequestRequest'];
+/** OS operacional nas Cobranças (19/10/2026): sem valor nem condição; o financeiro define o valor no lançamento. */
+export type LinhaOperacional = Esquemas['LinhaDeCobrancaOperacional'];
+export type SituacaoFinanceiraOperacional = Esquemas['SituacaoFinanceiraOperacional'];
+export type LancamentoOperacionalPayload = Esquemas['PatchedRegistrarCobrancaOSORequestRequest'];
 
 export type FiltrosDeCobrancas = FiltrosDe<'financeiro_cobrancas_retrieve'>;
 
@@ -51,6 +55,21 @@ export const getSituacaoFinanceira = async (ordemId: number): Promise<SituacaoFi
  */
 export const registrarLancamento = async (ordemId: number, payload: LancamentoPayload): Promise<Esquemas['OrdemServico']> => {
   const { data } = await api.patch<Esquemas['OrdemServico']>(`/api/ordens-servico/ordens/${ordemId}/cobranca/`, payload);
+  return data;
+};
+
+/**
+ * Resumo para faturar a OS operacional: cliente, o que cobrar, execução, liberação, lançamento, regra de cobrança,
+ * pendências da conferência e histórico. Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.
+ */
+export const getSituacaoFinanceiraOperacional = async (id: number): Promise<SituacaoFinanceiraOperacional> => {
+  const { data } = await api.get<SituacaoFinanceiraOperacional>(`/api/financeiro/operacionais/${id}/`);
+  return data;
+};
+
+/** Registra o lançamento da OS operacional: referência (opcional) e data (padrão: hoje). 400 se não estiver liberada. */
+export const registrarLancamentoOperacional = async (id: number, payload: LancamentoOperacionalPayload) => {
+  const { data } = await api.patch<Esquemas['OrdemServicoOperacional']>(`/api/ordens-servico/operacionais/${id}/cobranca/`, payload);
   return data;
 };
 

@@ -14,6 +14,9 @@ export const PENDENCIA: Record<CodigoDaConferencia, { rotulo: string; situacao: 
   aguardando_lancamento: { rotulo: 'Aguardando lançamento', situacao: 'a_faturar' },
   mudou_apos_liberacao: { rotulo: 'Mudou depois da liberação', situacao: 'a_faturar' },
   mudou_apos_lancamento: { rotulo: 'Mudou depois de faturada', situacao: 'faturadas' },
+  oso_sync_liberacao: { rotulo: 'OSO finalizada sem liberar', situacao: 'previsao', garantia: true },
+  oso_aguardando_lancamento: { rotulo: 'OSO aguardando lançamento', situacao: 'a_faturar' },
+  oso_sem_referencia: { rotulo: 'OSO faturada sem referência', situacao: 'faturadas' },
 };
 
 export const CODIGOS = Object.keys(PENDENCIA) as CodigoDaConferencia[];

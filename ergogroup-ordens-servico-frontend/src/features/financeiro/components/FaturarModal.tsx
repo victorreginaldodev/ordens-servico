@@ -13,56 +13,11 @@ import { formatCurrency, formatDate, formatDocumento, formatTelefone } from '@/l
 import { cn } from '@/lib/utils';
 import { useRegistrarLancamento, useSituacaoFinanceira } from '../hooks';
 import type { SituacaoFinanceira } from '../services';
+import { hoje } from '../lancamento';
+import { Dados, Secao, type Campo } from './DadosDoLancamento';
 
-const hoje = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
 const curta = (data: string | null | undefined) => (data ? formatDate(data)?.slice(0, 5) : null);
-
-interface Campo {
-  rotulo: string;
-  valor: string | null | undefined;
-  copiar?: boolean;
-  forte?: boolean;
-}
-
-function Secao({ titulo, icone: Icone, acao, children }: { titulo: string; icone: typeof Building2; acao?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section className="grid gap-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold">
-        <Icone className="size-4 text-muted-foreground" aria-hidden />
-        {titulo}
-        {acao ? <span className="ml-auto">{acao}</span> : null}
-      </h3>
-      {children}
-    </section>
-  );
-}
-
-/** Os dados em duas colunas, com copiar nos que entram no lançamento. */
-function Dados({ campos, onCopiar }: { campos: Campo[]; onCopiar: (rotulo: string, valor: string) => void }) {
-  return (
-    <dl className="grid gap-x-6 md:grid-cols-2">
-      {campos.map((c) => (
-        <div key={c.rotulo} className="grid min-w-0 grid-cols-[9.5rem_minmax(0,1fr)_1.75rem] items-center gap-2 border-b border-dashed py-1.5 text-sm">
-          <dt className="text-muted-foreground">{c.rotulo}</dt>
-          <dd className={cn('truncate', c.forte && 'font-semibold tabular-nums')} title={c.valor ?? undefined}>
-            {c.valor || <span className="text-muted-foreground">Não informado</span>}
-          </dd>
-          <dd>
-            {c.copiar && c.valor ? (
-              <Button variant="ghost" size="icon" className="size-7" aria-label={`Copiar ${c.rotulo.toLowerCase()}`} onClick={() => onCopiar(c.rotulo, c.valor!)}>
-                <Copy className="size-3.5" />
-              </Button>
-            ) : null}
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
 
 /** Por que a OS está liberada (pela regra: na venda ou na conclusão) e os avisos da conferência. */
 function Liberacao({ s }: { s: SituacaoFinanceira }) {

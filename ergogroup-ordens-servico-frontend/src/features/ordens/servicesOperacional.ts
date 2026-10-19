@@ -24,6 +24,9 @@ export interface OperationalOrderItem {
   geraCobranca: boolean;
   cobrancaRealizada: boolean;
   numeroNf: string | null;
+  /** Referência do lançamento no sistema financeiro (desde 19/10/2026); nas antigas, só `numeroNf`. */
+  referenciaLancamento: string | null;
+  dataCobranca: string | null;
   cobrancaRealizadaPorNome: string | null;
   dataLiberacaoCobranca: string | null;
   liberadaCobrancaPorNome: string | null;
@@ -90,6 +93,8 @@ const normalizeItem = (dto: any): OperationalOrderItem => ({
   geraCobranca: Boolean(dto.gera_cobranca),
   cobrancaRealizada: Boolean(dto.cobranca_realizada),
   numeroNf: dto.numero_nf ?? null,
+  referenciaLancamento: dto.referencia_lancamento ?? null,
+  dataCobranca: dto.data_cobranca ?? null,
   cobrancaRealizadaPorNome: dto.cobranca_realizada_por_nome ?? null,
   dataLiberacaoCobranca: dto.data_liberacao_cobranca ?? null,
   liberadaCobrancaPorNome: dto.liberada_cobranca_por_nome ?? null,
@@ -176,12 +181,4 @@ export const updateOperationalOrder = async (
 
 export const deleteOperationalOrder = async (id: number): Promise<void> => {
   await api.delete(`${ENDPOINT}${id}/`);
-};
-
-export const registrarCobrancaOperacional = async (
-  id: number,
-  numeroNf: string,
-): Promise<OperationalOrderDetail> => {
-  const { data } = await api.patch(`${ENDPOINT}${id}/cobranca/`, { numero_nf: numeroNf });
-  return normalizeDetail(data);
 };

@@ -5,7 +5,6 @@ import {
   createOperationalOrder,
   updateOperationalOrder,
   deleteOperationalOrder,
-  registrarCobrancaOperacional,
   CreateOperationalOrderPayload,
   UpdateOperationalOrderPayload,
 } from './servicesOperacional';
@@ -60,17 +59,5 @@ export const useDeleteOperationalOrder = () => {
   return useMutation({
     mutationFn: (id: number) => deleteOperationalOrder(id),
     onSuccess: () => invalidateList(qc),
-  });
-};
-
-export const useRegistrarCobrancaOperacional = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, numeroNf }: { id: number; numeroNf: string }) =>
-      registrarCobrancaOperacional(id, numeroNf),
-    onSuccess: (_, { id }) => {
-      invalidateList(qc);
-      qc.invalidateQueries({ queryKey: ['operational-order-detail', id] });
-    },
   });
 };

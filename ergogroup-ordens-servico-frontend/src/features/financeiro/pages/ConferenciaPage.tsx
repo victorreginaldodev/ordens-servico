@@ -11,6 +11,7 @@ import { ChecagemDaConferencia } from '../components/ChecagemDaConferencia';
 import { useChecagemDaConferencia } from '../useChecagemDaConferencia';
 import { useConferencia, useCorrigirConferencia } from '../hooks';
 import type { Verificacao } from '../services';
+import { OrigemDaCobranca } from '../components/OrigemDaCobranca';
 
 const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
 
@@ -41,7 +42,7 @@ function CartaoDaVerificacao({ v }: { v: Verificacao }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="h-10 border-b bg-secondary text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {['OS', 'Cliente', 'Serviço', 'Setor', 'Com quem', 'Detalhe', 'Ações'].map((h, i) => (
+                {['Nº', 'Cliente', 'Serviço', 'Setor', 'Com quem', 'Detalhe', 'Ações'].map((h, i) => (
                   <th key={h} className={cn('whitespace-nowrap px-3 text-left', i > 0 && 'border-l border-border/70', h === 'Ações' && 'text-right')}>
                     {h}
                   </th>
@@ -50,8 +51,15 @@ function CartaoDaVerificacao({ v }: { v: Verificacao }) {
             </thead>
             <tbody>
               {v.itens.map((item, i) => (
-                <tr key={`${item.ordem_servico_id}-${item.servico_id ?? i}`} className="border-b last:border-b-0">
-                  <td className="px-3 py-2.5 font-semibold tabular-nums">{item.ordem_servico_id}</td>
+                <tr key={`${item.ordem_servico_id ?? `oso-${item.ordem_servico_operacional_id}`}-${item.servico_id ?? i}`} className="border-b last:border-b-0">
+                  <td className="whitespace-nowrap px-3 py-2.5 font-semibold tabular-nums">
+                    {item.ordem_servico_id ?? (
+                      <span className="inline-flex items-center gap-1.5">
+                        {item.ordem_servico_operacional_id}
+                        <OrigemDaCobranca origem="oso" />
+                      </span>
+                    )}
+                  </td>
                   <td className="border-l border-border/70 max-w-72 truncate px-3 py-2.5 font-medium" title={item.cliente_nome}>
                     {item.cliente_nome}
                   </td>
@@ -71,7 +79,7 @@ function CartaoDaVerificacao({ v }: { v: Verificacao }) {
                   <td className="border-l border-border/70 min-w-64 px-3 py-2.5 text-muted-foreground">{item.detalhe}</td>
                   <td className="border-l border-border/70 px-3 py-2.5 text-right">
                     <Button size="sm" variant="outline" className="h-8" asChild>
-                      <Link to={`/cobrancas/${item.ordem_servico_id}`}>Abrir</Link>
+                      <Link to={item.ordem_servico_id ? `/cobrancas/${item.ordem_servico_id}` : `/cobrancas/operacionais/${item.ordem_servico_operacional_id}`}>Abrir</Link>
                     </Button>
                   </td>
                 </tr>
@@ -105,7 +113,7 @@ export default function ConferenciaPage() {
       onSuccess: (r) =>
         toast({
           title: 'Sincronização refeita',
-          description: `${plural(r.servicos_corrigidos, 'serviço corrigido', 'serviços corrigidos')} · ${plural(r.ordens_liberadas, 'venda liberada', 'vendas liberadas')}. Tudo fica registrado no histórico.`,
+          description: `${plural(r.servicos_corrigidos, 'serviço corrigido', 'serviços corrigidos')} · ${plural(r.ordens_liberadas, 'venda liberada', 'vendas liberadas')} · ${plural(r.operacionais_liberadas, 'OS operacional liberada', 'OS operacionais liberadas')}. Tudo fica registrado no histórico.`,
         }),
       onError: (e) => toast({ variant: 'destructive', title: 'Não foi possível corrigir', description: mensagemDeErro(e, 'Tente de novo.') }),
     });

@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe — Cobranças com OS operacionais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --background:0 0% 100%;--foreground:222 47% 11%;--card:0 0% 100%;
+  --muted:210 40% 96%;--muted-foreground:215 20% 42%;--border:214 32% 91%;
+  --accent:210 40% 96%;--primary:173 58% 31%;--primary-foreground:0 0% 100%;
+  --success-subtle:138 76% 96%;--success-strong:142 72% 26%;
+  --warning-subtle:48 96% 94%;--warning-strong:26 90% 33%;
+  --danger-subtle:0 86% 96%;--danger-strong:0 70% 40%;
+  --info-subtle:214 95% 96%;--info-strong:224 70% 42%;
+  --oso-subtle:262 83% 96%;--oso-strong:263 60% 42%;
+}
+[data-theme="dark"]{
+  --background:222 47% 6%;--foreground:210 40% 98%;--card:222 47% 8%;
+  --muted:222 30% 18%;--muted-foreground:215 20% 62%;--border:222 30% 18%;
+  --accent:222 30% 14%;--primary:173 55% 45%;--primary-foreground:222 47% 6%;
+  --success-subtle:172 50% 11%;--success-strong:142 69% 62%;
+  --warning-subtle:35 26% 14%;--warning-strong:43 96% 62%;
+  --danger-subtle:329 35% 12%;--danger-strong:0 91% 72%;
+  --info-subtle:219 55% 16%;--info-strong:213 94% 72%;
+  --oso-subtle:263 40% 16%;--oso-strong:262 90% 78%;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:hsl(var(--background));color:hsl(var(--foreground));font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+svg.lucide{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+.muted{color:hsl(var(--muted-foreground))}
+.num{font-variant-numeric:tabular-nums}
+.up{text-transform:uppercase}
+.b{font-weight:600}
+
+/* Barra do wireframe (fora do produto) */
+.wf{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 16px;background:repeating-linear-gradient(45deg,hsl(var(--muted)),hsl(var(--muted)) 6px,hsl(var(--background)) 6px,hsl(var(--background)) 12px);border-bottom:1px dashed hsl(var(--muted-foreground)/.5);font-size:12px}
+.wf b{font-weight:600}
+.seg{display:inline-flex;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--card));padding:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:hsl(var(--muted-foreground))}
+.seg button.on{background:hsl(var(--foreground));color:hsl(var(--background))}
+
+.page{max-width:1440px;margin:0 auto;padding:24px}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.ph h1{font-size:20px;line-height:28px;font-weight:700;letter-spacing:-.01em}
+.ph p{color:hsl(var(--muted-foreground));margin-top:2px}
+
+/* Conferência: um item pequeno no cabeçalho, no lugar da faixa grande */
+.conf{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;border:1px solid hsl(var(--border));font-size:12px;font-weight:500;cursor:pointer;background:hsl(var(--card));white-space:nowrap}
+.conf .dot{width:8px;height:8px;border-radius:50%}
+.conf.ok .dot{background:hsl(var(--success-strong))}
+.conf.at .dot{background:hsl(var(--warning-strong))}
+.conf.fa{border-color:hsl(var(--danger-strong)/.4);color:hsl(var(--danger-strong));background:hsl(var(--danger-subtle))}
+.conf.fa .dot{background:hsl(var(--danger-strong))}
+.pop{position:absolute;right:0;top:36px;width:340px;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:12px;box-shadow:0 12px 32px hsl(0 0% 0%/.12);padding:12px;z-index:30;display:none}
+.pop.on{display:block}
+.pop li{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed hsl(var(--border));font-size:13px;list-style:none}
+.pop ul{padding:0;margin:8px 0}
+
+/* Abas e toolbar do DataTable */
+.tabs{display:flex;align-items:center;gap:4px;border-bottom:1px solid hsl(var(--border));margin-bottom:12px}
+.tab{padding:8px 12px;border:0;background:none;cursor:pointer;font-weight:500;color:hsl(var(--muted-foreground));border-bottom:2px solid transparent;margin-bottom:-1px;display:inline-flex;gap:6px;align-items:center}
+.tab.on{color:hsl(var(--foreground));border-bottom-color:hsl(var(--primary))}
+.tab .c{font-size:12px;background:hsl(var(--muted));border-radius:999px;padding:0 7px}
+.tot{margin-left:auto;font-size:13px;color:hsl(var(--muted-foreground));display:flex;gap:10px;align-items:center}
+.tot b{color:hsl(var(--foreground))}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.inp{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid hsl(var(--border));border-radius:8px;min-width:300px;color:hsl(var(--muted-foreground))}
+.fil{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px;border:1px dashed hsl(var(--border));border-radius:8px;font-size:13px;font-weight:500;background:none;cursor:pointer}
+.fil.on{border-style:solid;background:hsl(var(--accent))}
+.ori{display:inline-flex;border:1px solid hsl(var(--border));border-radius:8px;padding:2px;height:34px}
+.ori button{border:0;background:none;padding:0 10px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:hsl(var(--muted-foreground));display:inline-flex;gap:6px;align-items:center}
+.ori button.on{background:hsl(var(--accent));color:hsl(var(--foreground))}
+.ori .n{font-size:11px;color:hsl(var(--muted-foreground))}
+
+/* Tabela */
+.tw{border:1px solid hsl(var(--border));border-radius:12px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));text-align:left;padding:9px 12px;background:hsl(var(--muted)/.5);white-space:nowrap;border-bottom:1px solid hsl(var(--border))}
+td{padding:10px 12px;border-bottom:1px solid hsl(var(--border));vertical-align:middle;white-space:nowrap}
+th+th,td+td{border-left:1px solid hsl(var(--border)/.7)}
+th.acao,td.acao{border-left:1px solid hsl(var(--border)/.7)}
+tr:hover td{background:hsl(var(--muted)/.35);cursor:pointer}
+tr.oso td:first-child{box-shadow:inset 3px 0 0 hsl(var(--oso-strong))}
+.r{text-align:right}
+.chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.chip svg{width:13px;height:13px}
+.c-venda{background:hsl(var(--info-subtle));color:hsl(var(--info-strong))}
+.c-oso{background:hsl(var(--oso-subtle));color:hsl(var(--oso-strong))}
+.c-warn{background:hsl(var(--warning-subtle));color:hsl(var(--warning-strong))}
+.c-ok{background:hsl(var(--success-subtle));color:hsl(var(--success-strong))}
+.c-neu{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+.c-dan{background:hsl(var(--danger-subtle));color:hsl(var(--danger-strong))}
+.na{color:hsl(var(--muted-foreground));font-style:italic}
+.pes{display:inline-flex;align-items:center;gap:6px}
+.pes i{width:22px;height:22px;border-radius:50%;background:hsl(var(--primary)/.15);color:hsl(var(--primary));display:grid;place-items:center;font-size:10px;font-weight:700;font-style:normal}
+.btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;border:1px solid hsl(var(--border));background:hsl(var(--card));font-size:13px;font-weight:500;cursor:pointer}
+.btn.pri{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:transparent}
+.btn.gh{border-color:transparent;background:none}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:12px;color:hsl(var(--muted-foreground))}
+.nota{margin-top:10px;font-size:12px;color:hsl(var(--muted-foreground))}
+
+/* Modal (um por vez, em etapas) */
+.ov{position:fixed;inset:0;background:hsl(222 47% 6%/.5);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:50}
+.ov.on{display:flex}
+.md{width:min(860px,100%);background:hsl(var(--card));border-radius:14px;border:1px solid hsl(var(--border));box-shadow:0 24px 60px hsl(0 0% 0%/.25)}
+.md-h{padding:18px 22px;border-bottom:1px solid hsl(var(--border));display:flex;gap:12px;align-items:flex-start}
+.md-h h2{font-size:17px;font-weight:700}
+.md-b{padding:18px 22px;display:grid;gap:20px}
+.md-f{padding:14px 22px;border-top:1px solid hsl(var(--border));display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sec h3{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:6px}
+.sec h3 svg{color:hsl(var(--muted-foreground))}
+dl.dd{display:grid;grid-template-columns:1fr 1fr;column-gap:24px}
+dl.dd div{display:grid;grid-template-columns:10rem 1fr 28px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed hsl(var(--border));font-size:13px}
+dl.dd dt{color:hsl(var(--muted-foreground))}
+dl.dd dd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp{width:26px;height:26px;border:0;background:none;border-radius:6px;display:grid;place-items:center;cursor:pointer;color:hsl(var(--muted-foreground))}
+.cp:hover{background:hsl(var(--accent))}
+.cp svg{width:13px;height:13px}
+.regra{display:flex;gap:10px;padding:10px 12px;border-radius:10px;background:hsl(var(--oso-subtle));color:hsl(var(--oso-strong));font-size:13px}
+.fld{display:grid;gap:6px}
+.fld label{font-size:13px;font-weight:500}
+.fld .in{height:36px;border:1px solid hsl(var(--border));border-radius:8px;padding:0 10px;display:flex;align-items:center;color:hsl(var(--muted-foreground))}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Detalhe */
+.grid3{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.blk{border:1px solid hsl(var(--border));border-radius:12px;padding:14px 16px}
+.blk h2{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;margin-bottom:8px}
+.hist li{list-style:none;display:flex;gap:10px;padding:6px 0;font-size:13px;border-bottom:1px dashed hsl(var(--border))}
+.hist{padding:0}
+.prop{border:1px dashed hsl(var(--warning-strong)/.6);background:hsl(var(--warning-subtle)/.6);border-radius:10px;padding:10px 12px;font-size:12px;color:hsl(var(--warning-strong));margin-top:16px}
+.prop b{font-weight:600}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="wf">
+  <b>Wireframe · Cobranças com OS operacionais (proposta, 19/10/2026)</b>
+  <span>Tela:</span>
+  <span class="seg" data-g="tela"><button class="on" data-v="lista">Cobranças</button><button data-v="detalhe">Detalhe da OSO</button></span>
+  <span>Aba:</span>
+  <span class="seg" data-g="aba"><button class="on" data-v="faturar">Para faturar</button><button data-v="exec">Em execução</button><button data-v="faturadas">Faturadas</button></span>
+  <span>Conferência:</span>
+  <span class="seg" data-g="conf"><button data-v="ok">Tudo conferido</button><button class="on" data-v="at">Pontos para olhar</button><button data-v="fa">Fora de sincronia</button></span>
+  <span class="seg" data-g="tema"><button class="on" data-v="light">Claro</button><button data-v="dark">Escuro</button></span>
+</div>
+
+<!-- ═════════════ LISTA ═════════════ -->
+<div class="page" id="t-lista">
+  <div class="ph">
+    <div>
+      <h1>Cobranças</h1>
+      <p>Vendas e OS operacionais que já podem ser faturadas, o que ainda está em execução e o que já foi lançado.</p>
+    </div>
+    <div style="position:relative">
+      <button class="conf at" id="confChip" title="Conferência do faturamento"><span class="dot"></span><span id="confTxt">Conferência · 2 pontos</span><i data-lucide="chevron-down"></i></button>
+      <div class="pop" id="confPop">
+        <div class="b">Conferência do faturamento</div>
+        <div class="muted" style="font-size:12px">Verificada às 14:32 · vendas e OS operacionais</div>
+        <ul>
+          <li><span>Serviço concluído fora de venda liberada</span><span class="b" style="color:hsl(var(--success-strong))">ok</span></li>
+          <li><span>Venda liberada sem lançamento há mais de 3 dias</span><span class="b" style="color:hsl(var(--warning-strong))">1</span></li>
+          <li><span>OSO finalizada que gera cobrança e não foi liberada</span><span class="b" style="color:hsl(var(--success-strong))">ok</span></li>
+          <li><span>OSO cobrada sem NF</span><span class="b" style="color:hsl(var(--warning-strong))">1</span></li>
+        </ul>
+        <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn gh"><i data-lucide="refresh-cw"></i>Verificar de novo</button><button class="btn">Abrir conferência</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="faturar">Para faturar <span class="c">9</span></button>
+    <button class="tab" data-tab="exec">Em execução <span class="c">27</span></button>
+    <button class="tab" data-tab="faturadas">Faturadas em outubro <span class="c">31</span></button>
+    <span class="tot" id="tot">
+      <span><b>5</b> vendas · <b class="num">R$ 38.450,00</b></span>
+      <span>·</span>
+      <span><b>4</b> OS operacionais</span>
+    </span>
+  </div>
+
+  <div class="bar">
+    <span class="inp"><i data-lucide="search"></i>Buscar cliente, nº da venda ou da OSO, referência ou NF</span>
+    <span class="ori" title="Origem da cobrança">
+      <button class="on">Todas <span class="n">9</span></button>
+      <button><i data-lucide="handshake"></i>Vendas <span class="n">5</span></button>
+      <button><i data-lucide="wrench"></i>OS operacionais <span class="n">4</span></button>
+    </span>
+    <button class="fil"><i data-lucide="circle-alert"></i>Precisa de atenção</button>
+    <button class="fil"><i data-lucide="plus-circle"></i>Cliente</button>
+    <button class="fil"><i data-lucide="plus-circle"></i>Condição</button>
+    <button class="fil"><i data-lucide="plus-circle"></i>Vendido por</button>
+    <button class="fil"><i data-lucide="calendar"></i>Liberada em</button>
+    <span style="margin-left:auto;display:flex;gap:6px"><button class="btn gh"><i data-lucide="columns-3"></i></button><button class="btn gh"><i data-lucide="rows-3"></i></button></span>
+  </div>
+
+  <!-- Para faturar -->
+  <div class="tw" id="a-faturar">
+    <table>
+      <thead><tr>
+        <th>Origem</th><th>Nº</th><th>Cliente</th><th>O que cobrar</th><th class="r">Valor</th><th>Condição</th><th>Vencimento</th><th>Liberada em</th><th>Liberação</th><th>Aguardando</th><th class="acao">Ações</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><span class="chip c-venda"><i data-lucide="handshake"></i>Venda</span></td><td class="num b">1042</td><td class="b up">Metalúrgica Exemplo Ltda</td><td>3 serviços</td><td class="r num">R$ 12.800,00</td><td><span class="chip c-neu">Parcelado</span> <span class="muted num">3x</span></td><td class="num" style="color:hsl(var(--warning-strong));font-weight:500">25/10/2026</td><td class="num">14/10/2026</td><td><span class="chip c-ok"><i data-lucide="check-check"></i>Serviços concluídos</span></td><td><span class="chip c-warn"><i data-lucide="alarm-clock"></i>5 dias</span></td><td class="acao"><button class="btn"><i data-lucide="receipt"></i>Faturar</button></td></tr>
+        <tr class="oso" data-abre="oso"><td><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional</span></td><td class="num b">3150</td><td class="b up">Transportes Modelo S.A.</td><td><span class="up b">Revisão PGR/PCMSO - Correção cliente</span> <span class="muted num">× 2</span></td><td class="r na">Definido no lançamento</td><td class="na">—</td><td class="na">—</td><td class="num">17/10/2026</td><td><span class="chip c-oso"><i data-lucide="flag"></i>OSO finalizada</span></td><td class="muted num">2 dias</td><td class="acao"><button class="btn" data-abre="oso"><i data-lucide="receipt"></i>Faturar</button></td></tr>
+        <tr><td><span class="chip c-venda"><i data-lucide="handshake"></i>Venda</span></td><td class="num b">1051</td><td class="b up">Clínica Fictícia ME</td><td>1 serviço</td><td class="r num">R$ 2.400,00</td><td><span class="chip c-neu">À vista</span></td><td class="num">21 dias após a nota</td><td class="num">18/10/2026</td><td><span class="chip c-warn"><i data-lucide="zap"></i>Na venda</span></td><td class="muted num">1 dia</td><td class="acao"><button class="btn"><i data-lucide="receipt"></i>Faturar</button></td></tr>
+        <tr class="oso" data-abre="oso"><td><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional</span></td><td class="num b">3162</td><td class="b up">Indústria Alfa Ltda</td><td><span class="up b">Revisão LTCAT - Correção cliente</span></td><td class="r na">Definido no lançamento</td><td class="na">—</td><td class="na">—</td><td class="num">18/10/2026</td><td><span class="chip c-oso"><i data-lucide="flag"></i>OSO finalizada</span></td><td class="muted num">1 dia</td><td class="acao"><button class="btn" data-abre="oso"><i data-lucide="receipt"></i>Faturar</button></td></tr>
+        <tr class="oso" data-abre="oso"><td><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional</span></td><td class="num b">3171</td><td class="b up">Construtora Beta S.A.</td><td><span class="up b">Inclusão de função</span> <span class="muted num">× 4</span></td><td class="r na">Definido no lançamento</td><td class="na">—</td><td class="na">—</td><td class="num">19/10/2026</td><td><span class="chip c-oso"><i data-lucide="flag"></i>OSO finalizada</span></td><td class="muted num">Liberada hoje</td><td class="acao"><button class="btn" data-abre="oso"><i data-lucide="receipt"></i>Faturar</button></td></tr>
+      </tbody>
+    </table>
+    <div class="foot"><span>Linhas com a borda roxa são OS operacionais.</span><span>1–5 de 9 · 25 por página</span></div>
+  </div>
+
+  <!-- Em execução -->
+  <div class="tw hide" id="a-exec">
+    <table>
+      <thead><tr>
+        <th>Origem</th><th>Nº</th><th>Cliente</th><th>O que cobrar</th><th class="r">Valor</th><th>Andamento</th><th>Falta</th><th>Com quem</th><th>Sem andamento há</th><th class="acao">Ações</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><span class="chip c-venda"><i data-lucide="handshake"></i>Venda</span></td><td class="num b">1060</td><td class="b up">Metalúrgica Exemplo Ltda</td><td>4 serviços</td><td class="r num">R$ 9.700,00</td><td><span class="num">2 de 4 concluídos</span></td><td><span class="up b">AET</span> <span class="chip c-neu">+1</span><div class="muted" style="font-size:12px">Ergonomia</div></td><td><span class="pes"><i>AS</i>Ana Souza</span></td><td class="muted num">3 dias</td><td class="acao"><button class="btn gh"><i data-lucide="ellipsis"></i></button></td></tr>
+        <tr class="oso"><td><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional</span></td><td class="num b">3180</td><td class="b up">Transportes Modelo S.A.</td><td><span class="up b">Revisão PCA - Correção cliente</span></td><td class="r na">Definido no lançamento</td><td><span class="chip c-info" style="background:hsl(var(--info-subtle));color:hsl(var(--info-strong))"><i data-lucide="circle-dot"></i>Em andamento</span></td><td class="na">—</td><td><span class="pes"><i>GL</i>Guilherme Lima</span></td><td style="color:hsl(var(--warning-strong));font-weight:500" class="num">8 dias</td><td class="acao"><button class="btn gh"><i data-lucide="ellipsis"></i></button></td></tr>
+        <tr class="oso"><td><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional</span></td><td class="num b">3184</td><td class="b up">Clínica Fictícia ME</td><td><span class="up b">Inclusão de exames</span> <span class="muted num">× 3</span></td><td class="r na">Definido no lançamento</td><td><span class="chip c-neu"><i data-lucide="circle-dashed"></i>Não iniciada</span></td><td class="na">—</td><td><span class="pes"><i>MR</i>Marina Rocha</span></td><td class="muted num">1 dia</td><td class="acao"><button class="btn gh"><i data-lucide="ellipsis"></i></button></td></tr>
+      </tbody>
+    </table>
+    <div class="foot"><span>Só entram as OS operacionais que geram cobrança (regra do catálogo, cliente não isento).</span><span>1–3 de 27</span></div>
+  </div>
+
+  <!-- Faturadas -->
+  <div class="tw hide" id="a-faturadas">
+    <table>
+      <thead><tr>
+        <th>Origem</th><th>Nº</th><th>Cliente</th><th>O que cobrar</th><th class="r">Valor</th><th>Condição</th><th>Referência / NF</th><th>Faturada em</th><th>Faturada por</th><th class="acao">Ações</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><span class="chip c-venda"><i data-lucide="handshake"></i>Venda</span></td><td class="num b">1033</td><td class="b up">Indústria Alfa Ltda</td><td>2 serviços</td><td class="r num">R$ 6.300,00</td><td><span class="chip c-neu">À vista</span></td><td class="num">NF 4567</td><td class="num">16/10/2026</td><td><span class="pes"><i>CF</i>Carla Ferreira</span></td><td class="acao"><button class="btn gh"><i data-lucide="ellipsis"></i></button></td></tr>
+        <tr class="oso"><td><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional</span></td><td class="num b">3122</td><td class="b up">Construtora Beta S.A.</td><td><span class="up b">Revisão PGR/PCMSO - Correção cliente</span></td><td class="r na">Definido no lançamento</td><td class="na">—</td><td class="num">NF 4571</td><td class="num">17/10/2026</td><td><span class="pes"><i>CF</i>Carla Ferreira</span></td><td class="acao"><button class="btn gh"><i data-lucide="ellipsis"></i></button></td></tr>
+      </tbody>
+    </table>
+    <div class="foot"><span>&nbsp;</span><span>1–2 de 31 · ‹ outubro de 2026 ›</span></div>
+  </div>
+
+  <p class="nota">“Aguardando” fica em destaque a partir de 3 dias da liberação; o vencimento, a partir de 7 dias antes. Clique numa OS operacional para abrir “Faturar OS operacional”.</p>
+
+  <div class="prop">
+    <b>Pontos que dependem de decisão (proposta):</b>
+    1) a OS operacional não tem valor, condição nem vencimento no sistema: a tabela mostra “Definido no lançamento” e “—”, e o total da aba conta as OSOs sem somar valor;
+    2) para registrar como nas vendas, a OSO precisa guardar a data do lançamento e uma referência (hoje só guarda a NF, com até 10 caracteres);
+    3) a lista de Cobranças (<code>/api/financeiro/cobrancas/</code>) passaria a trazer as OSOs, com um campo de origem;
+    4) a conferência ganharia as verificações das OSOs (finalizada sem liberação, cobrada sem NF).
+  </div>
+</div>
+
+<!-- ═════════════ DETALHE DA OSO ═════════════ -->
+<div class="page hide" id="t-detalhe">
+  <div class="ph">
+    <div>
+      <div class="muted" style="font-size:12px;display:flex;gap:6px;align-items:center"><i data-lucide="arrow-left"></i>Cobranças</div>
+      <h1 class="up" style="margin-top:4px">Transportes Modelo S.A.</h1>
+      <p style="display:flex;gap:8px;align-items:center;margin-top:6px"><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional 3150</span><span class="chip c-warn"><i data-lucide="clock"></i>A cobrar</span><span class="muted">Liberada em 17/10/2026 por Guilherme Lima</span></p>
+    </div>
+    <div style="display:flex;gap:8px"><button class="btn"><i data-lucide="copy"></i>Copiar dados</button><button class="btn pri" data-abre="oso"><i data-lucide="receipt"></i>Faturar</button></div>
+  </div>
+
+  <div class="grid3">
+    <div class="blk">
+      <h2><i data-lucide="file-text"></i>Para lançar no sistema financeiro</h2>
+      <dl class="dd">
+        <div><dt>Razão social</dt><dd class="b up">Transportes Modelo S.A.</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        <div><dt>CNPJ</dt><dd class="num">98.765.432/0001-10</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        <div><dt>Tipo de cliente</dt><dd>Gestão</dd><span></span></div>
+        <div><dt>Representante</dt><dd>Paulo Mendes</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        <div><dt>E-mail</dt><dd>paulo@modelo.test</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        <div><dt>Telefone</dt><dd class="num">(41) 99999-0000</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        <div><dt>Serviço</dt><dd class="b up">Revisão PGR/PCMSO - Correção cliente</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        <div><dt>Quantidade</dt><dd class="num">2</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        <div style="grid-column:1/-1;grid-template-columns:10rem 1fr 28px"><dt>Descrição</dt><dd style="white-space:normal">Revisão do PGR e do PCMSO após inclusão de duas funções pelo cliente.</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+      </dl>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start">
+      <div class="blk">
+        <h2><i data-lucide="receipt"></i>Lançamento</h2>
+        <p class="muted" style="font-size:13px">Ainda não faturada. Aguardando há 2 dias.</p>
+      </div>
+      <div class="blk">
+        <h2><i data-lucide="scale"></i>Regra de cobrança</h2>
+        <div class="regra"><i data-lucide="shield-check"></i><span>Gera cobrança: o serviço é cobrável no catálogo e o cliente não está entre os isentos. Regra aplicada quando a OSO foi criada, em 10/10/2026.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:16px">
+    <div class="blk">
+      <h2><i data-lucide="wrench"></i>Execução</h2>
+      <dl class="dd">
+        <div><dt>Responsável</dt><dd>Guilherme Lima</dd><span></span></div>
+        <div><dt>Status</dt><dd>Finalizada</dd><span></span></div>
+        <div><dt>Recebimento</dt><dd class="num">10/10/2026</dd><span></span></div>
+        <div><dt>Início</dt><dd class="num">14/10/2026</dd><span></span></div>
+        <div><dt>Término</dt><dd class="num">17/10/2026</dd><span></span></div>
+        <div><dt>Prazo</dt><dd class="num">20/10/2026</dd><span></span></div>
+      </dl>
+    </div>
+    <div class="blk">
+      <h2><i data-lucide="history"></i>Histórico</h2>
+      <ul class="hist">
+        <li><span class="muted num">10/10</span><span>Criada por Ana Souza · regra: gera cobrança</span></li>
+        <li><span class="muted num">14/10</span><span>Iniciada por Guilherme Lima</span></li>
+        <li><span class="muted num">17/10</span><span>Finalizada e liberada para cobrança</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════ MODAL: FATURAR OS OPERACIONAL ═════════════ -->
+<div class="ov" id="ov">
+  <div class="md" role="dialog" aria-label="Faturar OS operacional">
+    <div class="md-h">
+      <div style="flex:1">
+        <h2>Faturar OS operacional 3150</h2>
+        <p class="muted" style="margin-top:4px;display:flex;gap:8px;align-items:center"><span class="chip c-oso"><i data-lucide="wrench"></i>OS operacional</span><span class="up">Transportes Modelo S.A.</span></p>
+      </div>
+      <button class="btn gh" id="fecha"><i data-lucide="x"></i></button>
+    </div>
+    <div class="md-b">
+      <div class="sec">
+        <h3><i data-lucide="building-2"></i>Cliente <span style="margin-left:auto"><button class="btn gh"><i data-lucide="copy"></i>Copiar tudo</button></span></h3>
+        <dl class="dd">
+          <div><dt>Razão social</dt><dd class="b up">Transportes Modelo S.A.</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+          <div><dt>CNPJ</dt><dd class="num">98.765.432/0001-10</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+          <div><dt>Representante</dt><dd>Paulo Mendes</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+          <div><dt>E-mail</dt><dd>paulo@modelo.test</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        </dl>
+      </div>
+      <div class="sec">
+        <h3><i data-lucide="wrench"></i>O que cobrar</h3>
+        <dl class="dd">
+          <div><dt>Serviço</dt><dd class="b up">Revisão PGR/PCMSO - Correção cliente</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+          <div><dt>Quantidade</dt><dd class="num">2</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+          <div><dt>Responsável</dt><dd>Guilherme Lima</dd><span></span></div>
+          <div><dt>Término</dt><dd class="num">17/10/2026</dd><span></span></div>
+          <div><dt>Liberada em</dt><dd class="num">17/10/2026 · OSO finalizada</dd><span></span></div>
+          <div><dt>Recebimento</dt><dd class="num">10/10/2026</dd><span></span></div>
+          <div style="grid-column:1/-1;grid-template-columns:10rem 1fr 28px"><dt>Descrição</dt><dd style="white-space:normal">Revisão do PGR e do PCMSO após inclusão de duas funções pelo cliente.</dd><button class="cp"><i data-lucide="copy"></i></button></div>
+        </dl>
+        <div class="regra" style="margin-top:10px"><i data-lucide="shield-check"></i><span>Gera cobrança pela regra do catálogo: serviço cobrável e cliente não isento (aplicada em 10/10/2026).</span></div>
+      </div>
+      <div class="sec">
+        <h3><i data-lucide="receipt"></i>Lançamento</h3>
+        <div class="g2">
+          <div class="fld"><label>Número da NF</label><div class="in">Ex.: 4572</div></div>
+          <div class="fld"><label>Data do lançamento <span class="chip c-warn" style="height:18px;font-size:11px">proposta</span></label><div class="in num">19/10/2026</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="md-f">
+      <button class="btn gh">Ver detalhe da OSO</button>
+      <span style="display:flex;gap:8px"><button class="btn" id="cancela">Cancelar</button><button class="btn pri"><i data-lucide="check"></i>Registrar cobrança</button></span>
+    </div>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const st={tela:'lista',aba:'faturar',conf:'at',tema:'light'};
+const totais={
+  faturar:'<span><b>5</b> vendas · <b class="num">R$ 38.450,00</b></span><span>·</span><span><b>4</b> OS operacionais</span>',
+  exec:'<span><b>14</b> vendas · <b class="num">R$ 61.900,00</b></span><span>·</span><span><b>13</b> OS operacionais</span>',
+  faturadas:'<span><b>22</b> vendas · <b class="num">R$ 104.200,00</b></span><span>·</span><span><b>9</b> OS operacionais</span>'};
+const confTxt={ok:'Tudo conferido',at:'Conferência · 2 pontos',fa:'1 item fora de sincronia'};
+function render(){
+  $('#t-lista').classList.toggle('hide',st.tela!=='lista');
+  $('#t-detalhe').classList.toggle('hide',st.tela!=='detalhe');
+  ['faturar','exec','faturadas'].forEach(a=>$('#a-'+a).classList.toggle('hide',st.aba!==a));
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===st.aba));
+  $('#tot').innerHTML=totais[st.aba];
+  const c=$('#confChip'); c.className='conf '+st.conf; $('#confTxt').textContent=confTxt[st.conf];
+  document.documentElement.dataset.theme=st.tema;
+  $$('.seg').forEach(s=>$$('button',s).forEach(b=>b.classList.toggle('on',st[s.dataset.g]===b.dataset.v)));
+}
+$$('.seg').forEach(s=>s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st[s.dataset.g]=b.dataset.v;render();}));
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{st.aba=t.dataset.tab;render();}));
+$('#confChip').addEventListener('click',e=>{e.stopPropagation();$('#confPop').classList.toggle('on');});
+document.addEventListener('click',()=>$('#confPop').classList.remove('on'));
+$$('[data-abre="oso"]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();$('#ov').classList.add('on');}));
+['#fecha','#cancela'].forEach(s=>$(s).addEventListener('click',()=>$('#ov').classList.remove('on')));
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')$('#ov').classList.remove('on');});
+render();
+</script>
+</body>
+</html>
