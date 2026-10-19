@@ -1,5 +1,4 @@
 import api from '@/services/api';
-import { isPaginatedResponse, PageResult, toPageResult } from '@/services/pagination';
 
 const ENDPOINT = '/api/ordens-servico/operacionais/';
 
@@ -72,19 +71,6 @@ export interface UpdateOperationalOrderPayload {
   revisaoCliente?: boolean;
 }
 
-export interface OperationalOrderListParams {
-  page?: number;
-  pageSize?: number;
-  q?: string;
-  status?: string;
-  prioridade?: string;
-  cobrancaRealizada?: string;
-  responsavel?: number;
-  cliente?: number;
-  atrasada?: boolean;
-  ordering?: 'prazo' | '-prazo';
-}
-
 // ── Normalization ─────────────────────────────────────────────────────────────
 
 const normalizeItem = (dto: any): OperationalOrderItem => ({
@@ -140,45 +126,6 @@ const normalizeDetail = (dto: any): OperationalOrderDetail => ({
 export const getOperationalOrderList = async (): Promise<OperationalOrderItem[]> => {
   const { data } = await api.get(ENDPOINT);
   return (Array.isArray(data) ? data : []).map(normalizeItem);
-};
-
-export const getOperationalOrderPage = async (
-  params: OperationalOrderListParams,
-): Promise<PageResult<OperationalOrderItem>> => {
-  const page = params.page ?? 1;
-  const pageSize = params.pageSize ?? 20;
-  const queryParams: Record<string, string | number> = {};
-  if (params.q) queryParams.q = params.q;
-  if (params.status && params.status !== 'all') queryParams.status = params.status;
-  if (params.prioridade && params.prioridade !== 'all') queryParams.prioridade = params.prioridade;
-  if (params.cobrancaRealizada !== undefined) queryParams.cobranca_realizada = params.cobrancaRealizada;
-  if (params.responsavel) queryParams.responsavel = params.responsavel;
-  if (params.cliente) queryParams.cliente = params.cliente;
-  if (params.atrasada) queryParams.atrasada = 'true';
-  if (params.ordering) queryParams.ordering = params.ordering;
-
-  const { data } = await api.get(ENDPOINT, { params: queryParams });
-
-  // O schema mostra esse endpoint devolvendo um array simples — sem paginação
-  // nem parâmetros page/page_size documentados. Paginamos no cliente, mas
-  // seguimos tratando uma eventual resposta paginada por segurança.
-  if (isPaginatedResponse<any>(data)) {
-    return { ...toPageResult(data, page, pageSize), items: data.results.map(normalizeItem) };
-  }
-
-  const all = (Array.isArray(data) ? data : []).map(normalizeItem);
-  const start = (page - 1) * pageSize;
-  const items = all.slice(start, start + pageSize);
-
-  return {
-    items,
-    count: all.length,
-    page,
-    pageSize,
-    totalPages: Math.max(1, Math.ceil(all.length / pageSize)),
-    next: null,
-    previous: null,
-  };
 };
 
 export const getOperationalOrderDetail = async (id: number): Promise<OperationalOrderDetail> => {

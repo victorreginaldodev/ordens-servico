@@ -673,6 +673,19 @@ Vendido por e Outros na OS são P2 (somem abaixo de 1280px; voltam pelo menu Col
 
 ---
 
+### 6.10 OS operacionais — `/ordens/operacionais` no padrão de listagem (19/10/2026, pedido do usuário)
+
+A tela saiu da tabela própria (filtros em dropdown, chips de filtros ativos e paginação no servidor) e passou ao `DataTable`, como Catálogo operacional, Vendas e Cobranças:
+
+- **Cabeçalho:** `PageHeader` "OS operacionais" com o total e o botão **Nova OS operacional** (`os_operacional.gerenciar`).
+- **Colunas (uma informação por coluna):** Cliente (sempre em maiúsculas, com `OSO <número>` embaixo), Serviço (nome do catálogo operacional sempre em maiúsculas; os dois também nos filtros), Responsável (nome completo), Status, Prioridade, Recebimento e Cobrança. **Prazo** fica oculta por padrão e pode ser ligada no menu Colunas.
+- **Cobrança:** segue a regra fotografada do catálogo (ADR 0011): **Não gera cobrança**, **Não liberada**, **A cobrar** ou **Cobrada** (com a NF).
+- **Visões:** Em aberto (padrão), Atrasadas, A cobrar, Finalizadas e Todas.
+- **Busca e filtros:** busca por cliente, serviço, responsável, número ou NF; filtros de Cliente, Serviço, Responsável, Status, Prioridade e Cobrança; período por data de recebimento.
+- **Ações:** clicar na linha abre o modal de edição (quem gerencia OS operacionais); **Registrar cobrança** aparece na linha das OSOs "A cobrar" para quem tem `financeiro.registrar_cobranca`.
+- A lista vem inteira do backend (o endpoint não pagina) e a paginação, a busca e os filtros são do `DataTable`. Saíram `OperationalOrderFilters`, `OperationalOrderActiveFilters`, `OperationalOrderRow`, `OperationalOrderStatusBadge`, `utilsOperacional.ts`, `features/ordens/utils.ts` e a consulta paginada (`useOperationalOrderPage`).
+- O modal de criar e editar (`OperationalOrderForm`) e o de registrar cobrança não mudaram.
+
 ## 7. Como as telas se ligam
 
 ```

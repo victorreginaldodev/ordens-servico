@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOperationalOrderList,
-  getOperationalOrderPage,
   getOperationalOrderDetail,
   createOperationalOrder,
   updateOperationalOrder,
@@ -9,14 +8,12 @@ import {
   registrarCobrancaOperacional,
   CreateOperationalOrderPayload,
   UpdateOperationalOrderPayload,
-  OperationalOrderListParams,
 } from './servicesOperacional';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const invalidateList = (qc: ReturnType<typeof useQueryClient>) => {
   qc.invalidateQueries({ queryKey: ['operational-order-list'] });
-  qc.invalidateQueries({ queryKey: ['operational-order-page'] });
 };
 
 // ── Operational Order queries ─────────────────────────────────────────────────
@@ -25,13 +22,6 @@ export const useOperationalOrderList = () =>
   useQuery({
     queryKey: ['operational-order-list'],
     queryFn: getOperationalOrderList,
-    staleTime: 1000 * 60 * 2,
-  });
-
-export const useOperationalOrderPage = (params: OperationalOrderListParams) =>
-  useQuery({
-    queryKey: ['operational-order-page', params],
-    queryFn: () => getOperationalOrderPage(params),
     staleTime: 1000 * 60 * 2,
   });
 
