@@ -51,8 +51,10 @@ import ConferenciaPage from '@/features/financeiro/pages/ConferenciaPage';
 // Ajuda
 import AjudaPage from '@/features/ajuda/pages/AjudaPage';
 
-// OS Operacional em manutenção
-import OperationalOrderMaintenancePage from '@/features/ordens/pages/OperationalOrderMaintenancePage';
+// OS Operacional
+import OperationalOrderListPage from '@/features/ordens/pages/OperationalOrderListPage';
+import CatalogoOperacionalListPage from '@/features/catalogo/pages/CatalogoOperacionalListPage';
+import CatalogoOperacionalFormPage from '@/features/catalogo/pages/CatalogoOperacionalFormPage';
 
 const w = (element: React.ReactNode) => <DashboardLayout>{element}</DashboardLayout>;
 
@@ -121,14 +123,16 @@ const AppRoutes = () => (
     <Route path="/ordens/new" element={<Navigate to="/vendas/nova" replace />} />
     <Route path="/ordens/:id" element={<DeOrdensParaVendas />} />
     <Route path="/ordens/:id/edit" element={<DeOrdensParaVendas sufixo="/editar" />} />
-    <Route path="/ordens/operacionais/*" element={w(<OperationalOrderMaintenancePage />)} />
+    <Route path="/ordens/operacionais" element={w(<OperationalOrderListPage />)} />
 
     {/* Catálogo */}
     <Route path="/catalogo" element={w(<CatalogListPage />)} />
     {/* O formulário do catálogo é um modal sobre a listagem; os endereços abrem o modal. */}
     <Route path="/catalogo/new" element={w(<CatalogListPage />)} />
     <Route path="/catalogo/:id/edit" element={w(<CatalogListPage />)} />
-    <Route path="/catalogo/operacional/*" element={w(<OperationalOrderMaintenancePage />)} />
+    <Route path="/catalogo/operacional" element={w(<CatalogoOperacionalListPage />)} />
+    <Route path="/catalogo/operacional/new" element={w(<CatalogoOperacionalFormPage />)} />
+    <Route path="/catalogo/operacional/:id/edit" element={w(<CatalogoOperacionalFormPage />)} />
 
     {/* Clientes e Contatos */}
     <Route path="/clientes" element={w(<ClientListPage />)} />
