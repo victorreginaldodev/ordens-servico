@@ -12,7 +12,8 @@ class Permissao(models.TextChoices):
     OS_VER_TODAS = 'os.ver_todas', 'Ver todas as OS, serviços e tarefas'
     OS_GERENCIAR = 'os.gerenciar', 'Criar e editar OS e seus serviços'
     OS_EXCLUIR = 'os.excluir', 'Excluir OS'
-    OS_OPERACIONAL_GERENCIAR = 'os_operacional.gerenciar', 'Criar e editar OS operacionais e o catálogo operacional'
+    OS_OPERACIONAL_GERENCIAR = 'os_operacional.gerenciar', 'Criar e editar OS operacionais'
+    CATALOGO_OPERACIONAL_GERENCIAR = 'catalogo_operacional.gerenciar', 'Criar, editar e excluir o catálogo operacional'
     CATALOGO_OPERACIONAL_CONFIGURAR_COBRANCA = (
         'catalogo_operacional.configurar_cobranca',
         'Configurar cobrança e exceções por cliente no catálogo operacional',

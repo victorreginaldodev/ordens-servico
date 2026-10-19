@@ -40,10 +40,10 @@ class CatalogoOperacionalViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewSet):
     serializer_class = CatalogoOperacionalSerializer
     permission_classes = [IsAuthenticated]
     permissoes_por_acao = {
-        'create': (Permissao.OS_OPERACIONAL_GERENCIAR,),
-        'update': (Permissao.OS_OPERACIONAL_GERENCIAR,),
-        'partial_update': (Permissao.OS_OPERACIONAL_GERENCIAR,),
-        'destroy': (Permissao.OS_OPERACIONAL_GERENCIAR,),
+        'create': (Permissao.CATALOGO_OPERACIONAL_GERENCIAR,),
+        'update': (Permissao.CATALOGO_OPERACIONAL_GERENCIAR,),
+        'partial_update': (Permissao.CATALOGO_OPERACIONAL_GERENCIAR,),
+        'destroy': (Permissao.CATALOGO_OPERACIONAL_GERENCIAR,),
     }
     campos_de_cobranca = frozenset({'gera_cobranca', 'clientes_isentos_cobranca'})
 

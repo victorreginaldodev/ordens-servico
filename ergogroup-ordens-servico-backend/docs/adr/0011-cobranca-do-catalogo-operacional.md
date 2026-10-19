@@ -1,6 +1,6 @@
 # ADR 0011 — Cobrança definida pelo catálogo operacional
 
-**Status:** aceito; backend implementado em 19/10/2026, frontend pendente.
+**Status:** aceito; backend e frontend implementados em 19/10/2026.
 
 ## Contexto
 
@@ -26,15 +26,19 @@ por aquele serviço formam uma lista menor de exceções.
 7. A permissão global `catalogo_operacional.configurar_cobranca` controla os dois campos financeiros do catálogo.
    Inicialmente ela é atribuída somente à função `Diretor`, mas pode ser concedida a outras funções pela
    configuração normal de permissões.
-8. `os_operacional.gerenciar` continua permitindo alterar os demais dados do catálogo operacional e trabalhar com
-   OSOs; não permite mudar a política de cobrança.
+8. Desde 19/10/2026, o cadastro do catálogo operacional tem permissão própria, `catalogo_operacional.gerenciar`
+   (criar, editar e excluir itens). `os_operacional.gerenciar` passou a valer só para as OSOs. A migração
+   `organizacoes/0025` concedeu a permissão nova às funções que tinham `os_operacional.gerenciar`, para ninguém
+   perder o acesso. Nenhuma das duas permite mudar a política de cobrança.
 
 ## Migração e compatibilidade
 
 - Todos os itens existentes do catálogo começam com `gera_cobranca=false`. A Diretoria deve classificá-los antes
   de o novo fluxo ser usado em produção; não há inferência automática a partir do histórico.
 - Nenhuma OSO existente é recalculada.
-- O frontend ainda precisa expor “Este serviço gera cobrança” e “Exceções de cobrança”.
+- O formulário do catálogo operacional (`CatalogoOperacionalFormPage`) tem a seção “Cobrança”: o interruptor
+  “Este serviço gera cobrança” e a tabela “Clientes isentos”. Sem `catalogo_operacional.configurar_cobranca`, a seção
+  aparece somente para leitura e o formulário não envia esses campos.
 
 ## Contrato da API
 

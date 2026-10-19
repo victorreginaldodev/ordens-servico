@@ -43,7 +43,8 @@ Há dois escopos:
 | Vendas | `os.ver_todas` | Empresa | Ver todas as vendas (OS), serviços e tarefas. Sem ela, a pessoa vê só as OS em que tem tarefa ou que são do seu setor. |
 | | `os.gerenciar` | Empresa | Vender: criar e editar a OS e os serviços dela. |
 | | `os.excluir` | Empresa | Excluir OS, junto com os serviços e as tarefas. Não há como desfazer. |
-| | `os_operacional.gerenciar` | Empresa | OS operacional e catálogo operacional (fora do escopo desta documentação). |
+| | `os_operacional.gerenciar` | Empresa | OS operacional (fora do escopo desta documentação). |
+| | `catalogo_operacional.gerenciar` | Empresa | Cadastro do catálogo operacional (fora do escopo desta documentação). |
 | Execução | `tarefas.receber` | Setor | **Recebe tarefas**: a pessoa pode ser escolhida como responsável por tarefas do setor. |
 | | `servicos.ver_setor` | Setor | Acompanhar o setor: Painel do setor com a fila, o andamento, a equipe e a produtividade. |
 | | `tarefas.distribuir` | Setor | Distribuir: criar tarefas, escolher responsável e prazo, reatribuir e excluir tarefas. |

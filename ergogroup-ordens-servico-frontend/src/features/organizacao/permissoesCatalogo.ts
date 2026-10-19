@@ -13,7 +13,7 @@ export interface GrupoPermissoes {
 }
 
 export const GRUPOS_PERMISSOES: GrupoPermissoes[] = [
-  { id: 'vendas', titulo: 'Vendas', permissoes: ['os.ver_todas', 'os.gerenciar', 'os.excluir', 'os_operacional.gerenciar'] },
+  { id: 'vendas', titulo: 'Vendas', permissoes: ['os.ver_todas', 'os.gerenciar', 'os.excluir', 'os_operacional.gerenciar', 'catalogo_operacional.gerenciar', 'catalogo_operacional.configurar_cobranca'] },
   {
     id: 'execucao',
     titulo: 'Execução',
@@ -36,6 +36,9 @@ export const TITULO_PERMISSAO: Partial<Record<Permissao, string>> = {
   'os.ver_todas': 'Ver todas as vendas',
   'os.gerenciar': 'Vender: criar e editar OS e seus serviços',
   'os.excluir': 'Excluir OS',
+  'os_operacional.gerenciar': 'Criar e editar OS operacionais',
+  'catalogo_operacional.gerenciar': 'Cadastrar o catálogo operacional',
+  'catalogo_operacional.configurar_cobranca': 'Configurar a cobrança do catálogo operacional',
   'tarefas.receber': 'Recebe tarefas: pode ser responsável por tarefas',
   'servicos.ver_setor': 'Acompanhar o setor: ver a fila, o andamento e a equipe',
   'tarefas.distribuir': 'Distribuir: escolher responsável e prazo',
@@ -65,7 +68,11 @@ export const AJUDA_PERMISSAO: Partial<Record<Permissao, string>> = {
   'os.ver_todas': 'Sem ela, a pessoa vê só as OS em que tem tarefa ou que são dos seus setores.',
   'os.gerenciar': 'Cria a OS, define cliente, contrato, condições e serviços.',
   'os.excluir': 'Apaga a OS com seus serviços e tarefas. Não há como desfazer.',
-  'os_operacional.gerenciar': 'Inclui o catálogo operacional.',
+  'os_operacional.gerenciar': 'Não inclui o catálogo operacional, que tem permissão própria.',
+  'catalogo_operacional.gerenciar':
+    'Cria, edita e exclui os serviços do catálogo operacional. A regra de cobrança exige também "Configurar a cobrança do catálogo operacional".',
+  'catalogo_operacional.configurar_cobranca':
+    'Define se cada serviço do catálogo operacional gera cobrança e quais clientes são isentos. Vale só para as OS operacionais criadas depois da alteração.',
   'tarefas.receber':
     'A pessoa aparece na lista de responsáveis do setor. Quem é de outro setor recebe pelo "Também executa em", na pessoa. "Atuar em todos os setores" não estende esta permissão.',
   'servicos.ver_setor': 'Vê o Painel do setor: a fila, o andamento, a equipe e a produtividade das pessoas. Com "Distribuir", organiza o setor e recebe o aviso de chegada.',

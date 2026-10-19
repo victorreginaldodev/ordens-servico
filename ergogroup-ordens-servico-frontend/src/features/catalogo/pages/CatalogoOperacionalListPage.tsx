@@ -45,7 +45,7 @@ const CatalogoOperacionalListPage = () => {
   const { search } = useLocation();
   const { toast } = useToast();
   const { pode } = usePermissoes();
-  const podeGerenciar = pode('os_operacional.gerenciar');
+  const podeGerenciar = pode('catalogo_operacional.gerenciar');
   const catalogosQ = useCatalogosOperacionais();
   const catalogos = useMemo(() => catalogosQ.data ?? [], [catalogosQ.data]);
   const excluir = useDeleteCatalogoOperacional();

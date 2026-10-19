@@ -4,7 +4,9 @@ from rest_framework.test import APITestCase
 
 from apps.catalogo.models import CatalogoOperacional
 from apps.clientes.models import Cliente
-from apps.organizacoes.apoio_testes import Perfil, criar_usuario
+from apps.organizacoes.apoio_testes import Perfil, criar_usuario, setor_padrao
+from apps.organizacoes.models import Funcao, FuncaoPermissao, Organizacao
+from apps.organizacoes.permissoes import Permissao
 from apps.ordens_servico.models import OrdemServicoOperacional
 
 
@@ -91,3 +93,57 @@ class PermissaoDaRegraDeCobrancaOperacionalTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.catalogo.refresh_from_db()
         self.assertEqual(self.catalogo.descricao, 'Descrição operacional')
+
+
+class PermissaoDeGerenciarCatalogoOperacionalTestCase(APITestCase):
+    """`catalogo_operacional.gerenciar` (19/10/2026) separa o cadastro do catálogo operacional da OS operacional."""
+
+    def setUp(self):
+        self.organizacao = Organizacao.objects.get(nome='Ergogroup')
+        self.catalogo = CatalogoOperacional.objects.create(nome='Revisão')
+        self.url = reverse('catalogos-operacionais-detail', args=[self.catalogo.pk])
+
+    def pessoa_com(self, *permissoes):
+        funcao = Funcao.objects.create(organizacao=self.organizacao, nome=f'Função {Funcao.objects.count()}')
+        funcao.setores.add(setor_padrao())
+        funcao.definir_permissoes(list(permissoes))
+        pessoa = criar_usuario(None)
+        pessoa.vinculos_setor.create(setor=setor_padrao(), funcao=funcao)
+        return pessoa
+
+    def test_so_os_operacional_nao_altera_o_catalogo(self):
+        self.client.force_authenticate(user=self.pessoa_com(Permissao.OS_OPERACIONAL_GERENCIAR))
+
+        criacao = self.client.post(reverse('catalogos-operacionais-list'), {'nome': 'Nova'})
+        edicao = self.client.patch(self.url, {'descricao': 'Outra'})
+        exclusao = self.client.delete(self.url)
+
+        self.assertEqual(
+            [criacao.status_code, edicao.status_code, exclusao.status_code], [status.HTTP_403_FORBIDDEN] * 3,
+        )
+
+    def test_gerenciar_catalogo_operacional_cria_edita_e_exclui(self):
+        self.client.force_authenticate(user=self.pessoa_com(Permissao.CATALOGO_OPERACIONAL_GERENCIAR))
+
+        criacao = self.client.post(reverse('catalogos-operacionais-list'), {'nome': 'Nova'})
+        edicao = self.client.patch(self.url, {'descricao': 'Outra'})
+        exclusao = self.client.delete(self.url)
+
+        self.assertEqual(criacao.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(edicao.status_code, status.HTTP_200_OK)
+        self.assertEqual(exclusao.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_gerenciar_catalogo_operacional_nao_configura_cobranca(self):
+        self.client.force_authenticate(user=self.pessoa_com(Permissao.CATALOGO_OPERACIONAL_GERENCIAR))
+
+        response = self.client.patch(self.url, {'gera_cobranca': True})
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_quem_gerenciava_a_os_operacional_recebeu_a_permissao_nova(self):
+        # Migração organizacoes/0025: nenhuma função perde o acesso ao catálogo que já tinha.
+        funcoes = FuncaoPermissao.objects.filter(permissao=Permissao.OS_OPERACIONAL_GERENCIAR).values_list('funcao', flat=True)
+
+        self.assertTrue(funcoes)
+        for funcao in Funcao.objects.filter(pk__in=funcoes):
+            self.assertIn(Permissao.CATALOGO_OPERACIONAL_GERENCIAR, funcao.codigos_permissao)

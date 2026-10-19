@@ -129,6 +129,9 @@ export interface CatalogoOperacionalItem {
 export interface CatalogoOperacionalPayload {
   nome: string;
   descricao?: string | null;
+  /** Só vai para a API quem tem `catalogo_operacional.configurar_cobranca`. */
+  geraCobranca?: boolean;
+  clientesIsentosCobranca?: number[];
 }
 
 type CatalogoOperacionalDTO = {
@@ -152,6 +155,10 @@ const catalogoOperacionalToFrontend = (dto: CatalogoOperacionalDTO): CatalogoOpe
 const catalogoOperacionalToBackend = (payload: Partial<CatalogoOperacionalPayload>) => ({
   ...(payload.nome !== undefined ? { nome: payload.nome } : {}),
   ...(payload.descricao !== undefined ? { descricao: payload.descricao } : {}),
+  ...(payload.geraCobranca !== undefined ? { gera_cobranca: payload.geraCobranca } : {}),
+  ...(payload.clientesIsentosCobranca !== undefined
+    ? { clientes_isentos_cobranca: payload.clientesIsentosCobranca }
+    : {}),
 });
 
 export const getCatalogosOperacionais = async (params: { q?: string } = {}): Promise<CatalogoOperacionalItem[]> => {

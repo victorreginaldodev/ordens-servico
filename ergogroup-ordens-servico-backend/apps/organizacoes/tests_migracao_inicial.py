@@ -22,13 +22,21 @@ class MigracaoInicialTestCase(TestCase):
 
     def test_cria_as_funcoes_com_as_permissoes_do_mapeamento(self):
         # Ajustes posteriores ao mapeamento: "Recebe tarefas" nas funções de Segurança do Trabalho (0021) e o
-        # Gestor Técnico sem "Ver valores" (0022), decisões da revisão de permissões de 14/10/2026.
+        # Gestor Técnico sem "Ver valores" (0022), decisões da revisão de permissões de 14/10/2026,
+        # "Configurar a cobrança do catálogo operacional" no Diretor (0023) e "Gerenciar o catálogo
+        # operacional" para quem gerenciava a OS operacional (0025).
         for nome_setor, nome_funcao, permissoes in migracao.MAPEAMENTO.values():
             esperadas = set(permissoes)
             if nome_setor == 'Segurança do Trabalho':
                 esperadas.add('tarefas.receber')
             if nome_funcao == 'Gestor Técnico':
                 esperadas.discard('financeiro.ver_valores')
+            if nome_funcao == 'Diretor':
+                # 0023: a regra de cobrança do catálogo operacional começa só com a diretoria.
+                esperadas.add('catalogo_operacional.configurar_cobranca')
+            if 'os_operacional.gerenciar' in esperadas:
+                # 0025 (19/10/2026): o catálogo operacional ganhou permissão própria.
+                esperadas.add('catalogo_operacional.gerenciar')
             funcao = Funcao.objects.get(nome=nome_funcao)
             self.assertEqual(set(funcao.codigos_permissao), esperadas, nome_funcao)
 

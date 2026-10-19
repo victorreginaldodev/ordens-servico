@@ -82,8 +82,8 @@ Modelo proposto: **permissão** (lista fixa no código) → **função** (nome l
 | Criar, editar e excluir catálogo e subitens | `/catalogos/`, `/subitens/` | Autenticado | `catalogo.gerenciar` | global |
 | Definir o setor de um catálogo | `PATCH /catalogos/<id>/` (`setor`, `mover_servicos_em_aberto`, `mover_servicos_com_tarefas`) | Autenticado | `catalogo.gerenciar` | global |
 | Mudar o setor de vários catálogos (14/10/2026) | `POST /catalogos/mudar-setor/` | — | `catalogo.gerenciar` | global |
-| Criar, editar e excluir catálogo operacional | `/catalogos-operacionais/` | Autenticado | `os_operacional.gerenciar` | global |
-| Configurar cobrança e exceções por cliente no catálogo operacional | campos `gera_cobranca` e `clientes_isentos_cobranca` em `/catalogos-operacionais/` | `os_operacional.gerenciar` | `catalogo_operacional.configurar_cobranca` adicional | global |
+| Criar, editar e excluir catálogo operacional | `/catalogos-operacionais/` | Autenticado | `catalogo_operacional.gerenciar` (19/10/2026; antes `os_operacional.gerenciar`) | global |
+| Configurar cobrança e exceções por cliente no catálogo operacional | campos `gera_cobranca` e `clientes_isentos_cobranca` em `/catalogos-operacionais/` | `catalogo_operacional.gerenciar` | `catalogo_operacional.configurar_cobranca` adicional | global |
 
 ### 2.6 Ordem de serviço (venda)
 
@@ -144,7 +144,8 @@ Hoje não tem setor. Até ser incorporada, sugiro manter regras próprias com as
 ## 3. Catálogo de permissões proposto (rascunho)
 
 > **Implementado na fase 1** (09/10/2026). A fonte de verdade é o enum `Permissao` em `apps/organizacoes/permissoes.py` e as permissões marcadas em cada função (`/api/organizacoes/funcoes/`). Desde 10/10/2026, a tabela por tipo de usuário foi removida; as funções iniciais saíram dela (migração `organizacoes/0013`) e seguem as travas do frontend (seção 5) com as decisões abaixo. Em relação a este rascunho, a implementação acrescentou:
-> - `os_operacional.gerenciar`: OS operacional e catálogo operacional, que na tela têm regra própria;
+> - `os_operacional.gerenciar`: OS operacional, que na tela tem regra própria;
+> - `catalogo_operacional.gerenciar`: cadastro do catálogo operacional, separado da OS operacional em 19/10/2026;
 > - `catalogo_operacional.configurar_cobranca`: altera a regra de cobrança e as exceções por cliente; inicialmente só a função Diretor recebe;
 > - `usuarios.gerenciar_diretoria`: gerenciar diretor e gestor comercial (A8);
 > - `usuarios.redefinir_senha`: alterar a senha de terceiros.
@@ -164,7 +165,8 @@ Hoje não tem setor. Até ser incorporada, sugiro manter regras próprias com as
 | `os.ver_todas` | Ver todas as OS, serviços, tarefas e OS operacionais, de qualquer setor |
 | `os.gerenciar` | Criar e editar OS (venda, contrato, condições) e seus serviços; criar e editar OS operacional |
 | `os.excluir` | Excluir OS e serviços (apaga o que está abaixo) |
-| `os_operacional.gerenciar` | Criar e editar OS operacionais e os dados não financeiros do catálogo operacional |
+| `os_operacional.gerenciar` | Criar e editar OS operacionais |
+| `catalogo_operacional.gerenciar` | Criar, editar e excluir itens do catálogo operacional (dados não financeiros). Concedida na migração `organizacoes/0025` a quem tinha `os_operacional.gerenciar` |
 | `catalogo_operacional.configurar_cobranca` | Configurar se um item do catálogo operacional gera cobrança e seus clientes isentos; inicialmente atribuída somente à função Diretor |
 | `financeiro.ver_valores` | Ver valor e condições de pagamento das OS e os indicadores financeiros |
 | `financeiro.registrar_cobranca` | Registrar cobrança e NF de OS e OS operacional. **Desde 14/10/2026 exige `financeiro.ver_valores` na mesma função** (o backend recusa a função sem ela) e a tela de Cobranças (`/api/financeiro/cobrancas/`) exige as duas. |

@@ -12,6 +12,8 @@ export const PERMISSOES = [
   'os.gerenciar',
   'os.excluir',
   'os_operacional.gerenciar',
+  'catalogo_operacional.gerenciar',
+  'catalogo_operacional.configurar_cobranca',
   'financeiro.ver_valores',
   'financeiro.registrar_cobranca',
   'clientes.gerenciar',
