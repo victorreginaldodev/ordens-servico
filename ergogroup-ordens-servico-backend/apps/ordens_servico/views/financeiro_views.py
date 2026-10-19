@@ -9,11 +9,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.ordens_servico.models import FormaPagamento, OrdemServico, TipoCondicao
+from apps.ordens_servico.models import FormaPagamento, OrdemServico, OrdemServicoOperacional, TipoCondicao
 from apps.ordens_servico.serializers.financeiro_serializer import (
-    CobrancasSerializer, ConferenciaSerializer, CorrecaoSerializer, SituacaoFinanceiraSerializer,
+    CobrancasSerializer, ConferenciaSerializer, CorrecaoSerializer, SituacaoFinanceiraOperacionalSerializer,
+    SituacaoFinanceiraSerializer,
 )
-from apps.ordens_servico.services import conferencia, financeiro
+from apps.ordens_servico.services import cobranca_operacional, conferencia, financeiro
 from apps.organizacoes.permissoes import Permissao, TemPermissao
 
 
@@ -46,7 +47,9 @@ class CobrancasView(_DoFinanceiro):
             '`previsao` (ainda não liberadas, as mais perto de liberar primeiro; sem as canceladas). Com `todas`, '
             'as três numa chamada (a faturar, previsão e faturadas, nessa ordem). Traz os contadores das três '
             'situações sob os mesmos filtros, o que falta em cada OS da previsão (`pendentes`) e os códigos da '
-            'conferência (`pendencias`). Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.'
+            'conferência (`pendencias`). Em `operacionais`, as OS operacionais que geram cobrança, nas mesmas '
+            'situações (sem valor nem condição; com `tipo_condicao` ou `forma_pagamento`, a lista vem vazia). '
+            'Exige `financeiro.registrar_cobranca` e `financeiro.ver_valores`.'
         ),
         parameters=[
             OpenApiParameter('situacao', str, enum=financeiro.SITUACOES + [financeiro.Situacao.TODAS],
@@ -98,6 +101,23 @@ class SituacaoFinanceiraView(APIView):
     def get(self, request, pk):
         ordem = get_object_or_404(OrdemServico, pk=pk)
         return Response(SituacaoFinanceiraSerializer(financeiro.situacao_financeira(ordem, request.user)).data)
+
+
+class SituacaoFinanceiraOperacionalView(_DoFinanceiro):
+    @extend_schema(
+        summary='Situação financeira da OS operacional',
+        description=(
+            'O resumo para faturar a OS operacional: os dados do cliente, o que cobrar (item do catálogo, '
+            'quantidade e descrição), a execução, a liberação, o lançamento, a regra de cobrança aplicada, as '
+            'pendências da conferência e o histórico. Exige `financeiro.registrar_cobranca` e '
+            '`financeiro.ver_valores`.'
+        ),
+        responses={200: SituacaoFinanceiraOperacionalSerializer},
+        tags=['financeiro'],
+    )
+    def get(self, request, pk):
+        oso = get_object_or_404(OrdemServicoOperacional, pk=pk)
+        return Response(SituacaoFinanceiraOperacionalSerializer(cobranca_operacional.situacao_financeira(oso)).data)
 
 
 class ConferenciaView(_DoFinanceiro):

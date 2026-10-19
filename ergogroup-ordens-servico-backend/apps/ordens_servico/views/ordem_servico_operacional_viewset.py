@@ -131,8 +131,9 @@ class OrdemServicoOperacionalViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewS
     @extend_schema(
         summary='Registrar cobrança da Ordem de Serviço Operacional',
         description=(
-            'Marca a Ordem de Serviço Operacional como tendo a cobrança realizada, registrando o número da NF e o usuário responsável. '
-            'Retorna 400 se ela não gerar cobrança ou ainda não estiver liberada para cobrança.'
+            'Registra o lançamento da Ordem de Serviço Operacional no sistema financeiro externo: a referência '
+            '(número da NF ou código), a data do lançamento (padrão: hoje) e quem registrou. Exige '
+            '`financeiro.registrar_cobranca`. Retorna 400 se ela não gerar cobrança ou ainda não estiver liberada.'
         ),
         request=RegistrarCobrancaOSORequestSerializer,
         responses={
@@ -154,9 +155,17 @@ class OrdemServicoOperacionalViewSet(PermissoesPorAcaoMixin, viewsets.ModelViewS
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        numero_nf = request.data.get('numero_nf')
+        dados = RegistrarCobrancaOSORequestSerializer(data=request.data)
+        dados.is_valid(raise_exception=True)
+        campos = dados.validated_data
         oso.cobranca_realizada = True
-        oso.numero_nf = numero_nf
+        oso.referencia_lancamento = (campos.get('referencia_lancamento') or '').strip() or None
+        oso.data_cobranca = campos.get('data_cobranca') or timezone.localdate()
+        if 'numero_nf' in campos:
+            oso.numero_nf = (campos.get('numero_nf') or '').strip() or None
         oso.cobranca_realizada_por = request.user
-        oso.save(update_fields=['cobranca_realizada', 'numero_nf', 'cobranca_realizada_por', 'atualizado_em'])
+        oso.save(update_fields=[
+            'cobranca_realizada', 'referencia_lancamento', 'data_cobranca', 'numero_nf', 'cobranca_realizada_por',
+            'atualizado_em',
+        ])
         return Response(OrdemServicoOperacionalSerializer(oso, context={'request': request}).data)

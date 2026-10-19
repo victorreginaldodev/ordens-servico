@@ -28,7 +28,8 @@ class OrdemServicoOperacionalListSerializer(serializers.ModelSerializer):
             'prioridade', 'prioridade_display', 'prazo',
             'revisao_cliente', 'gera_cobranca', 'data_liberacao_cobranca',
             'liberada_cobranca_por', 'liberada_cobranca_por_nome',
-            'cobranca_realizada', 'numero_nf', 'cobranca_realizada_por', 'cobranca_realizada_por_nome',
+            'cobranca_realizada', 'numero_nf', 'referencia_lancamento', 'data_cobranca',
+            'cobranca_realizada_por', 'cobranca_realizada_por_nome',
             'data_recebimento', 'data_inicio', 'data_termino',
             'criada_em', 'atualizado_em',
         ]
@@ -71,6 +72,7 @@ class OrdemServicoOperacionalSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'revisao_cliente', 'gera_cobranca',
             'data_liberacao_cobranca', 'liberada_cobranca_por',
             'liberada_cobranca_por_nome', 'cobranca_realizada', 'numero_nf',
+            'referencia_lancamento', 'data_cobranca',
             'cobranca_realizada_por', 'cobranca_realizada_por_nome',
             'criada_em', 'atualizado_em',
         ]
@@ -79,7 +81,7 @@ class OrdemServicoOperacionalSerializer(serializers.ModelSerializer):
             'revisao_cliente', 'gera_cobranca', 'data_liberacao_cobranca',
             'liberada_cobranca_por', 'cobranca_realizada_por',
             # Cobrança só é registrada pelo endpoint dedicado, que valida a liberação.
-            'cobranca_realizada', 'numero_nf',
+            'cobranca_realizada', 'numero_nf', 'referencia_lancamento', 'data_cobranca',
         ]
 
     @extend_schema_field(serializers.CharField(allow_null=True))
@@ -98,4 +100,14 @@ class OrdemServicoOperacionalSerializer(serializers.ModelSerializer):
 
 
 class RegistrarCobrancaOSORequestSerializer(serializers.Serializer):
-    numero_nf = serializers.CharField(max_length=10, required=False, allow_null=True)
+    referencia_lancamento = serializers.CharField(
+        max_length=100, required=False, allow_null=True, allow_blank=True,
+        help_text='Referência do lançamento no sistema financeiro externo (número da NF ou código).',
+    )
+    data_cobranca = serializers.DateField(
+        required=False, allow_null=True, help_text='Data do lançamento. Sem ela, vale a data de hoje.',
+    )
+    numero_nf = serializers.CharField(
+        max_length=10, required=False, allow_null=True, allow_blank=True,
+        help_text='Campo anterior, mantido por compatibilidade. Use `referencia_lancamento`.',
+    )

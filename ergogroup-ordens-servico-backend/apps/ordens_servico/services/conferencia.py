@@ -16,8 +16,9 @@ from django.db.models import Prefetch, Q
 from django.utils import timezone
 
 from apps.auditoria.models import AcaoAuditoria, EntidadeAuditada, RegistroAuditoria
-from apps.ordens_servico.models import OrdemServico, Servico
+from apps.ordens_servico.models import OrdemServico, OrdemServicoOperacional, Servico
 from apps.ordens_servico.models.ordem_servico import LiberarEm, Status
+from apps.ordens_servico.models.ordem_servico_operacional import StatusOrdemServicoOperacional
 from apps.ordens_servico.models.servico import StatusServico, status_pelas_tarefas
 from apps.ordens_servico.models.tarefa import StatusTarefa
 from apps.ordens_servico.services.execucao import Etapa, dias_desde, etapa_do_servico, hoje, nome
@@ -44,6 +45,10 @@ class Verificacao:
     AGUARDANDO_LANCAMENTO = 'aguardando_lancamento'
     MUDOU_APOS_LIBERACAO = 'mudou_apos_liberacao'
     MUDOU_APOS_LANCAMENTO = 'mudou_apos_lancamento'
+    # OS operacionais (19/10/2026)
+    OSO_SYNC_LIBERACAO = 'oso_sync_liberacao'
+    OSO_AGUARDANDO_LANCAMENTO = 'oso_aguardando_lancamento'
+    OSO_SEM_REFERENCIA = 'oso_sem_referencia'
 
 
 CODIGOS = [valor for chave, valor in vars(Verificacao).items() if not chave.startswith('_')]
@@ -94,6 +99,21 @@ def _definicoes():
             f'Algo mudou depois do lançamento (alterações dos últimos {DIAS_JANELA_ALTERACOES} dias): ajuste no '
             'sistema financeiro.',
         ),
+        Verificacao.OSO_SYNC_LIBERACAO: (
+            GARANTIA, 'previsao', 'Toda OS operacional finalizada que gera cobrança está liberada',
+            'Quando a OS operacional que gera cobrança é finalizada, ela é liberada na hora. Se aparecer algo aqui, '
+            'use "Corrigir agora".',
+        ),
+        Verificacao.OSO_AGUARDANDO_LANCAMENTO: (
+            ATENCAO, 'a_faturar',
+            f'OS operacional liberada há {settings.DIAS_ALERTA_SEM_LANCAMENTO} dias ou mais sem faturar',
+            'Está na fila do financeiro.',
+        ),
+        Verificacao.OSO_SEM_REFERENCIA: (
+            ATENCAO, 'faturadas', 'OS operacional faturada sem referência do lançamento',
+            'Foi marcada como cobrada sem a NF ou o código do lançamento (ou com a NF "0"). Confira no sistema '
+            'financeiro.',
+        ),
     }
 
 
@@ -128,6 +148,7 @@ def _ordens(queryset):
 def _item(ordem, detalhe, servico=None):
     return {
         'ordem_servico_id': ordem.id,
+        'ordem_servico_operacional_id': None,
         'cliente_nome': ordem.cliente.nome,
         'servico_id': servico.id if servico else None,
         'servico_nome': nome_do_servico(servico) if servico else None,
@@ -135,6 +156,35 @@ def _item(ordem, detalhe, servico=None):
         'responsavel_nome': (', '.join(responsaveis_pendentes(servico)) or None) if servico else None,
         'detalhe': detalhe,
     }
+
+
+def _item_oso(oso, detalhe):
+    return {
+        'ordem_servico_id': None,
+        'ordem_servico_operacional_id': oso.id,
+        'cliente_nome': oso.cliente.nome,
+        'servico_id': None,
+        'servico_nome': oso.catalogo_operacional.nome,
+        'setor_nome': None,
+        'responsavel_nome': nome(oso.responsavel),
+        'detalhe': detalhe,
+    }
+
+
+def _verificar_osos(osos, itens):
+    from apps.ordens_servico.services import cobranca_operacional
+
+    base = osos.select_related('cliente', 'catalogo_operacional', 'responsavel')
+    for oso in base.filter(gera_cobranca=True, cobranca_realizada=False, data_liberacao_cobranca__isnull=True,
+                           status=StatusOrdemServicoOperacional.FINALIZADA):
+        itens[Verificacao.OSO_SYNC_LIBERACAO].append(_item_oso(oso, 'Finalizada e ainda não liberada'))
+    for oso in base.filter(cobranca_operacional.filtro_em_alerta()):
+        dias = cobranca_operacional.dias_aguardando_lancamento(oso)
+        itens[Verificacao.OSO_AGUARDANDO_LANCAMENTO].append(_item_oso(oso, f'Liberada há {dias} dias'))
+    for oso in base.filter(cobranca_realizada=True):
+        if not cobranca_operacional.referencia(oso):
+            detalhe = 'NF informada como "0"' if (oso.numero_nf or '').strip() == '0' else 'Sem NF nem referência'
+            itens[Verificacao.OSO_SEM_REFERENCIA].append(_item_oso(oso, detalhe))
 
 
 def _plural(n, singular, plural):
@@ -247,11 +297,15 @@ def _verificar_mudancas(ordens, itens):
                 itens[Verificacao.MUDOU_APOS_LIBERACAO].append(_item(ordem, texto))
 
 
-def calcular(queryset=None):
-    """Os itens de cada verificação, para as OS do `queryset` (padrão: todas)."""
+def calcular(queryset=None, osos=None):
+    """Os itens de cada verificação, para as OS do `queryset` e as OS operacionais de `osos`. Sem nenhum dos
+    dois, todas; com só um deles, o outro fica vazio."""
     from apps.ordens_servico.services import financeiro
 
-    queryset = OrdemServico.objects.all() if queryset is None else queryset
+    if queryset is None and osos is None:
+        queryset, osos = OrdemServico.objects.all(), OrdemServicoOperacional.objects.all()
+    queryset = OrdemServico.objects.none() if queryset is None else queryset
+    osos = OrdemServicoOperacional.objects.none() if osos is None else osos
     itens = {codigo: [] for codigo in _definicoes()}
 
     for ordem in _ordens(queryset.filter(financeiro.FILTRO_SITUACAO[financeiro.Situacao.PREVISAO])):
@@ -268,6 +322,7 @@ def calcular(queryset=None):
         Q(data_cobranca__gte=desde) | Q(data_cobranca__isnull=True) | Q(data_atualizacao__date__gte=desde),
     )))
     _verificar_mudancas(a_faturar + faturadas, itens)
+    _verificar_osos(osos, itens)
     return itens
 
 
@@ -276,7 +331,22 @@ def pendencias_por_ordem(itens):
     resultado = {}
     for codigo, lista in itens.items():
         for item in lista:
+            if item['ordem_servico_id'] is None:
+                continue
             codigos = resultado.setdefault(item['ordem_servico_id'], [])
+            if codigo not in codigos:
+                codigos.append(codigo)
+    return resultado
+
+
+def pendencias_por_oso(itens):
+    """OS operacional → códigos das verificações em que ela aparece."""
+    resultado = {}
+    for codigo, lista in itens.items():
+        for item in lista:
+            if item['ordem_servico_operacional_id'] is None:
+                continue
+            codigos = resultado.setdefault(item['ordem_servico_operacional_id'], [])
             if codigo not in codigos:
                 codigos.append(codigo)
     return resultado
@@ -312,6 +382,20 @@ def pendencias_da_ordem(ordem):
     } for codigo, lista in itens.items() for item in lista]
 
 
+def pendencias_da_oso(oso):
+    """As verificações em que esta OS operacional aparece, com o detalhe."""
+    itens = calcular(osos=OrdemServicoOperacional.objects.filter(pk=oso.pk))
+    definicoes = _definicoes()
+    return [{
+        'codigo': codigo,
+        'tipo': definicoes[codigo][0],
+        'titulo': definicoes[codigo][2],
+        'explicacao': definicoes[codigo][3],
+        'detalhe': item['detalhe'],
+        'servico_id': None,
+    } for codigo, lista in itens.items() for item in lista]
+
+
 @transaction.atomic
 def corrigir():
     """Refaz a sincronização dos serviços e das OS ainda não liberadas. Só aplica o que a regra já manda; cada
@@ -335,4 +419,15 @@ def corrigir():
         ordem.sincronizar_status_e_cobranca()
         if ordem.liberada_para_cobranca:
             ordens_liberadas += 1
-    return {'servicos_corrigidos': servicos_corrigidos, 'ordens_liberadas': ordens_liberadas}
+    # OS operacional finalizada que gera cobrança: o `save()` faz a liberação.
+    operacionais_liberadas = 0
+    for oso in OrdemServicoOperacional.objects.filter(
+        gera_cobranca=True, cobranca_realizada=False, data_liberacao_cobranca__isnull=True,
+        status=StatusOrdemServicoOperacional.FINALIZADA,
+    ):
+        oso.save()
+        operacionais_liberadas += 1
+    return {
+        'servicos_corrigidos': servicos_corrigidos, 'ordens_liberadas': ordens_liberadas,
+        'operacionais_liberadas': operacionais_liberadas,
+    }

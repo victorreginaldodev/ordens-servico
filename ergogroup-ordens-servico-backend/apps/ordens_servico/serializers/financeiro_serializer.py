@@ -76,12 +76,51 @@ class ContadoresSerializer(serializers.Serializer):
     previsao = ContadorSerializer()
 
 
+class LinhaDeCobrancaOperacionalSerializer(serializers.Serializer):
+    ordem_servico_operacional_id = serializers.IntegerField()
+    situacao = serializers.ChoiceField(choices=SITUACOES, allow_null=True)
+    status = serializers.CharField(help_text='Status da OS operacional.')
+    cliente_id = serializers.IntegerField()
+    cliente_nome = serializers.CharField()
+    catalogo_operacional_nome = serializers.CharField(help_text='O item do catálogo operacional: o que cobrar.')
+    quantidade = serializers.IntegerField()
+    descricao = serializers.CharField(allow_null=True)
+    responsavel_nome = serializers.CharField(allow_null=True)
+    data_recebimento = serializers.DateField(allow_null=True)
+    data_inicio = serializers.DateField(allow_null=True)
+    data_termino = serializers.DateField(allow_null=True)
+    prazo = serializers.DateField(allow_null=True)
+    liberada_para_cobranca_em = serializers.DateTimeField(allow_null=True)
+    liberada_para_cobranca_por_nome = serializers.CharField(allow_null=True)
+    referencia_lancamento = serializers.CharField(
+        allow_null=True, help_text='Referência do lançamento; nas cobranças antigas, a NF do campo anterior.',
+    )
+    data_cobranca = serializers.DateField(allow_null=True, help_text='Data do lançamento.')
+    cobranca_realizada_por_nome = serializers.CharField(allow_null=True)
+    dias_aguardando_lancamento = serializers.IntegerField(allow_null=True, help_text='Só nas OS operacionais a faturar.')
+    em_alerta = serializers.BooleanField()
+    dias_sem_movimentacao = serializers.IntegerField(allow_null=True, help_text='Só na previsão.')
+    criada_em = serializers.DateTimeField()
+    pendencias = serializers.ListField(child=serializers.ChoiceField(choices=CODIGOS_DA_CONFERENCIA))
+
+
+class ContadoresOperacionaisSerializer(serializers.Serializer):
+    a_faturar = serializers.IntegerField()
+    faturadas = serializers.IntegerField()
+    previsao = serializers.IntegerField()
+
+
 class CobrancasSerializer(serializers.Serializer):
     situacao = serializers.ChoiceField(choices=SITUACOES_DA_LISTA)
     contadores = ContadoresSerializer(help_text='As três situações, sob os mesmos filtros.')
     em_alerta = serializers.IntegerField(help_text='Quantas OS a faturar estão em alerta.')
     dias_alerta_sem_lancamento = serializers.IntegerField(help_text='A partir de quantos dias a OS liberada entra em alerta.')
     ordens = LinhaDeCobrancaSerializer(many=True)
+    operacionais = LinhaDeCobrancaOperacionalSerializer(
+        many=True, help_text='As OS operacionais que geram cobrança, nas mesmas situações (19/10/2026).',
+    )
+    contadores_operacionais = ContadoresOperacionaisSerializer(help_text='Quantas OS operacionais em cada situação.')
+    operacionais_em_alerta = serializers.IntegerField()
 
 
 class ServicoRealizadoSerializer(serializers.Serializer):
@@ -135,8 +174,23 @@ class SituacaoFinanceiraSerializer(LinhaDeCobrancaSerializer):
     eventos = EventoDoResumoSerializer(many=True, help_text='A linha do tempo da OS, do mais recente ao mais antigo.')
 
 
+class MarcoDaOperacionalSerializer(serializers.Serializer):
+    quando = serializers.DateField(allow_null=True)
+    tipo = serializers.ChoiceField(choices=['criada', 'iniciada', 'finalizada', 'liberacao', 'lancamento'])
+    descricao = serializers.CharField()
+    pessoa_nome = serializers.CharField(allow_null=True)
+
+
+class SituacaoFinanceiraOperacionalSerializer(LinhaDeCobrancaOperacionalSerializer):
+    gera_cobranca = serializers.BooleanField(help_text='A regra aplicada na criação (catálogo e clientes isentos).')
+    cliente = ClienteDoResumoSerializer()
+    detalhe_pendencias = PendenciaDaOrdemSerializer(many=True)
+    historico = MarcoDaOperacionalSerializer(many=True, help_text='Do mais recente ao mais antigo.')
+
+
 class ItemDaConferenciaSerializer(serializers.Serializer):
-    ordem_servico_id = serializers.IntegerField()
+    ordem_servico_id = serializers.IntegerField(allow_null=True, help_text='Nulo nos itens de OS operacional.')
+    ordem_servico_operacional_id = serializers.IntegerField(allow_null=True, help_text='Só nos itens de OS operacional.')
     cliente_nome = serializers.CharField()
     servico_id = serializers.IntegerField(allow_null=True)
     servico_nome = serializers.CharField(allow_null=True)
@@ -163,3 +217,4 @@ class ConferenciaSerializer(serializers.Serializer):
 class CorrecaoSerializer(serializers.Serializer):
     servicos_corrigidos = serializers.IntegerField()
     ordens_liberadas = serializers.IntegerField()
+    operacionais_liberadas = serializers.IntegerField()

@@ -49,6 +49,9 @@ class OrdemServicoOperacional(models.Model):
     )
     cobranca_realizada = models.BooleanField(default=False)
     numero_nf = models.CharField(max_length=10, null=True, blank=True)
+    # Lançamento no sistema financeiro externo, como nas vendas (19/10/2026).
+    referencia_lancamento = models.CharField(max_length=100, null=True, blank=True)
+    data_cobranca = models.DateField(null=True, blank=True)
     cobranca_realizada_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

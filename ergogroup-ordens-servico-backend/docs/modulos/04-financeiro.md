@@ -121,7 +121,17 @@ A aba **Em execução** mostra as vendas ainda não liberadas, **as mais perto d
 
 ### 4.3 Conferir que nada ficou para trás
 
-A **Conferência do faturamento** (seção 5) roda na hora em que é aberta. O resumo dela aparece no topo de Cobranças, e as OS com pendência ganham o filtro **"Precisa de atenção"**.
+A **Conferência do faturamento** (seção 5) roda na hora em que é aberta. O resumo dela aparece como um item pequeno no cabeçalho de Cobranças (um ponto colorido e a contagem; ao abrir, as verificações com problema, "Verificar de novo" e o atalho para a conferência), e as OS com pendência ganham o filtro **"Precisa de atenção"**.
+
+### 4.4 OS operacionais (19/10/2026)
+
+As **OS operacionais que geram cobrança** (regra do catálogo operacional, ADR 0011) entram nas mesmas abas de Cobranças, junto das vendas:
+
+- **Em execução:** gera cobrança e ainda não foi finalizada;
+- **Para faturar:** finalizada e liberada (a liberação é automática ao finalizar);
+- **Faturadas:** com o lançamento registrado.
+
+A OS operacional **não tem valor, condição nem vencimento** no sistema: o valor é definido no lançamento. Para faturar, o financeiro abre "Faturar a OS operacional", confere o cliente, o que cobrar (item do catálogo, quantidade e descrição), a execução e a regra de cobrança aplicada, lança no sistema financeiro e registra aqui a **referência** (opcional) e a **data do lançamento** (padrão: hoje). As cobranças anteriores a 19/10/2026 guardavam só a NF (`numero_nf`); ela aparece como referência ("NF 123"), e a NF "0" conta como não informada.
 
 ---
 
@@ -143,9 +153,12 @@ São verificações calculadas na hora da consulta, sem agendamento. Há dois ti
 | Atenção | Liberada há 3 dias ou mais sem faturar | Está na fila do financeiro há tempo demais. | Para faturar |
 | Atenção | Mudou depois da liberação | Serviço acrescentado, cancelado ou excluído, ou valor e condição alterados, depois da liberação. Confira antes de faturar. | Para faturar |
 | Atenção | Mudou depois de faturada | Algo mudou depois do lançamento (alterações dos últimos 90 dias): ajuste no sistema financeiro. | Faturadas |
+| Garantia | Toda OS operacional finalizada que gera cobrança está liberada | Finalizada, gera cobrança e sem liberação. "Corrigir agora" libera. | Em execução |
+| Atenção | OS operacional liberada há 3 dias ou mais sem faturar | Está na fila do financeiro há tempo demais. | Para faturar |
+| Atenção | OS operacional faturada sem referência do lançamento | Marcada como cobrada sem NF nem código do lançamento (ou com a NF "0"). | Faturadas |
 
 Cada item traz:
-- a OS e o cliente;
+- a OS (ou a OS operacional) e o cliente;
 - o serviço e o setor, quando o problema é de um serviço;
 - **com quem está**: os responsáveis das tarefas que faltam;
 - o detalhe (ex.: "Chegou ao setor há 5 dias", "Valor ou condição de pagamento alterados por Fulano em 10/10/2026").
@@ -160,8 +173,10 @@ O menu mostra **Cobranças** para quem tem `financeiro.registrar_cobranca` e **P
 
 | Tela | Rota | O que mostra e faz |
 |---|---|---|
-| **Cobranças** | `/cobrancas` | Abas pelas situações, sem sobreposição: **Para faturar** (padrão, a fila), **Em execução** (com o que falta) e **Faturadas** (por mês). No topo fica o resumo da Conferência. Filtros: "Precisa de atenção" (as verificações da conferência), cliente, condição, vendedor, liberação (na venda ou serviços concluídos), forma, data e vencimento. Cada linha mostra como foi liberada ("na venda" ou "serviços concluídos"). Ações: Faturar, abrir o resumo para faturar e abrir a venda. |
+| **Cobranças** | `/cobrancas` | Vendas e OS operacionais juntas. Abas pelas situações, sem sobreposição: **Para faturar** (padrão, a fila), **Em execução** (com o que falta) e **Faturadas** (por mês). A coluna **Origem** diz se é venda ou OS operacional, e o seletor **Todas · Vendas · OS operacionais** filtra. "O que cobrar" mostra quantos serviços tem a venda ou o item do catálogo da OS operacional (com a quantidade); o que não se aplica à OS operacional (valor, condição, vencimento, vendedor) aparece como "—" ou "Definido no lançamento". O total da aba separa as vendas (quantidade e valor) das OS operacionais (quantidade). No cabeçalho fica o item pequeno da Conferência. Filtros: "Precisa de atenção", cliente, condição, vendedor, liberação (na venda, serviços concluídos ou OS operacional finalizada), data e vencimento. Ações: Faturar, abrir o resumo para faturar e abrir a venda. |
 | **Faturar** (modal) | dentro de Cobranças e do Resumo | As duas etapas da seção 4.1. |
+| **Faturar a OS operacional** (modal) | dentro de Cobranças, do resumo da OS operacional e da lista de OS operacionais | Um modal só: a regra de cobrança e a liberação, o cliente e o que cobrar (com copiar) e o lançamento (referência e data). |
+| **Resumo da OS operacional** | `/cobrancas/operacionais/:id` | A regra de cobrança, as pendências da conferência, "Para lançar no sistema financeiro" (com copiar), o que cobrar, o lançamento e o histórico (criada, iniciada, finalizada, liberada e faturada). |
 | **Resumo para faturar** | `/cobrancas/:id` | Tudo da OS num lugar só: uma faixa explicando por que está (ou não) liberada; as pendências da conferência; o bloco "Para lançar no sistema financeiro" com copiar; o lançamento; os serviços realizados (setor, quem executou, início, término e quem finalizou); e o histórico, com o filtro "Financeiro \| Tudo" que separa os eventos financeiros dos de execução. |
 | **Conferência do faturamento** | `/cobrancas/conferencia` | Cada verificação com o estado (ok, atenção ou falha de garantia), a contagem e, aberta, as vendas com o detalhe e com quem está. Tem o botão "Corrigir agora". |
 | **Painel financeiro** | `/analise/financeiro` | Indicadores: Faturado, A faturar (liberadas sem lançamento), Previsão (ainda não liberadas) e Ticket médio. Também mostra os mesmos totais por tipo de condição (à vista e parcelado), vendas por mês e clientes. |
@@ -174,6 +189,8 @@ O menu mostra **Cobranças** para quem tem `financeiro.registrar_cobranca` e **P
 |---|---|---|
 | Cobranças | `GET /api/financeiro/cobrancas/?situacao=` (`a_faturar`, que é o padrão, `previsao`, `faturadas` ou `todas`) | `registrar_cobranca` + `ver_valores` |
 | Resumo para faturar | `GET /api/financeiro/ordens/<id>/` | `ver_valores` |
+| Resumo da OS operacional | `GET /api/financeiro/operacionais/<id>/` | `registrar_cobranca` + `ver_valores` |
+| Registrar o lançamento da OS operacional | `PATCH /api/ordens-servico/operacionais/<id>/cobranca/` (`referencia_lancamento`, `data_cobranca`; `numero_nf` só por compatibilidade) | `registrar_cobranca`. 400 se não gerar cobrança ou não estiver liberada. |
 | Conferência | `GET /api/financeiro/conferencia/` | `registrar_cobranca` + `ver_valores` |
 | Corrigir a sincronização | `POST /api/financeiro/conferencia/corrigir/` | `registrar_cobranca` + `ver_valores` |
 | Registrar o lançamento | `PATCH /api/ordens-servico/ordens/<id>/cobranca/` (`referencia_lancamento`, `data_cobranca`) | `registrar_cobranca`. 400 se a OS não estiver liberada. |
@@ -185,7 +202,7 @@ Filtros de Cobranças:
 - `em_alerta=true`;
 - `faturada_de` e `faturada_ate` (data do lançamento; limita só as faturadas).
 
-A resposta traz os **contadores das três situações** (quantidade e valor) sob os mesmos filtros, o número de OS em alerta, o que falta em cada OS da previsão (`pendentes`) e os códigos da conferência de cada OS (`pendencias`).
+A resposta traz os **contadores das três situações** (quantidade e valor) sob os mesmos filtros, o número de OS em alerta, o que falta em cada OS da previsão (`pendentes`) e os códigos da conferência de cada OS (`pendencias`). Em `operacionais` vêm as OS operacionais que geram cobrança, com `contadores_operacionais` (só quantidade) e `operacionais_em_alerta`. Para elas, `de` e `ate` valem sobre a data de recebimento, e `tipo_condicao` ou `forma_pagamento` deixam a lista vazia (são da venda).
 
 ---
 
@@ -195,6 +212,7 @@ A resposta traz os **contadores das três situações** (quantidade e valor) sob
 |---|---|
 | Liberação, lançamento e resumo da condição | `apps/ordens_servico/models/ordem_servico.py` |
 | Situações, fila, alerta e resumo para faturar | `apps/ordens_servico/services/financeiro.py` |
+| OS operacionais nas Cobranças | `apps/ordens_servico/services/cobranca_operacional.py` |
 | Conferência do faturamento e correção | `apps/ordens_servico/services/conferencia.py`, comando `conferir_faturamento` |
 | E-mails de liberação, faturada e resumo diário | `apps/ordens_servico/emails.py`, `services/resumo_diario.py` |
 | Endpoints | `apps/ordens_servico/views/financeiro_views.py`; lançamento em `views/ordem_servico_viewset.py` |

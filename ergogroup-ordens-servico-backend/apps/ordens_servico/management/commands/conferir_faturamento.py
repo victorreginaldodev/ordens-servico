@@ -19,11 +19,14 @@ class Command(BaseCommand):
             resultado = conferencia.corrigir()
             self.stdout.write(
                 f"Sincronização refeita: {resultado['servicos_corrigidos']} serviço(s) corrigido(s), "
-                f"{resultado['ordens_liberadas']} OS liberada(s)."
+                f"{resultado['ordens_liberadas']} OS liberada(s), "
+                f"{resultado['operacionais_liberadas']} OS operacional(is) liberada(s)."
             )
         for verificacao in conferencia.conferencia()['verificacoes']:
             marca = 'OK' if verificacao['quantidade'] == 0 else verificacao['tipo'].upper()
             self.stdout.write(f"[{marca}] {verificacao['titulo']}: {verificacao['quantidade']}")
             for item in verificacao['itens']:
                 servico = f" · {item['servico_nome']}" if item['servico_nome'] else ''
-                self.stdout.write(f"    OS {item['ordem_servico_id']} ({item['cliente_nome']}){servico}: {item['detalhe']}")
+                numero = (f"OS {item['ordem_servico_id']}" if item['ordem_servico_id']
+                          else f"OSO {item['ordem_servico_operacional_id']}")
+                self.stdout.write(f"    {numero} ({item['cliente_nome']}){servico}: {item['detalhe']}")

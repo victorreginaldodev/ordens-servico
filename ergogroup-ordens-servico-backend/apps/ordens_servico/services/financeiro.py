@@ -8,9 +8,9 @@ from django.conf import settings
 from django.db.models import Count, Prefetch, Q, Sum
 from django.utils import timezone
 
-from apps.ordens_servico.models import OrdemServico, Servico
+from apps.ordens_servico.models import OrdemServico, OrdemServicoOperacional, Servico
 from apps.ordens_servico.models.ordem_servico import Status
-from apps.ordens_servico.services import conferencia
+from apps.ordens_servico.services import cobranca_operacional, conferencia
 from apps.ordens_servico.services.comercial import _responsaveis as responsaveis_do_servico
 from apps.ordens_servico.services.comercial import andamento
 from apps.ordens_servico.services.linha_do_tempo import linha_do_tempo_da_os
@@ -192,9 +192,11 @@ def cobrancas(situacao, filtros=None):
     if filtros.get('em_alerta'):
         ordens = ordens.filter(filtro_em_alerta())
     ordens = list(ordens)
-    pendencias = conferencia.pendencias_por_ordem(
-        conferencia.calcular(OrdemServico.objects.filter(pk__in=[o.pk for o in ordens])),
+    itens = conferencia.calcular(
+        OrdemServico.objects.filter(pk__in=[o.pk for o in ordens]), OrdemServicoOperacional.objects.all(),
     )
+    pendencias = conferencia.pendencias_por_ordem(itens)
+    operacionais = cobranca_operacional.cobrancas(situacoes, filtros, conferencia.pendencias_por_oso(itens))
     linhas = [linha(ordem, pendencias.get(ordem.pk)) for ordem in ordens]
     contadores = _contadores(filtradas)
     if filtros.get('faturada_de') or filtros.get('faturada_ate'):
@@ -206,6 +208,9 @@ def cobrancas(situacao, filtros=None):
         'em_alerta': filtradas.filter(filtro_em_alerta()).count(),
         'dias_alerta_sem_lancamento': settings.DIAS_ALERTA_SEM_LANCAMENTO,
         'ordens': [item for s in situacoes for item in _ordenar(s, [l for l in linhas if l['situacao'] == s])],
+        'operacionais': operacionais['linhas'],
+        'contadores_operacionais': operacionais['contadores'],
+        'operacionais_em_alerta': operacionais['em_alerta'],
     }
 
 

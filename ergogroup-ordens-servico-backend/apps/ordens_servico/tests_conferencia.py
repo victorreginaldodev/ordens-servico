@@ -184,7 +184,7 @@ class ConferenciaTestCase(ConferenciaBase):
         self.client.force_authenticate(user=self.financeiro)
         resultado = self.client.post(reverse('financeiro-conferencia-corrigir')).data
 
-        self.assertEqual(resultado, {'servicos_corrigidos': 1, 'ordens_liberadas': 1})
+        self.assertEqual(resultado, {'servicos_corrigidos': 1, 'ordens_liberadas': 1, 'operacionais_liberadas': 0})
         ordem.refresh_from_db()
         self.assertTrue(ordem.liberada_para_cobranca)
         self.assertEqual(self.verificacao(self.conferencia().data, 'sync_servico')['quantidade'], 0)

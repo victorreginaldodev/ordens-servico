@@ -40,6 +40,18 @@ por aquele serviço formam uma lista menor de exceções.
   “Este serviço gera cobrança” e a tabela “Clientes isentos”. Sem `catalogo_operacional.configurar_cobranca`, a seção
   aparece somente para leitura e o formulário não envia esses campos.
 
+## Faturamento das OS operacionais no financeiro (19/10/2026, wireframe aprovado)
+
+- As OS operacionais que geram cobrança entram em Cobranças (`/cobrancas`), nas mesmas situações das vendas:
+  Em execução (não finalizada), Para faturar (liberada) e Faturadas (lançada). Detalhes em `modulos/04-financeiro.md`.
+- O lançamento da OSO passa a guardar, como o da venda, a **referência** (`referencia_lancamento`, até 100
+  caracteres) e a **data do lançamento** (`data_cobranca`, padrão: hoje). Migrações `ordens_servico/0054` e `0055`,
+  uma alteração por migração. `numero_nf` continua no modelo e no histórico; nas cobranças antigas, ele aparece como
+  a referência.
+- A conferência do faturamento ganhou três verificações das OSOs: finalizada sem liberação (garantia; "Corrigir
+  agora" libera), liberada há dias sem lançamento e faturada sem referência.
+- A OSO continua sem valor no sistema: o financeiro define o valor no lançamento.
+
 ## Contrato da API
 
 `GET/POST/PATCH /api/catalogo/catalogos-operacionais/` passa a expor:
