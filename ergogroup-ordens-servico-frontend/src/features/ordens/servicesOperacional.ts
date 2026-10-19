@@ -20,6 +20,7 @@ export interface OperationalOrderItem {
   prioridade: OperationalOrderPrioridade;
   prioridadeDisplay: string;
   prazo: string | null;
+  /** Histórico: a cobrança vem da regra do catálogo (ADR 0011); o formulário não edita mais este campo. */
   revisaoCliente: boolean;
   geraCobranca: boolean;
   cobrancaRealizada: boolean;
@@ -56,7 +57,6 @@ export interface CreateOperationalOrderPayload {
   prazo?: string | null;
   prioridade?: OperationalOrderPrioridade;
   status?: OperationalOrderStatus;
-  revisaoCliente?: boolean;
 }
 
 export interface UpdateOperationalOrderPayload {
@@ -71,7 +71,6 @@ export interface UpdateOperationalOrderPayload {
   prazo?: string | null;
   prioridade?: OperationalOrderPrioridade;
   status?: OperationalOrderStatus;
-  revisaoCliente?: boolean;
 }
 
 // ── Normalization ─────────────────────────────────────────────────────────────
@@ -153,7 +152,6 @@ export const createOperationalOrder = async (
     prazo: payload.prazo ?? null,
     prioridade: payload.prioridade ?? 'baixa',
     status: payload.status ?? 'nao_iniciado',
-    revisao_cliente: payload.revisaoCliente ?? false,
   });
   return normalizeDetail(data);
 };
@@ -174,7 +172,6 @@ export const updateOperationalOrder = async (
   if (payload.prazo !== undefined) body.prazo = payload.prazo;
   if (payload.prioridade !== undefined) body.prioridade = payload.prioridade;
   if (payload.status !== undefined) body.status = payload.status;
-  if (payload.revisaoCliente !== undefined) body.revisao_cliente = payload.revisaoCliente;
   const { data } = await api.patch(`${ENDPOINT}${id}/`, body);
   return normalizeDetail(data);
 };

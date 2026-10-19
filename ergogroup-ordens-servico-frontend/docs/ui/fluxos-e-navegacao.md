@@ -684,7 +684,7 @@ A tela saiu da tabela própria (filtros em dropdown, chips de filtros ativos e p
 - **Busca e filtros:** busca por cliente, serviço, responsável, número ou NF; filtros de Cliente, Serviço, Responsável, Status, Prioridade e Cobrança; período por data de recebimento.
 - **Ações:** clicar na linha abre o modal de edição (quem gerencia OS operacionais); **Registrar cobrança** aparece na linha das OSOs "A cobrar" para quem tem `financeiro.registrar_cobranca`.
 - A lista vem inteira do backend (o endpoint não pagina) e a paginação, a busca e os filtros são do `DataTable`. Saíram `OperationalOrderFilters`, `OperationalOrderActiveFilters`, `OperationalOrderRow`, `OperationalOrderStatusBadge`, `utilsOperacional.ts`, `features/ordens/utils.ts` e a consulta paginada (`useOperationalOrderPage`).
-- O modal de criar e editar (`OperationalOrderForm`) e o de registrar cobrança não mudaram.
+- O modal de criar e editar (`OperationalOrderForm`) não mudou de estrutura. Desde 19/10/2026: as datas (recebimento, início, término e prazo) usam o campo de data padrão (`CampoData`, com calendário em português; início, término e prazo podem ser apagados), e o interruptor "Revisão do cliente" saiu do formulário. O campo `revisao_cliente` continua no banco e na API, só para leitura e histórico (ADR 0011). O registro de cobrança passou ao "Faturar a OS operacional" do financeiro (§6.11).
 
 ### 6.11 Cobranças com as OS operacionais (19/10/2026, wireframe `lote7-cobrancas-oso.html` aprovado)
 

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -17,6 +16,7 @@ import { useClients } from '@/features/clientes/hooks';
 import { useUsers } from '@/features/time/hooks';
 import { opcoesDePessoas } from '@/features/time/utils';
 import { useCatalogosOperacionais } from '@/features/catalogo/hooks';
+import { CampoData } from '@/features/vendas/components/CampoData';
 import {
   useOperationalOrderDetail,
   useCreateOperationalOrder,
@@ -36,7 +36,6 @@ interface FormState {
   prazo: string;
   prioridade: OperationalOrderPrioridade;
   status: OperationalOrderStatus;
-  revisaoCliente: boolean;
 }
 
 const defaultForm: FormState = {
@@ -51,7 +50,6 @@ const defaultForm: FormState = {
   prazo: '',
   prioridade: 'baixa',
   status: 'nao_iniciado',
-  revisaoCliente: false,
 };
 
 interface OperationalOrderFormProps {
@@ -90,7 +88,6 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
         prazo: detail.prazo ?? '',
         prioridade: detail.prioridade,
         status: detail.status,
-        revisaoCliente: detail.revisaoCliente,
       });
     }
   }, [open, isEdit, detail]);
@@ -116,7 +113,6 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
       prazo: form.prazo || null,
       prioridade: form.prioridade,
       status: form.status,
-      revisaoCliente: form.revisaoCliente,
     };
 
     if (isEdit && editId) {
@@ -233,11 +229,11 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Recebimento</p>
-                <Input
-                  type="date"
-                  value={form.dataRecebimento}
-                  onChange={(e) => setForm({ ...form, dataRecebimento: e.target.value })}
-                  className="bg-background border-border"
+                <CampoData
+                  id="oso-recebimento"
+                  aria-label="Recebimento"
+                  valor={form.dataRecebimento}
+                  onChange={(dataRecebimento) => setForm({ ...form, dataRecebimento })}
                 />
               </div>
               <div>
@@ -258,20 +254,24 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Data de início</p>
-                <Input
-                  type="date"
-                  value={form.dataInicio}
-                  onChange={(e) => setForm({ ...form, dataInicio: e.target.value })}
-                  className="bg-background border-border max-w-[200px]"
+                <CampoData
+                  id="oso-inicio"
+                  aria-label="Data de início"
+                  valor={form.dataInicio}
+                  onChange={(dataInicio) => setForm({ ...form, dataInicio })}
+                  placeholder="Sem data"
+                  limpavel
                 />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Data de término</p>
-                <Input
-                  type="date"
-                  value={form.dataTermino}
-                  onChange={(e) => setForm({ ...form, dataTermino: e.target.value })}
-                  className="bg-background border-border max-w-[200px]"
+                <CampoData
+                  id="oso-termino"
+                  aria-label="Data de término"
+                  valor={form.dataTermino}
+                  onChange={(dataTermino) => setForm({ ...form, dataTermino })}
+                  placeholder="Sem data"
+                  limpavel
                 />
               </div>
             </div>
@@ -292,24 +292,16 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Prazo</p>
-                <Input
-                  type="date"
-                  value={form.prazo}
-                  onChange={(e) => setForm({ ...form, prazo: e.target.value })}
-                  className="bg-background border-border"
+                <CampoData
+                  id="oso-prazo"
+                  aria-label="Prazo"
+                  valor={form.prazo}
+                  onChange={(prazo) => setForm({ ...form, prazo })}
+                  placeholder="Sem prazo"
+                  limpavel
+                  atalhos={[{ rotulo: 'Hoje', dias: 0 }, { rotulo: 'Em 7 dias', dias: 7 }, { rotulo: 'Em 15 dias', dias: 15 }]}
                 />
               </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={form.revisaoCliente}
-                onCheckedChange={(v) => setForm({ ...form, revisaoCliente: v })}
-              />
-              <span className="text-sm">Revisão do cliente</span>
-              {form.revisaoCliente && (
-                <span className="text-xs text-muted-foreground">(gera cobrança ao finalizar)</span>
-              )}
             </div>
 
             <div>

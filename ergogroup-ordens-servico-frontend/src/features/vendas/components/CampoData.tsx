@@ -26,7 +26,8 @@ export interface AtalhoDeData {
 }
 
 /**
- * Campo de data com calendário (por enquanto só no formulário da venda; plano-melhorias-nova-venda.md, etapa 3).
+ * Campo de data com calendário, o padrão dos formulários (venda, plano-melhorias-nova-venda.md, etapa 3; OS
+ * operacional desde 19/10/2026).
  * Mostra "13/10/2026 · ter", abre um calendário em português e guarda `AAAA-MM-DD`, o formato da API.
  */
 export function CampoData({
