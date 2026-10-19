@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.organizacoes.models import Funcao
-from apps.organizacoes.permissoes import Permissao, PermissoesPorAcaoMixin, escopo_da_permissao, pode_conceder
+from apps.organizacoes.permissoes import EhSuperusuario, Permissao, escopo_da_permissao, pode_conceder
 from apps.organizacoes.serializers import FuncaoSerializer, PermissaoCatalogoSerializer
 from apps.organizacoes.views.avisos import AvisaSetorSemQuemRecebeMixin
 
@@ -27,37 +27,42 @@ from apps.organizacoes.views.avisos import AvisaSetorSemQuemRecebeMixin
         summary='Criar função',
         description=(
             'Cria uma função com nome livre, as permissões marcadas e os setores em que pode ser usada '
-            '(`setores`, obrigatório). Exige `organizacao.configurar`.'
+            '(`setores`, obrigatório). Somente superusuários.'
         ),
     ),
     retrieve=extend_schema(summary='Detalhar função'),
     update=extend_schema(
         summary='Atualizar função',
-        description='Substitui os dados e as permissões da função. Exige `organizacao.configurar`.',
+        description='Substitui os dados e as permissões da função. Somente superusuários.',
     ),
     partial_update=extend_schema(
         summary='Atualizar função parcialmente',
         description=(
-            'Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`. A resposta traz '
+            'Se `permissoes` for enviado, substitui a lista inteira. Somente superusuários. A resposta traz '
             '`avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.'
         ),
     ),
     destroy=extend_schema(
         summary='Remover função',
-        description='Remove a função. Retorna 409 se houver usuários vinculados a ela; nesse caso, desative-a.',
+        description=(
+            'Remove a função. Somente superusuários. Retorna 409 se houver usuários vinculados a ela; nesse caso, '
+            'desative-a.'
+        ),
     ),
 )
-class FuncaoViewSet(AvisaSetorSemQuemRecebeMixin, PermissoesPorAcaoMixin, viewsets.ModelViewSet):
+class FuncaoViewSet(AvisaSetorSemQuemRecebeMixin, viewsets.ModelViewSet):
     queryset = Funcao.objects.prefetch_related('permissoes', 'setores').all()
     serializer_class = FuncaoSerializer
     permission_classes = [IsAuthenticated]
-    permissoes_por_acao = {
-        'create': (Permissao.ORGANIZACAO_CONFIGURAR,),
-        'update': (Permissao.ORGANIZACAO_CONFIGURAR,),
-        'partial_update': (Permissao.ORGANIZACAO_CONFIGURAR,),
-        'destroy': (Permissao.ORGANIZACAO_CONFIGURAR,),
-    }
+    # Funções e permissões não são concedidas por função: só superusuários as cadastram (19/10/2026).
+    acoes_de_superusuario = frozenset({'create', 'update', 'partial_update', 'destroy'})
     dica_exclusao_bloqueada = 'Desative a função em vez de excluí-la.'
+
+    def get_permissions(self):
+        permissoes = super().get_permissions()
+        if self.action in self.acoes_de_superusuario:
+            permissoes.append(EhSuperusuario())
+        return permissoes
 
     def perform_destroy(self, instance):
         if not pode_conceder(self.request.user, instance.codigos_permissao):

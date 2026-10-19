@@ -341,6 +341,7 @@ class CobrancaExigeVerValoresTestCase(APITestCase):
         self.organizacao = Organizacao.objects.get(nome='Ergogroup')
 
     def criar_funcao(self, permissoes):
+        self.client.force_authenticate(user=criar_usuario(None, is_superuser=True))
         return self.client.post(reverse('funcoes-list'), {
             'organizacao': self.organizacao.id, 'nome': 'Faturista', 'setores': [setor_padrao().id],
             'permissoes': permissoes,
@@ -360,6 +361,7 @@ class CobrancaExigeVerValoresTestCase(APITestCase):
     def test_tirar_ver_valores_de_quem_registra_cobranca_e_recusado(self):
         funcao = Funcao.objects.get(nome='Financeiro')
         sem_valores = [p for p in funcao.codigos_permissao if p != Permissao.FINANCEIRO_VER_VALORES]
+        self.client.force_authenticate(user=criar_usuario(None, is_superuser=True))
 
         response = self.client.patch(reverse('funcoes-detail', args=[funcao.id]), {'permissoes': sem_valores}, format='json')
 

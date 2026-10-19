@@ -29,6 +29,7 @@ import ResumoDaVendaPage from '@/features/vendas/pages/ResumoDaVendaPage';
 // Organização
 import CompanySettingsPage from '@/features/empresa/pages/CompanySettingsPage';
 import SetoresPage from '@/features/organizacao/pages/SetoresPage';
+import FuncoesPage from '@/features/organizacao/pages/FuncoesPage';
 
 // Catálogo
 import CatalogListPage from '@/features/catalogo/pages/CatalogListPage';
@@ -151,6 +152,14 @@ const AppRoutes = () => (
     <Route path="/time" element={g(<TimePage />, ['organizacao.configurar', 'usuarios.gerenciar'])} />
     <Route path="/time/eu" element={w(<MeuPerfilPage />)} />
     <Route path="/organizacao/setores" element={w(<SetoresPage />)} />
+    <Route
+      path="/organizacao/funcoes"
+      element={w(
+        <RequerPermissao somenteSuperusuario>
+          <FuncoesPage />
+        </RequerPermissao>,
+      )}
+    />
     <Route path="/organizacao/dados" element={w(<CompanySettingsPage />)} />
 
     {/* Ajuda: tela cheia, sem o menu do sistema; aberta para todos, cada página filtra o que mostra pelas permissões */}

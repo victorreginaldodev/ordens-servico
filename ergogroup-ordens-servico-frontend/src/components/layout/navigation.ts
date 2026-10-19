@@ -4,6 +4,7 @@ import {
   Building2,
   CirclePlus,
   Handshake,
+  KeyRound,
   LayoutDashboard,
   LayoutGrid,
   ListChecks,
@@ -31,6 +32,8 @@ export interface NavItem {
   permissoes?: Permissao[];
   /** Some para quem tem alguma destas (ex.: o Painel do setor para quem tem a Visão geral). */
   semPermissoes?: Permissao[];
+  /** Só superusuários veem (ex.: Funções e permissões, que não é concedido por função). */
+  somenteSuperusuario?: boolean;
 }
 
 export interface NavGroup {
@@ -39,7 +42,7 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Quem administra a organização: vê Time e Setores no menu do usuário. */
+/** Quem administra a organização: vê Time e Setores no menu do usuário (Funções e permissões só para superusuários). */
 export const ADMIN_ORGANIZACAO: Permissao[] = ['organizacao.configurar', 'usuarios.gerenciar'];
 
 /** Menu lateral, na ordem do fluxo: vende, executa, cobra; depois análise e cadastros. */
@@ -100,11 +103,18 @@ export const NAV_ORGANIZACAO: NavGroup = {
   items: [
     { title: 'Time', url: '/time', icon: Users, permissoes: ADMIN_ORGANIZACAO },
     { title: 'Setores', url: '/organizacao/setores', icon: Network, permissoes: ADMIN_ORGANIZACAO },
+    { title: 'Funções e permissões', url: '/organizacao/funcoes', icon: KeyRound, somenteSuperusuario: true },
   ],
 };
 
-export const podeVerItem = (item: Pick<NavItem, 'permissoes' | 'semPermissoes'>, podeAlguma: Verificador['podeAlguma']) =>
-  (!item.permissoes || podeAlguma(item.permissoes)) && !(item.semPermissoes && podeAlguma(item.semPermissoes));
+export const podeVerItem = (
+  item: Pick<NavItem, 'permissoes' | 'semPermissoes' | 'somenteSuperusuario'>,
+  podeAlguma: Verificador['podeAlguma'],
+  superusuario = false,
+) =>
+  (!item.somenteSuperusuario || superusuario) &&
+  (!item.permissoes || podeAlguma(item.permissoes)) &&
+  !(item.semPermissoes && podeAlguma(item.semPermissoes));
 
 /** Grupos com os itens que a pessoa pode ver. Recebe `usePermissoes().podeAlguma`. */
 export const visibleNavGroups = (podeAlguma: Verificador['podeAlguma']): NavGroup[] =>

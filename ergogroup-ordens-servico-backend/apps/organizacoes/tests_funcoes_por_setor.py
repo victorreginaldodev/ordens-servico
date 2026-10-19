@@ -77,7 +77,7 @@ class SetoresDaFuncaoApiTestCase(APITestCase):
         self.ergogroup = Organizacao.objects.get(nome='Ergogroup')
         self.comercial = Setor.objects.get(nome='Comercial')
         self.seguranca = Setor.objects.get(nome='Segurança do Trabalho')
-        self.client.force_authenticate(user=criar_usuario(Perfil.DIRETOR))
+        self.client.force_authenticate(user=criar_usuario(None, is_superuser=True))
 
     def criar(self, **extra):
         return self.client.post(reverse('funcoes-list'), {

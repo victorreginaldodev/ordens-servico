@@ -58,7 +58,7 @@ Há dois escopos:
 | Pessoas e organização | `usuarios.gerenciar` | Empresa | Gerenciar o time: adicionar pessoas, definir setor e função, ativar, desativar e excluir. |
 | | `usuarios.gerenciar_diretoria` | Empresa | Gerenciar as pessoas da diretoria (quem tem esta mesma permissão). |
 | | `usuarios.redefinir_senha` | Empresa | Trocar a senha de outra pessoa. |
-| | `organizacao.configurar` | Empresa | Editar os dados da empresa e cadastrar setores e funções. |
+| | `organizacao.configurar` | Empresa | Editar os dados da empresa e cadastrar setores. Funções e permissões são só de superusuários. |
 | Indicadores e auditoria | `indicadores.ver_geral` | Empresa | Ver os indicadores de toda a equipe. Sem ela, só os números da própria pessoa ou do setor. |
 | | `auditoria.ver` | Empresa | Ver o histórico de alterações das OS, com os valores antes e depois. |
 
@@ -113,7 +113,7 @@ Vale para montar funções e para vincular pessoas a elas.
 
 | Regra | Comportamento |
 |---|---|
-| Quem cadastra | Criar, editar, desativar e excluir exige `organizacao.configurar`, mais a regra da seção 3.1. Ver a lista é liberado para todos. |
+| Quem cadastra | Criar, editar, desativar e excluir é **somente para superusuários** (19/10/2026), inclusive liberar ou retirar a função de um setor. Ver a lista é liberado para todos. |
 | Nome | Livre e único dentro da organização. |
 | Setores liberados | **Obrigatório** ter pelo menos um. Os setores precisam ser da mesma organização. |
 | Retirar um setor da função | **Bloqueado** se houver pessoas vinculadas à função naquele setor. Troque esses vínculos antes. |
@@ -192,13 +192,13 @@ Time → Desativar. A pessoa perde o acesso e deixa de aparecer como responsáve
 
 ## 5. Telas
 
-O menu do usuário mostra **Time**, **Setores** e **Funções e permissões** para quem tem `organizacao.configurar` ou `usuarios.gerenciar`.
+O menu do usuário mostra **Time** e **Setores** para quem tem `organizacao.configurar` ou `usuarios.gerenciar`. **Funções e permissões** aparece só para superusuários (removida em 18/10/2026 e devolvida em 19/10/2026 só para eles).
 
 | Tela | Rota | O que mostra e faz |
 |---|---|---|
 | **Time** | `/time` | Tabela de pessoas com nome, e-mail, setor, função e "também executa em". Tem visões Ativos, Inativos e Todos, busca e filtros. As ações são adicionar, editar, desativar ou reativar e excluir. O próprio cadastro não se edita aqui, e sim em Meu perfil. |
 | **Setores** | `/organizacao/setores` | Cards dos setores com quem organiza, quantas pessoas recebem tarefas e os alertas "Sem quem organize" e "Sem quem receba tarefas". O detalhe abre em modal com as abas **Pessoas** (agrupadas por função), **Funções** (liberadas no setor e liberar mais) e **Catálogos**. Ações: editar, desativar ou reativar e excluir. |
-| **Funções e permissões** | `/organizacao/funcoes` | Lista das funções com permissões e setores, e a visão **Matriz** (funções × permissões lado a lado). O modal da função permite criar, editar, duplicar, desativar e excluir. Quem não pode alterar uma função vê a função em modo de leitura. |
+| **Funções e permissões** | `/organizacao/funcoes` | Só superusuários. Lista das funções com permissões e setores, e a visão **Matriz** (funções × permissões lado a lado). O modal da função permite criar, editar, duplicar, desativar e excluir. |
 | **Meu perfil** | `/time/eu` | Dados pessoais e troca da própria senha. |
 | **Dados da empresa** | `/organizacao/dados` | Dados cadastrais da organização. |
 
@@ -214,7 +214,7 @@ Prefixos: `/api/organizacoes/` e `/api/contas/`.
 |---|---|---|---|
 | Organização | `organizacoes/` | Todos | `organizacao.configurar` (não há exclusão) |
 | Setores | `setores/` (filtros `q`, `ativo`) | Todos | `organizacao.configurar` |
-| Funções | `funcoes/` (filtros `organizacao`, `setor`, `ativo`, `q`) | Todos | `organizacao.configurar`, mais a regra "não concede o que não tem" |
+| Funções | `funcoes/` (filtros `organizacao`, `setor`, `ativo`, `q`) | Todos | Somente superusuário |
 | Catálogo de permissões | `funcoes/permissoes-disponiveis/` | Todos | — |
 | Vínculos | `membros/` (filtros `usuario`, `setor`, `funcao`) | Todos | `usuarios.gerenciar`, mais a regra "não concede o que não tem" |
 | Pessoas | `usuarios/` (filtros `q`, `setor`, `funcao`, `ativo`) | Todos | Criar e excluir: `usuarios.gerenciar`. Editar: a própria pessoa (só dados cadastrais) ou `usuarios.gerenciar`. Os campos `vinculos` e `tambem_executa_em` vão na criação e na edição. |

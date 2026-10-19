@@ -155,6 +155,8 @@ Frequência: diária, na fila do que pode ser faturado.
 
 **Funções e permissões removidas do acesso (18/10/2026, pedido do usuário):** o item saiu da navegação central e a rota `/organizacao/funcoes` foi removida. Isso retira a página do menu do usuário, da busca global e do acesso direto para todas as pessoas. As funções continuam sendo usadas internamente em Time e Setores para vincular pessoas e organizar os setores. O marcador de versão que aparecia ao lado de **Novidades** também foi removido da sidebar.
 
+**Funções e permissões só para superusuários (19/10/2026, pedido do usuário):** a rota `/organizacao/funcoes` e o item no menu do usuário e na busca voltaram, visíveis só para superusuários (`RequerPermissao somenteSuperusuario` e `NavItem.somenteSuperusuario`). Para os demais, a rota mostra "sem acesso". Liberar ou retirar funções no detalhe do setor também é só para superusuários.
+
 **Ordem na Execução (14/10/2026, pedido do usuário):** Visão geral (ou Painel do setor) primeiro, depois Meus serviços e OS operacionais.
 
 **Nova venda** aparece no menu e também como botão principal da página de Vendas e ação da busca global (Ctrl+K).

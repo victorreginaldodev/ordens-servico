@@ -13,6 +13,8 @@ interface RequerPermissaoProps {
   nenhumaDe?: Permissao[];
   /** Para onde mandar quem foi barrado por `nenhumaDe`, em vez da tela "sem acesso". */
   redirecionarPara?: string;
+  /** Só superusuários (ex.: Funções e permissões). */
+  somenteSuperusuario?: boolean;
   children: React.ReactNode;
 }
 
@@ -33,9 +35,9 @@ export function SemAcesso() {
 }
 
 /** Guarda de rota por permissão. Sem sessão, volta para o login. */
-export function RequerPermissao({ algumaDe, nenhumaDe, redirecionarPara, children }: RequerPermissaoProps) {
+export function RequerPermissao({ algumaDe, nenhumaDe, redirecionarPara, somenteSuperusuario, children }: RequerPermissaoProps) {
   const { user } = useCurrentUser();
-  const { podeAlguma } = usePermissoes();
+  const { podeAlguma, superusuario } = usePermissoes();
 
   if (!user) return <Navigate to="/login" replace />;
   // Sessão gravada antes das permissões: espera o /auth/me/ (o layout relê a pessoa ao abrir).
@@ -47,6 +49,7 @@ export function RequerPermissao({ algumaDe, nenhumaDe, redirecionarPara, childre
     );
   }
   if (nenhumaDe && podeAlguma(nenhumaDe)) return redirecionarPara ? <Navigate to={redirecionarPara} replace /> : <SemAcesso />;
+  if (somenteSuperusuario && !superusuario) return <SemAcesso />;
   if (algumaDe && !podeAlguma(algumaDe)) return <SemAcesso />;
   return <>{children}</>;
 }

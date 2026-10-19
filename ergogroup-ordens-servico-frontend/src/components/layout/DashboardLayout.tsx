@@ -16,7 +16,7 @@ import { CommandMenu } from './CommandMenu';
 const SIDEBAR_KEY = 'sidebar:collapsed';
 
 // Rotas já liberadas; as demais mostram o aviso de "em desenvolvimento".
-const READY_PREFIXES = ['/inicio', '/meus-servicos', '/visao-geral', '/setor', '/servicos', '/vendas', '/ordens', '/time', '/organizacao/setores', '/cobrancas', '/clientes', '/catalogo', '/analise', '/ui'];
+const READY_PREFIXES = ['/inicio', '/meus-servicos', '/visao-geral', '/setor', '/servicos', '/vendas', '/ordens', '/time', '/organizacao/setores', '/organizacao/funcoes', '/cobrancas', '/clientes', '/catalogo', '/analise', '/ui'];
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

@@ -31,10 +31,10 @@ export const organizacaoKeys = {
   permissoes: ['organizacao', 'permissoes-disponiveis'] as const,
 };
 
-/** Quem altera uma função precisa configurar a organização e ter todas as permissões dela (regra do backend). */
+/** Funções e permissões são cadastradas só por superusuários (regra do backend, 19/10/2026). */
 export const usePodeEditarFuncao = () => {
-  const { pode, podeConceder } = usePermissoes();
-  return (f: Pick<Funcao, 'permissoes'>) => pode('organizacao.configurar') && f.permissoes.every((p) => podeConceder(p));
+  const { superusuario } = usePermissoes();
+  return (_f: Pick<Funcao, 'permissoes'>) => superusuario;
 };
 
 /** Catálogo fixo de permissões: muda só com deploy do backend. */

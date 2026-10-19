@@ -69,7 +69,7 @@ export function BuscaGatilho({ onClick }: { onClick: () => void }) {
 export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
-  const { pode, podeAlguma } = usePermissoes();
+  const { pode, podeAlguma, superusuario } = usePermissoes();
   const ajuda = useAjuda();
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
   const pages = [
     ...visibleNavGroups(podeAlguma).flatMap((g) => g.items.map((i) => ({ label: i.title, group: g.title, url: i.url, icon: i.icon }))),
     ...NAV_ORGANIZACAO.items
-      .filter((i) => podeVerItem(i, podeAlguma))
+      .filter((i) => podeVerItem(i, podeAlguma, superusuario))
       .map((i) => ({ label: i.title, group: NAV_ORGANIZACAO.title, url: i.url, icon: i.icon })),
     { label: 'Meu perfil', group: 'Conta', url: '/time/eu', icon: User },
     { label: 'Ajuda', group: 'Conta', url: '/ajuda', icon: CircleHelp },

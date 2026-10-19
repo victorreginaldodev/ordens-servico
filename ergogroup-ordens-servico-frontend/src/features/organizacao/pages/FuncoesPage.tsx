@@ -40,8 +40,7 @@ function SetoresCell({ funcao }: { funcao: Funcao }) {
 
 const FuncoesPage = () => {
   const { toast } = useToast();
-  const { pode } = usePermissoes();
-  const podeConfigurar = pode('organizacao.configurar');
+  const { superusuario: podeConfigurar } = usePermissoes();
   const podeEditar = usePodeEditarFuncao();
   const funcoesQ = useFuncoes();
   const { data: setores = [] } = useSetores();

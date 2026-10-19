@@ -169,6 +169,14 @@ class TemPermissao(BasePermission):
         return any(tem_permissao(request.user, p) for p in self.permissoes)
 
 
+class EhSuperusuario(BasePermission):
+    """Só superusuários. Usada no cadastro de funções e permissões, que não é concedido por função."""
+    message = 'Somente superusuários podem gerenciar funções e permissões.'
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+
 class PermissoesPorAcaoMixin:
     """Para viewsets: ``permissoes_por_acao = {'create': (Permissao.X,), ...}``. Ações fora do mapa
     exigem só autenticação; ações no mapa exigem ao menos uma das permissões listadas."""

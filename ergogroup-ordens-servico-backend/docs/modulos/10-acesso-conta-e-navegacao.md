@@ -51,7 +51,8 @@ O menu lateral segue a ordem do fluxo: vende, executa, cobra; depois análise e 
 | Análise BI | Painel operacional | Todos |
 | | Painel financeiro | `financeiro.ver_valores` |
 | Cadastros | Clientes, Catálogo | Todos (editar exige a permissão do módulo) |
-| Menu do usuário | Time, Setores, Funções e permissões | `organizacao.configurar` ou `usuarios.gerenciar` |
+| Menu do usuário | Time, Setores | `organizacao.configurar` ou `usuarios.gerenciar` |
+| | Funções e permissões | Somente superusuário |
 | | Meu perfil, Dados da empresa | Todos |
 
 O menu também mostra os itens da OS operacional, que está **fora do escopo** desta documentação.

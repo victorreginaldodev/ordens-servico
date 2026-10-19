@@ -141,13 +141,13 @@ class GestorTecnicoSemVerValoresTestCase(RecebeTarefasBase):
     def test_por_padrao_nao_ve_valores(self):
         self.assertNotIn(Permissao.FINANCEIRO_VER_VALORES, permissoes_do_usuario(self.gestor_tecnico))
 
-    def test_so_quem_ve_valores_pode_ativar_na_funcao(self):
+    def test_so_superusuario_pode_ativar_na_funcao(self):
         funcao = Funcao.objects.get(nome='Gestor Técnico')
         corpo = {'permissoes': [*funcao.codigos_permissao, Permissao.FINANCEIRO_VER_VALORES]}
 
         self.client.force_authenticate(user=self.gestor_tecnico)
         negado = self.client.patch(reverse('funcoes-detail', args=[funcao.id]), corpo, format='json')
-        self.client.force_authenticate(user=self.diretor)
+        self.client.force_authenticate(user=criar_usuario(None, is_superuser=True))
         aceito = self.client.patch(reverse('funcoes-detail', args=[funcao.id]), corpo, format='json')
 
         self.assertIn(negado.status_code, (status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN))

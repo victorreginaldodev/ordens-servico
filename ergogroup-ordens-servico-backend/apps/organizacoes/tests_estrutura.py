@@ -12,6 +12,7 @@ class EstruturaBaseTestCase(APITestCase):
     def setUp(self):
         self.ergogroup = Organizacao.objects.get(nome='Ergogroup')
         self.diretor = criar_usuario(Perfil.DIRETOR)
+        self.superusuario = criar_usuario(None, is_superuser=True)
         self.tecnico = criar_usuario(Perfil.TECNICO)
         self.novato = criar_usuario(None)
         self.ergonomia = Setor.objects.create(organizacao=self.ergogroup, nome='Ergonomia')
@@ -21,8 +22,8 @@ class EstruturaBaseTestCase(APITestCase):
 
 
 class FuncaoApiTestCase(EstruturaBaseTestCase):
-    def test_diretor_cria_funcao_com_permissoes(self):
-        self.client.force_authenticate(user=self.diretor)
+    def test_superusuario_cria_funcao_com_permissoes(self):
+        self.client.force_authenticate(user=self.superusuario)
 
         response = self.client.post(reverse('funcoes-list'), {
             'organizacao': self.ergogroup.id, 'setores': [self.ergonomia.id], 'nome': 'Financeiro Sênior',
@@ -36,7 +37,7 @@ class FuncaoApiTestCase(EstruturaBaseTestCase):
         self.assertEqual(Funcao.objects.get(nome='Financeiro Sênior').permissoes.count(), 2)
 
     def test_permissao_inexistente_e_rejeitada(self):
-        self.client.force_authenticate(user=self.diretor)
+        self.client.force_authenticate(user=self.superusuario)
 
         response = self.client.post(reverse('funcoes-list'), {
             'organizacao': self.ergogroup.id, 'setores': [self.ergonomia.id], 'nome': 'Inventada', 'permissoes': ['aprovar.orcamento'],
@@ -46,7 +47,7 @@ class FuncaoApiTestCase(EstruturaBaseTestCase):
         self.assertIn('permissoes', response.data)
 
     def test_atualizar_permissoes_substitui_a_lista(self):
-        self.client.force_authenticate(user=self.diretor)
+        self.client.force_authenticate(user=self.superusuario)
 
         response = self.client.patch(
             reverse('funcoes-detail', args=[self.gestor_execucao.id]),
@@ -57,7 +58,7 @@ class FuncaoApiTestCase(EstruturaBaseTestCase):
         self.assertEqual(self.gestor_execucao.codigos_permissao, ['tarefas.editar_setor'])
 
     def test_editar_so_o_nome_preserva_permissoes(self):
-        self.client.force_authenticate(user=self.diretor)
+        self.client.force_authenticate(user=self.superusuario)
 
         self.client.patch(
             reverse('funcoes-detail', args=[self.gestor_execucao.id]), {'nome': 'Coordenador'}, format='json',
@@ -76,6 +77,25 @@ class FuncaoApiTestCase(EstruturaBaseTestCase):
         self.assertEqual(leitura.status_code, status.HTTP_200_OK)
         self.assertEqual(criacao.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_diretor_le_mas_nao_cadastra_funcao(self):
+        # Funções e permissões são só de superusuários, mesmo para quem tem todas as permissões de função.
+        self.client.force_authenticate(user=self.diretor)
+
+        leitura = self.client.get(reverse('funcoes-list'))
+        criacao = self.client.post(reverse('funcoes-list'), {
+            'organizacao': self.ergogroup.id, 'setores': [self.ergonomia.id], 'nome': 'Qualquer',
+        }, format='json')
+        edicao = self.client.patch(
+            reverse('funcoes-detail', args=[self.gestor_execucao.id]), {'nome': 'Outro'}, format='json',
+        )
+        exclusao = self.client.delete(reverse('funcoes-detail', args=[self.gestor_execucao.id]))
+
+        self.assertEqual(leitura.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [criacao.status_code, edicao.status_code, exclusao.status_code], [status.HTTP_403_FORBIDDEN] * 3,
+        )
+        self.assertTrue(Funcao.objects.filter(nome='Gestor de Execução').exists())
+
     def test_catalogo_de_permissoes_informa_o_escopo(self):
         self.client.force_authenticate(user=self.tecnico)
 
@@ -88,7 +108,7 @@ class FuncaoApiTestCase(EstruturaBaseTestCase):
 
     def test_excluir_funcao_em_uso_retorna_409(self):
         MembroSetor.objects.create(usuario=self.novato, setor=self.ergonomia, funcao=self.gestor_execucao)
-        self.client.force_authenticate(user=self.diretor)
+        self.client.force_authenticate(user=self.superusuario)
 
         response = self.client.delete(reverse('funcoes-detail', args=[self.gestor_execucao.id]))
 

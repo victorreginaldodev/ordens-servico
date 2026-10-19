@@ -7,6 +7,8 @@ export interface PermissoesDaSessao extends Verificador {
   vinculos: Vinculo[];
   /** Verdadeiro quando as permissões por setor valem em qualquer setor (diretoria, superusuário). */
   todosOsSetores: boolean;
+  /** Superusuário: o único que cadastra funções e permissões. */
+  superusuario: boolean;
 }
 
 /**
@@ -21,6 +23,7 @@ export function usePermissoes(): PermissoesDaSessao {
       ...criarVerificador(user?.permissoes, superusuario),
       vinculos: user?.vinculos ?? [],
       todosOsSetores: superusuario || !!user?.permissoes?.todos_os_setores,
+      superusuario,
     };
   }, [user]);
 }

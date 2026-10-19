@@ -112,6 +112,13 @@ Os 43 usuários do dev foram vinculados, e o acesso foi conferido usuário a usu
 - **Tela de funções** (frontend): permissões agrupadas (Vendas, Execução, Financeiro, Cadastros, Pessoas e organização, Indicadores e auditoria), nome em linguagem de tela, escopo visível ("No setor da pessoa" ou "Empresa toda") e a prévia "Quem tem esta função vê no menu".
 - **Pendente (decisão do usuário, P3):** revisar as funções existentes (Gestor Comercial igual ao Diretor, Técnico com `clientes.gerenciar`, nomes iguais aos dos setores etc.). É configuração na tela de Funções, sem código.
 
+### Funções e permissões só para superusuários (19/10/2026, pedido do usuário)
+- Criar, editar, desativar e excluir funções (`/api/organizacoes/funcoes/`) exige ser superusuário (`EhSuperusuario`); não é uma permissão de função. Isso inclui liberar ou retirar a função de um setor, que altera `Funcao.setores`.
+- `organizacao.configurar` continua valendo para os dados da empresa e para os setores.
+- A tela `/organizacao/funcoes` voltou ao menu do usuário só para superusuários (fora disso, "sem acesso"). As outras pessoas veem as funções em modo de leitura no Time e nos Setores.
+- Vincular pessoas a funções continua com `usuarios.gerenciar` e a regra "ninguém concede o que não tem".
+- Nova permissão `catalogo_operacional.gerenciar` para o cadastro do catálogo operacional, separada de `os_operacional.gerenciar` (ADR 0011, item 8).
+
 ## Alternativas consideradas
 - **Função por setor (cada função pertence a um único setor):** rejeitada, porque impede reaproveitar uma função genérica (ex.: "Gestor de Área") em vários setores.
 - **Permissões marcadas direto em cada usuário:** rejeitada; com dezenas de usuários vira configuração repetida e sujeita a erro. A função funciona como molde, e exceções por usuário podem ser acrescentadas no futuro.

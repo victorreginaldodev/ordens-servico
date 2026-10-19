@@ -135,14 +135,14 @@ function EtapaForm({
   onEtapa: (e: EtapaFuncao | null) => void;
 }) {
   const { toast } = useToast();
-  const { pode, podeConceder } = usePermissoes();
+  const { podeConceder, superusuario } = usePermissoes();
   const podeEditarFuncao = usePodeEditarFuncao();
   const { data: catalogo = [], isPending: carregandoCatalogo } = usePermissoesDisponiveis();
   const { data: organizacao } = useOrganizacaoAtual();
   const salvar = useSalvarFuncao();
 
   const base = funcao ?? copia;
-  const somenteLeitura = funcao ? !podeEditarFuncao(funcao) : !pode('organizacao.configurar');
+  const somenteLeitura = funcao ? !podeEditarFuncao(funcao) : !superusuario;
   const form = useForm<Valores>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -218,9 +218,7 @@ function EtapaForm({
         {somenteLeitura && (
           <p className="flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
             <Lock className="mt-0.5 size-4 shrink-0" />
-            {pode('organizacao.configurar')
-              ? 'Esta função tem permissões que você não tem, então você pode vê-la, mas não alterá-la.'
-              : 'Você pode ver esta função, mas configurar funções exige a permissão de configurar a organização.'}
+            Você pode ver esta função, mas somente superusuários alteram funções e permissões.
           </p>
         )}
 

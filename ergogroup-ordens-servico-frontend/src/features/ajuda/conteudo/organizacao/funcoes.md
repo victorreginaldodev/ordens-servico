@@ -6,8 +6,10 @@ tela: Funções e permissões
 url: /organizacao/funcoes
 rotas: /organizacao/funcoes
 ver: permissoes, time
-atualizado: 15/10/2026
+atualizado: 19/10/2026
 ---
+
+Somente superusuários veem esta tela e criam, editam, desativam ou excluem funções. As demais pessoas veem as funções no Time e nos Setores, mas não as alteram.
 
 ## Criar uma função
 

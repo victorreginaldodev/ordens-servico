@@ -52,7 +52,7 @@ export const TITULO_PERMISSAO: Partial<Record<Permissao, string>> = {
   'usuarios.gerenciar': 'Gerenciar o time',
   'usuarios.gerenciar_diretoria': 'Gerenciar as pessoas da diretoria',
   'usuarios.redefinir_senha': 'Trocar a senha de outra pessoa',
-  'organizacao.configurar': 'Configurar setores e funções',
+  'organizacao.configurar': 'Configurar a empresa e os setores',
   'indicadores.ver_geral': 'Ver os indicadores de toda a equipe',
   'auditoria.ver': 'Ver o histórico de alterações',
 };
@@ -86,7 +86,7 @@ export const AJUDA_PERMISSAO: Partial<Record<Permissao, string>> = {
   'usuarios.gerenciar': 'Adiciona pessoas, define setores e funções, desativa e exclui.',
   'usuarios.gerenciar_diretoria': 'Altera pessoas cuja função também tem esta permissão.',
   'usuarios.redefinir_senha': 'Troca a senha de outra pessoa sem precisar da senha dela.',
-  'organizacao.configurar': 'Cria setores e funções e decide o que cada função pode fazer.',
+  'organizacao.configurar': 'Edita os dados da empresa e cria, edita e desativa setores. Funções e permissões são só de superusuários.',
   'indicadores.ver_geral': 'Sem ela, os indicadores mostram só os números da própria pessoa ou do setor.',
   'auditoria.ver': 'Vê quem alterou o quê nas OS, com os valores antes e depois.',
 };

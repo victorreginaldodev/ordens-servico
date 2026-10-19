@@ -23,11 +23,10 @@ const outrosSetores = (f: Funcao, setorId: number) =>
 
 export function FuncoesDoSetor({ resumo, onLiberar }: { resumo: ResumoSetor; onLiberar: () => void }) {
   const { toast } = useToast();
-  const { pode } = usePermissoes();
+  const { superusuario: podeConfigurar } = usePermissoes();
   const podeEditar = usePodeEditarFuncao();
   const alterar = useAlterarFuncoesDoSetor();
   const { setor, funcoes, membros } = resumo;
-  const podeConfigurar = pode('organizacao.configurar');
 
   const retirar = (f: Funcao) =>
     alterar.mutate([{ funcao: f, setores: f.setores.filter((id) => id !== setor.id) }], {
@@ -40,7 +39,7 @@ export function FuncoesDoSetor({ resumo, onLiberar }: { resumo: ResumoSetor; onL
   const bloqueio = (f: Funcao, pessoasAqui: number) => {
     if (pessoasAqui > 0) return `${plural(pessoasAqui, 'pessoa usa', 'pessoas usam')} esta função aqui. Troque a função delas no Time antes.`;
     if (f.setores.length === 1) return 'Este é o único setor da função. Toda função precisa estar liberada em ao menos um setor.';
-    if (!podeEditar(f)) return 'Esta função tem permissões que você não tem, então você não pode alterá-la.';
+    if (!podeEditar(f)) return 'Somente superusuários alteram funções e permissões.';
     return null;
   };
 

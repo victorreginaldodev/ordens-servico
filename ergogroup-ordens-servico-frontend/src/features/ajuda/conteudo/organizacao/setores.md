@@ -40,4 +40,4 @@ Clique em `Novo setor`, informe o nome e, se quiser, uma descrição do que o se
 
 ## Quem pode
 
-A tela fica no menu do usuário de quem gerencia o time ou configura setores e funções. Criar, editar, desativar e excluir: quem tem "Configurar setores e funções".
+A tela fica no menu do usuário de quem gerencia o time ou configura setores e funções. Criar, editar, desativar e excluir: quem tem "Configurar a empresa e os setores". Liberar ou retirar funções de um setor altera a função, então é só para superusuários.

@@ -64,7 +64,7 @@ Modelo proposto: **permissão** (lista fixa no código) → **função** (nome l
 | Editar dados da organização | `PATCH /organizacoes/<id>/` | Gestor | `organizacao.configurar` | global |
 | Ver setores | `GET /setores/` | Autenticado | Base | global |
 | Criar, editar, desativar e excluir setores | `/setores/` | Gestor | `organizacao.configurar` | global |
-| Criar e editar funções e suas permissões | *novo* | — | `organizacao.configurar` | global |
+| Criar e editar funções e suas permissões | `/funcoes/` | — | **somente superusuário** (19/10/2026; não é uma permissão de função) | global |
 
 ### 2.4 Clientes
 
@@ -173,7 +173,7 @@ Hoje não tem setor. Até ser incorporada, sugiro manter regras próprias com as
 | `clientes.gerenciar` | Criar, editar e excluir clientes |
 | `catalogo.gerenciar` | Criar, editar e excluir catálogos, subitens e catálogo operacional, e definir o setor do catálogo |
 | `usuarios.gerenciar` | Criar, editar, ativar, desativar e excluir usuários, alterar senhas e definir setores e funções |
-| `organizacao.configurar` | Editar dados da organização e cadastrar setores e funções |
+| `organizacao.configurar` | Editar dados da organização e cadastrar setores. Desde 19/10/2026, funções e permissões são cadastradas só por superusuários |
 | `indicadores.ver_geral` | Ver os indicadores operacionais de toda a empresa |
 | `auditoria.ver` | Ver o histórico de auditoria |
 

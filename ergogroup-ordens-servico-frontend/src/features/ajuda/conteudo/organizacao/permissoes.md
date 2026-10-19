@@ -47,7 +47,7 @@ Estas valem **só no setor** da pessoa.
 | Gerenciar o time | Adicionar pessoas, definir setor e função, ativar, desativar e excluir. |
 | Gerenciar as pessoas da diretoria | Mexer nas pessoas que também têm esta permissão. Só funciona junto com gerenciar o time. |
 | Trocar a senha de outra pessoa | Definir uma senha nova para outra pessoa. |
-| Configurar setores e funções | Editar os dados da empresa e cadastrar setores e funções. |
+| Configurar a empresa e os setores | Editar os dados da empresa e cadastrar setores. Funções e permissões são cadastradas só por superusuários. |
 
 ## Indicadores e auditoria
 

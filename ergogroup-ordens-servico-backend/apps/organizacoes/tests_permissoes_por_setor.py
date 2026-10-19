@@ -174,29 +174,22 @@ class NinguemConcedeOQueNaoTemTestCase(PermissoesPorSetorBase):
         ]))
         self.client.force_authenticate(user=self.rh)
 
-    def test_nao_cria_funcao_com_permissao_que_nao_tem(self):
-        response = self.client.post(reverse('funcoes-list'), {
-            'organizacao': self.ergogroup.id, 'setores': [self.ergonomia.id], 'nome': 'Super', 'permissoes': [P.FINANCEIRO_VER_VALORES],
-        }, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('permissoes', response.data)
-
-    def test_cria_funcao_com_permissoes_que_tem(self):
+    def test_quem_configura_a_organizacao_nao_cria_funcao(self):
+        # Desde 19/10/2026, funções e permissões são só de superusuários, mesmo com as permissões concedidas.
         response = self.client.post(reverse('funcoes-list'), {
             'organizacao': self.ergogroup.id, 'setores': [self.ergonomia.id], 'nome': 'Assistente de RH', 'permissoes': [P.USUARIOS_GERENCIAR],
         }, format='json')
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_nao_altera_funcao_mais_poderosa_que_a_sua(self):
+    def test_quem_configura_a_organizacao_nao_altera_funcao(self):
         diretoria = self.funcao('Diretoria', list(Permissao))
 
         response = self.client.patch(
             reverse('funcoes-detail', args=[diretoria.id]), {'permissoes': []}, format='json',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(len(diretoria.codigos_permissao), len(Permissao))
 
     def test_nao_se_vincula_a_funcao_mais_poderosa(self):

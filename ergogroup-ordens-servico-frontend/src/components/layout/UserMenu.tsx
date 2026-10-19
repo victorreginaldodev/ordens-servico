@@ -31,8 +31,8 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const telaInicial = useTelaInicial();
-  const { podeAlguma } = usePermissoes();
-  const itensOrganizacao = NAV_ORGANIZACAO.items.filter((item) => podeVerItem(item, podeAlguma));
+  const { podeAlguma, superusuario } = usePermissoes();
+  const itensOrganizacao = NAV_ORGANIZACAO.items.filter((item) => podeVerItem(item, podeAlguma, superusuario));
 
   useEffect(() => setMounted(true), []);
 

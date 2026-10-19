@@ -259,6 +259,8 @@ class SetorNovoDePontaAPontaTestCase(APITestCase):
 
         # Configuração: setor, funções, pessoas e catálogo, tudo pela API.
         setor = self.client.post(reverse('setores-list'), {'organizacao': ergogroup.id, 'nome': 'Ergonomia'}).data
+        # Funções e permissões são cadastradas só por superusuários.
+        self.client.force_authenticate(user=criar_usuario(None, is_superuser=True))
         coordenacao = self.client.post(reverse('funcoes-list'), {
             'organizacao': ergogroup.id, 'nome': 'Coordenador de Ergonomia', 'setores': [setor['id']],
             'permissoes': [Permissao.SERVICOS_VER_SETOR, Permissao.TAREFAS_DISTRIBUIR, Permissao.TAREFAS_EDITAR_SETOR],
@@ -266,6 +268,7 @@ class SetorNovoDePontaAPontaTestCase(APITestCase):
         execucao = self.client.post(reverse('funcoes-list'), {
             'organizacao': ergogroup.id, 'nome': 'Ergonomista', 'setores': [setor['id']], 'permissoes': [Permissao.TAREFAS_RECEBER],
         }, format='json').data
+        self.client.force_authenticate(user=diretor)
         coordenadora = criar_usuario(None)
         ergonomista = criar_usuario(None)
         for usuario, funcao in ((coordenadora, coordenacao), (ergonomista, execucao)):
