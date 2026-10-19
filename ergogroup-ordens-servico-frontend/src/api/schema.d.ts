@@ -1343,7 +1343,7 @@ export interface paths {
         put?: never;
         /**
          * Criar função
-         * @description Cria uma função com nome livre, as permissões marcadas e os setores em que pode ser usada (`setores`, obrigatório). Exige `organizacao.configurar`.
+         * @description Cria uma função com nome livre, as permissões marcadas e os setores em que pode ser usada (`setores`, obrigatório). Somente superusuários.
          */
         post: operations["organizacoes_funcoes_create"];
         delete?: never;
@@ -1366,20 +1366,20 @@ export interface paths {
         get: operations["organizacoes_funcoes_retrieve"];
         /**
          * Atualizar função
-         * @description Substitui os dados e as permissões da função. Exige `organizacao.configurar`.
+         * @description Substitui os dados e as permissões da função. Somente superusuários.
          */
         put: operations["organizacoes_funcoes_update"];
         post?: never;
         /**
          * Remover função
-         * @description Remove a função. Retorna 409 se houver usuários vinculados a ela; nesse caso, desative-a.
+         * @description Remove a função. Somente superusuários. Retorna 409 se houver usuários vinculados a ela; nesse caso, desative-a.
          */
         delete: operations["organizacoes_funcoes_destroy"];
         options?: never;
         head?: never;
         /**
          * Atualizar função parcialmente
-         * @description Se `permissoes` for enviado, substitui a lista inteira. Exige `organizacao.configurar`. A resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.
+         * @description Se `permissoes` for enviado, substitui a lista inteira. Somente superusuários. A resposta traz `avisos` se algum setor que executa catálogos ativos ficar sem quem receba tarefas.
          */
         patch: operations["organizacoes_funcoes_partial_update"];
         trace?: never;
@@ -2891,7 +2891,8 @@ export interface components {
          * @description * `os.ver_todas` - Ver todas as OS, serviços e tarefas
          *     * `os.gerenciar` - Criar e editar OS e seus serviços
          *     * `os.excluir` - Excluir OS
-         *     * `os_operacional.gerenciar` - Criar e editar OS operacionais e o catálogo operacional
+         *     * `os_operacional.gerenciar` - Criar e editar OS operacionais
+         *     * `catalogo_operacional.gerenciar` - Criar, editar e excluir o catálogo operacional
          *     * `catalogo_operacional.configurar_cobranca` - Configurar cobrança e exceções por cliente no catálogo operacional
          *     * `financeiro.ver_valores` - Ver valores e condições de pagamento
          *     * `financeiro.registrar_cobranca` - Registrar cobrança e nota fiscal
@@ -2911,7 +2912,7 @@ export interface components {
          *     * `setores.todos` - As permissões por setor valem em todos os setores
          * @enum {string}
          */
-        PermissoesEnum: "os.ver_todas" | "os.gerenciar" | "os.excluir" | "os_operacional.gerenciar" | "catalogo_operacional.configurar_cobranca" | "financeiro.ver_valores" | "financeiro.registrar_cobranca" | "clientes.gerenciar" | "catalogo.gerenciar" | "servicos.ver_setor" | "servicos.gerenciar" | "tarefas.distribuir" | "tarefas.editar_setor" | "tarefas.receber" | "usuarios.gerenciar" | "usuarios.gerenciar_diretoria" | "usuarios.redefinir_senha" | "organizacao.configurar" | "indicadores.ver_geral" | "auditoria.ver" | "setores.todos";
+        PermissoesEnum: "os.ver_todas" | "os.gerenciar" | "os.excluir" | "os_operacional.gerenciar" | "catalogo_operacional.gerenciar" | "catalogo_operacional.configurar_cobranca" | "financeiro.ver_valores" | "financeiro.registrar_cobranca" | "clientes.gerenciar" | "catalogo.gerenciar" | "servicos.ver_setor" | "servicos.gerenciar" | "tarefas.distribuir" | "tarefas.editar_setor" | "tarefas.receber" | "usuarios.gerenciar" | "usuarios.gerenciar_diretoria" | "usuarios.redefinir_senha" | "organizacao.configurar" | "indicadores.ver_geral" | "auditoria.ver" | "setores.todos";
         PermissoesNoSetor: {
             setor: number;
             setor_nome: string;
