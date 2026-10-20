@@ -125,7 +125,12 @@ A **Conferência do faturamento** (seção 5) roda na hora em que é aberta. O r
 
 ### 4.4 OS operacionais (19/10/2026)
 
-As **OS operacionais que geram cobrança** (regra do catálogo operacional, ADR 0011) entram nas mesmas abas de Cobranças, junto das vendas. A regra é a **atual** do catálogo e dos clientes isentos: quando ela muda, as OSOs ainda não faturadas desse serviço são recalculadas (as finalizadas que passam a cobrar entram em "Para faturar"; as que deixam de cobrar saem). O campo "Revisão do cliente" não influencia:
+As **OS operacionais que geram cobrança** (regra do catálogo operacional, ADR 0011) entram nas mesmas abas de Cobranças, junto das vendas. De onde vem a decisão de cobrar depende de quando a OSO foi criada (`regra_de_cobranca`):
+
+- **Anteriores à regra do catálogo** (todas as que existiam em 20/10/2026): mantêm a cobrança gravada (no sistema anterior, decidida pela "Revisão do cliente") e não mudam quando o catálogo muda;
+- **Regra do catálogo** (as criadas depois): seguem sempre o catálogo e os clientes isentos até serem faturadas; quando a regra do catálogo muda, as não faturadas são recalculadas (as finalizadas que passam a cobrar entram em "Para faturar"; as que deixam de cobrar saem).
+
+O campo "Revisão do cliente" não é editável e não influencia nada. Se a regra mudar sem passar pela tela, `python manage.py reaplicar_regra_de_cobranca` aplica a regra atual às OSOs da regra do catálogo:
 
 - **Em execução:** gera cobrança e ainda não foi finalizada;
 - **Para faturar:** finalizada e liberada (a liberação é automática ao finalizar);
@@ -178,6 +183,7 @@ O menu mostra **Cobranças** para quem tem `financeiro.registrar_cobranca` e **P
 | **Faturar a OS operacional** (modal) | dentro de Cobranças, do resumo da OS operacional e da lista de OS operacionais | Um modal só: a regra de cobrança e a liberação, o cliente e o que cobrar (com copiar) e o lançamento (referência e data). |
 | **Resumo da OS operacional** | `/cobrancas/operacionais/:id` | A regra de cobrança, as pendências da conferência, "Para lançar no sistema financeiro" (com copiar), o que cobrar, o lançamento e o histórico (criada, iniciada, finalizada, liberada e faturada). |
 | **Resumo para faturar** | `/cobrancas/:id` | Tudo da OS num lugar só: uma faixa explicando por que está (ou não) liberada; as pendências da conferência; o bloco "Para lançar no sistema financeiro" com copiar; o lançamento; os serviços realizados (setor, quem executou, início, término e quem finalizou); e o histórico, com o filtro "Financeiro \| Tudo" que separa os eventos financeiros dos de execução. |
+| **Auditoria das OS operacionais** | `/cobrancas/auditoria-operacionais` | Todas as OS operacionais criadas antes de 20/10/2026, sem filtro, com foco no que **deveria ter sido cobrado e não foi** (finalizada, não cobrada e: catálogo cobrável com cliente não isento e sem "Revisão do cliente", ou revisão marcada). Filtro por cliente, resumo (OSOs, unidades, clientes afetados, período), gráficos por mês e por cliente (ou por serviço), abas da tabela por caso e exportação para Excel do total ou do cliente (abas OS operacionais, Não cobradas por cliente, Não cobradas por mês, Resumo por serviço e Sobre). Sem os alertas de qualidade de dados (pedido do usuário). Acesso: `financeiro.ver_valores` + `auditoria.ver`. |
 | **Conferência do faturamento** | `/cobrancas/conferencia` | Cada verificação com o estado (ok, atenção ou falha de garantia), a contagem e, aberta, as vendas com o detalhe e com quem está. Tem o botão "Corrigir agora". |
 | **Painel financeiro** | `/analise/financeiro` | Indicadores: Faturado, A faturar (liberadas sem lançamento), Previsão (ainda não liberadas) e Ticket médio. Também mostra os mesmos totais por tipo de condição (à vista e parcelado), vendas por mês e clientes. |
 
@@ -191,6 +197,7 @@ O menu mostra **Cobranças** para quem tem `financeiro.registrar_cobranca` e **P
 | Resumo para faturar | `GET /api/financeiro/ordens/<id>/` | `ver_valores` |
 | Resumo da OS operacional | `GET /api/financeiro/operacionais/<id>/` | `registrar_cobranca` + `ver_valores` |
 | Registrar o lançamento da OS operacional | `PATCH /api/ordens-servico/operacionais/<id>/cobranca/` (`referencia_lancamento`, `data_cobranca`; `numero_nf` só por compatibilidade) | `registrar_cobranca`. 400 se não gerar cobrança ou não estiver liberada. |
+| Auditoria das OS operacionais | `GET /api/financeiro/auditoria-operacionais/` e, em Excel, `GET /api/financeiro/auditoria-operacionais/excel/?cliente=` (opcional) | `ver_valores` + `auditoria.ver` |
 | Conferência | `GET /api/financeiro/conferencia/` | `registrar_cobranca` + `ver_valores` |
 | Corrigir a sincronização | `POST /api/financeiro/conferencia/corrigir/` | `registrar_cobranca` + `ver_valores` |
 | Registrar o lançamento | `PATCH /api/ordens-servico/ordens/<id>/cobranca/` (`referencia_lancamento`, `data_cobranca`) | `registrar_cobranca`. 400 se a OS não estiver liberada. |
@@ -213,6 +220,7 @@ A resposta traz os **contadores das três situações** (quantidade e valor) sob
 | Liberação, lançamento e resumo da condição | `apps/ordens_servico/models/ordem_servico.py` |
 | Situações, fila, alerta e resumo para faturar | `apps/ordens_servico/services/financeiro.py` |
 | OS operacionais nas Cobranças | `apps/ordens_servico/services/cobranca_operacional.py` |
+| Auditoria das OS operacionais (tela e Excel) | `apps/ordens_servico/services/auditoria_operacional.py` |
 | Conferência do faturamento e correção | `apps/ordens_servico/services/conferencia.py`, comando `conferir_faturamento` |
 | E-mails de liberação, faturada e resumo diário | `apps/ordens_servico/emails.py`, `services/resumo_diario.py` |
 | Endpoints | `apps/ordens_servico/views/financeiro_views.py`; lançamento em `views/ordem_servico_viewset.py` |

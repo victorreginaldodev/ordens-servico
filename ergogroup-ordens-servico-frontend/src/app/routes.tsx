@@ -48,6 +48,7 @@ import TimePage from '@/features/time/pages/TimePage';
 import CobrancasPage from '@/features/financeiro/pages/CobrancasPage';
 import SituacaoFinanceiraPage from '@/features/financeiro/pages/SituacaoFinanceiraPage';
 import SituacaoFinanceiraOperacionalPage from '@/features/financeiro/pages/SituacaoFinanceiraOperacionalPage';
+import AuditoriaOperacionalPage from '@/features/financeiro/pages/AuditoriaOperacionalPage';
 import ConferenciaPage from '@/features/financeiro/pages/ConferenciaPage';
 
 // Ajuda
@@ -147,6 +148,7 @@ const AppRoutes = () => (
     {/* Cobranças */}
     <Route path="/cobrancas" element={g(<CobrancasPage />, ['financeiro.registrar_cobranca'])} />
     <Route path="/cobrancas/conferencia" element={g(<ConferenciaPage />, ['financeiro.registrar_cobranca'])} />
+    <Route path="/cobrancas/auditoria-operacionais" element={g(<AuditoriaOperacionalPage />, ['auditoria.ver'])} />
     <Route path="/cobrancas/operacionais/:id" element={g(<SituacaoFinanceiraOperacionalPage />, ['financeiro.registrar_cobranca'])} />
     <Route path="/cobrancas/:id" element={g(<SituacaoFinanceiraPage />, ['financeiro.ver_valores'])} />
 

@@ -9,6 +9,7 @@ from apps.ordens_servico.serializers.ordem_servico_serializer import AndamentoSe
 from apps.ordens_servico.serializers.comercial_serializer import ResponsavelDoServicoSerializer
 from apps.ordens_servico.services.conferencia import CODIGOS as CODIGOS_DA_CONFERENCIA
 from apps.ordens_servico.services.conferencia import TIPOS_DE_VERIFICACAO
+from apps.ordens_servico.services.auditoria_operacional import CODIGOS_DE_ALERTA as CODIGOS_DE_ALERTA_DA_AUDITORIA
 from apps.ordens_servico.services.financeiro import CATEGORIAS_DE_EVENTO, SITUACOES, SITUACOES_DA_LISTA
 
 
@@ -224,3 +225,58 @@ class CorrecaoSerializer(serializers.Serializer):
     servicos_corrigidos = serializers.IntegerField()
     ordens_liberadas = serializers.IntegerField()
     operacionais_liberadas = serializers.IntegerField()
+
+
+class OsoDaAuditoriaSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    cliente_id = serializers.IntegerField()
+    cliente_nome = serializers.CharField()
+    cliente_documento = serializers.CharField(allow_null=True)
+    cliente_tipo_inscricao = serializers.CharField(allow_null=True)
+    servico = serializers.CharField(help_text='Item do catálogo operacional.')
+    quantidade = serializers.IntegerField()
+    descricao = serializers.CharField(allow_null=True)
+    responsavel_nome = serializers.CharField(allow_null=True)
+    status = serializers.CharField()
+    data_recebimento = serializers.DateField(allow_null=True)
+    data_inicio = serializers.DateField(allow_null=True)
+    data_termino = serializers.DateField(allow_null=True)
+    dias_ate_terminar = serializers.IntegerField(allow_null=True)
+    mes_referencia = serializers.CharField(help_text='AAAA-MM do término (sem término, do recebimento).')
+    revisao_cliente = serializers.BooleanField(help_text='O que o técnico marcou no sistema anterior.')
+    liberada_em = serializers.DateTimeField(allow_null=True)
+    liberada_por_nome = serializers.CharField(allow_null=True)
+    catalogo_cobra_hoje = serializers.BooleanField()
+    cliente_isento_hoje = serializers.BooleanField()
+    cobraria_hoje = serializers.BooleanField(help_text='Pela regra do catálogo de hoje: cobra e cliente não isento.')
+    situacao_cobranca = serializers.ChoiceField(choices=['nao_gera', 'nao_liberada', 'a_cobrar', 'cobrada'])
+    cobrada = serializers.BooleanField()
+    referencia = serializers.CharField(allow_null=True, help_text='Referência do lançamento ou a NF antiga.')
+    numero_nf_original = serializers.CharField(allow_null=True)
+    data_lancamento = serializers.DateField(allow_null=True)
+    faturada_por_nome = serializers.CharField(allow_null=True)
+    deveria_ser_cobrada = serializers.ChoiceField(
+        choices=['catalogo_sem_revisao', 'revisao_sem_cobranca'], allow_null=True,
+        help_text=(
+            'Finalizada e não cobrada, e: `catalogo_sem_revisao` (catálogo cobrável, cliente não isento, sem '
+            '"Revisão do cliente") ou `revisao_sem_cobranca` (revisão marcada). Nulo quando não se aplica.'
+        ),
+    )
+    alertas = serializers.ListField(child=serializers.ChoiceField(choices=CODIGOS_DE_ALERTA_DA_AUDITORIA))
+    alteracoes_registradas = serializers.IntegerField(help_text='Registros na auditoria (desde 30/06/2026).')
+    ultima_alteracao = serializers.DateTimeField(allow_null=True)
+
+
+class AlertaDaAuditoriaSerializer(serializers.Serializer):
+    codigo = serializers.ChoiceField(choices=CODIGOS_DE_ALERTA_DA_AUDITORIA)
+    rotulo = serializers.CharField()
+    explicacao = serializers.CharField()
+    quantidade = serializers.IntegerField()
+
+
+class AuditoriaOperacionalSerializer(serializers.Serializer):
+    gerado_em = serializers.DateTimeField()
+    data_de_corte = serializers.DateField(help_text='Entram as OS operacionais criadas antes desta data.')
+    total = serializers.IntegerField()
+    alertas = AlertaDaAuditoriaSerializer(many=True)
+    osos = OsoDaAuditoriaSerializer(many=True)

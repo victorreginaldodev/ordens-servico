@@ -2,7 +2,9 @@
 existe: `PATCH /api/ordens-servico/ordens/{id}/cobranca/`."""
 from datetime import date
 
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -11,10 +13,10 @@ from rest_framework.views import APIView
 
 from apps.ordens_servico.models import FormaPagamento, OrdemServico, OrdemServicoOperacional, TipoCondicao
 from apps.ordens_servico.serializers.financeiro_serializer import (
-    CobrancasSerializer, ConferenciaSerializer, CorrecaoSerializer, SituacaoFinanceiraOperacionalSerializer,
+    AuditoriaOperacionalSerializer, CobrancasSerializer, ConferenciaSerializer, CorrecaoSerializer, SituacaoFinanceiraOperacionalSerializer,
     SituacaoFinanceiraSerializer,
 )
-from apps.ordens_servico.services import cobranca_operacional, conferencia, financeiro
+from apps.ordens_servico.services import auditoria_operacional, cobranca_operacional, conferencia, financeiro
 from apps.organizacoes.permissoes import Permissao, TemPermissao
 
 
@@ -118,6 +120,55 @@ class SituacaoFinanceiraOperacionalView(_DoFinanceiro):
     def get(self, request, pk):
         oso = get_object_or_404(OrdemServicoOperacional, pk=pk)
         return Response(SituacaoFinanceiraOperacionalSerializer(cobranca_operacional.situacao_financeira(oso)).data)
+
+
+class _DaAuditoriaOperacional(APIView):
+    def get_permissions(self):
+        return [
+            IsAuthenticated(), TemPermissao(Permissao.FINANCEIRO_VER_VALORES), TemPermissao(Permissao.AUDITORIA_VER),
+        ]
+
+
+class AuditoriaOperacionalView(_DaAuditoriaOperacional):
+    @extend_schema(
+        summary='Auditoria das OS operacionais anteriores à regra do catálogo',
+        description=(
+            'Todas as OS operacionais com `regra_de_cobranca = legado`, sem filtro: a decisão de cobrança gravada '
+            '(e a "Revisão do cliente"), a execução, a liberação, o lançamento, o que a regra do catálogo diria hoje '
+            'e os alertas de inconsistência, com a contagem de cada alerta. Exige `financeiro.ver_valores` e '
+            '`auditoria.ver`.'
+        ),
+        responses={200: AuditoriaOperacionalSerializer},
+        tags=['financeiro'],
+    )
+    def get(self, request):
+        return Response(AuditoriaOperacionalSerializer(auditoria_operacional.auditoria()).data)
+
+
+class AuditoriaOperacionalExcelView(_DaAuditoriaOperacional):
+    @extend_schema(
+        summary='Auditoria das OS operacionais em Excel',
+        description=(
+            'O mesmo conteúdo da auditoria em `.xlsx`, com as abas "OS operacionais", "Não cobradas por cliente", '
+            '"Não cobradas por mês", "Resumo por serviço" e "Sobre". Com `cliente`, só as OS operacionais '
+            'desse cliente. Exige `financeiro.ver_valores` e `auditoria.ver`.'
+        ),
+        parameters=[OpenApiParameter('cliente', int, description='Só as OS operacionais deste cliente.')],
+        responses={(200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): bytes},
+        tags=['financeiro'],
+    )
+    def get(self, request):
+        cliente = request.query_params.get('cliente', '').strip()
+        if cliente and not cliente.isdigit():
+            raise ValidationError({'cliente': 'Informe o id do cliente.'})
+        sufixo = f'-cliente-{cliente}' if cliente else ''
+        nome_do_arquivo = f'auditoria-os-operacionais{sufixo}-{timezone.localdate():%Y-%m-%d}.xlsx'
+        resposta = HttpResponse(
+            auditoria_operacional.excel(request.user, cliente=int(cliente) if cliente else None),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        resposta['Content-Disposition'] = f'attachment; filename="{nome_do_arquivo}"'
+        return resposta
 
 
 class ConferenciaView(_DoFinanceiro):

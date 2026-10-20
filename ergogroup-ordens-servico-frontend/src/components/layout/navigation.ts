@@ -11,6 +11,7 @@ import {
   Network,
   Package,
   Receipt,
+  ScanSearch,
   Users,
   Wallet,
   Wrench,
@@ -75,7 +76,11 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'financeiro',
     title: 'Financeiro',
-    items: [{ title: 'Cobranças', url: '/cobrancas', icon: Receipt, permissoes: ['financeiro.registrar_cobranca'] }],
+    items: [
+      { title: 'Cobranças', url: '/cobrancas', icon: Receipt, permissoes: ['financeiro.registrar_cobranca'] },
+      // Exige também `financeiro.ver_valores` no backend (o menu só confere `auditoria.ver`).
+      { title: 'Auditoria das OS operacionais', url: '/cobrancas/auditoria-operacionais', icon: ScanSearch, permissoes: ['auditoria.ver'] },
+    ],
   },
   {
     id: 'analise',

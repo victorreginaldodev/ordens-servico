@@ -26,6 +26,11 @@ export type LancamentoPayload = Esquemas['PatchedRegistrarCobrancaRequestRequest
 export type LinhaOperacional = Esquemas['LinhaDeCobrancaOperacional'];
 export type SituacaoFinanceiraOperacional = Esquemas['SituacaoFinanceiraOperacional'];
 export type LancamentoOperacionalPayload = Esquemas['PatchedRegistrarCobrancaOSORequestRequest'];
+/** Auditoria das OS operacionais anteriores à regra do catálogo (20/10/2026). */
+export type AuditoriaOperacional = Esquemas['AuditoriaOperacional'];
+export type OsoDaAuditoria = Esquemas['OsoDaAuditoria'];
+export type AlertaDaAuditoria = Esquemas['AlertasEnum'];
+export type MotivoNaoCobrada = Esquemas['DeveriaSerCobradaEnum'];
 
 export type FiltrosDeCobrancas = FiltrosDe<'financeiro_cobrancas_retrieve'>;
 
@@ -71,6 +76,36 @@ export const getSituacaoFinanceiraOperacional = async (id: number): Promise<Situ
 export const registrarLancamentoOperacional = async (id: number, payload: LancamentoOperacionalPayload) => {
   const { data } = await api.patch<Esquemas['OrdemServicoOperacional']>(`/api/ordens-servico/operacionais/${id}/cobranca/`, payload);
   return data;
+};
+
+/**
+ * Auditoria: todas as OS operacionais anteriores à regra do catálogo, sem filtro, com os alertas. Exige
+ * `financeiro.ver_valores` e `auditoria.ver`.
+ */
+export const getAuditoriaOperacional = async (): Promise<AuditoriaOperacional> => {
+  const { data } = await api.get<AuditoriaOperacional>('/api/financeiro/auditoria-operacionais/');
+  return data;
+};
+
+/**
+ * Baixa o Excel da auditoria (abas OS operacionais, Não cobradas por cliente e por mês, Resumo por serviço, Alertas
+ * e Sobre). Com `cliente`, só as OS operacionais dele.
+ */
+export const baixarAuditoriaOperacionalExcel = async (cliente?: number | null): Promise<void> => {
+  const resposta = await api.get<Blob>('/api/financeiro/auditoria-operacionais/excel/', {
+    responseType: 'blob',
+    params: cliente ? { cliente } : undefined,
+  });
+  const disposicao = String(resposta.headers['content-disposition'] ?? '');
+  const nome = /filename="([^"]+)"/.exec(disposicao)?.[1] ?? 'auditoria-os-operacionais.xlsx';
+  const url = URL.createObjectURL(resposta.data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nome;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 };
 
 /** Indicadores: a faturar, faturado, previsão e por tipo de condição (à vista e parcelado). */

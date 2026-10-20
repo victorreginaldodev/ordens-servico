@@ -64,7 +64,7 @@ export const MODULOS_DA_AJUDA: DefinicaoDeModulo[] = [
     titulo: 'Financeiro',
     icone: Receipt,
     permissoes: ['financeiro.registrar_cobranca', 'financeiro.ver_valores'],
-    paginas: ['como-funciona', 'cobrancas', 'faturar', 'resumo-para-faturar', 'conferencia', 'quem-pode'],
+    paginas: ['como-funciona', 'cobrancas', 'faturar', 'resumo-para-faturar', 'conferencia', 'auditoria-operacionais', 'quem-pode'],
   },
   {
     id: 'cadastros',

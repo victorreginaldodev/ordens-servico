@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   corrigirConferencia,
+  getAuditoriaOperacional,
   getCobrancas,
   getConferencia,
   getIndicadoresFinanceiros,
@@ -20,6 +21,7 @@ export const financeiroKeys = {
   situacaoOperacional: (id: number) => ['financeiro', 'situacao-operacional', id] as const,
   indicadores: ['financeiro', 'indicadores'] as const,
   conferencia: ['financeiro', 'conferencia'] as const,
+  auditoriaOperacional: ['financeiro', 'auditoria-operacional'] as const,
 };
 
 export const useCobrancas = (filtros: FiltrosDeCobrancas = {}, habilitado = true) =>
@@ -55,6 +57,9 @@ export const useRegistrarLancamentoOperacional = () => {
       ),
   });
 };
+
+export const useAuditoriaOperacional = () =>
+  useQuery({ queryKey: financeiroKeys.auditoriaOperacional, queryFn: getAuditoriaOperacional, staleTime: 5 * 60_000 });
 
 export const useIndicadoresFinanceiros = (habilitado = true) =>
   useQuery({
