@@ -19,23 +19,32 @@ import { OrigemDaCobranca } from './OrigemDaCobranca';
 
 const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
 
-/** A regra de cobrança do catálogo (ADR 0011) e os avisos da conferência. */
+/** De onde vem a cobrança (regra do catálogo ou anterior a ela, ADR 0011) e os avisos da conferência. */
 export function RegraEAvisos({ s }: { s: SituacaoFinanceiraOperacional }) {
   return (
     <div className="grid gap-2">
       <p className="flex gap-2.5 rounded-lg bg-violet-100 px-3 py-2.5 text-sm text-violet-800 dark:bg-violet-500/15 dark:text-violet-300">
         <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>
-          {s.gera_cobranca ? (
+          {s.regra_de_cobranca === 'legado' ? (
             <>
-              <b>Gera cobrança pela regra do catálogo:</b> o serviço é cobrável e o cliente não está entre os isentos.
+              <b>{s.gera_cobranca ? 'Gera cobrança' : 'Não gera cobrança'} pela decisão anterior à regra do catálogo.</b>{' '}
+              A OS operacional já existia quando a cobrança passou a vir do catálogo, então mantém a decisão gravada
+              {s.revisao_cliente ? ' (no sistema anterior, o técnico marcou "Revisão do cliente")' : ''} e não muda
+              quando o catálogo muda.
             </>
           ) : (
-            <b>Não gera cobrança pela regra do catálogo.</b>
-          )}{' '}
-          {s.situacao === 'faturadas'
-            ? 'A regra não muda mais: a OS operacional já foi faturada.'
-            : 'É a regra atual do catálogo; ela vale até a OS operacional ser faturada.'}
+            <>
+              {s.gera_cobranca ? (
+                <b>Gera cobrança pela regra do catálogo: o serviço é cobrável e o cliente não está entre os isentos.</b>
+              ) : (
+                <b>Não gera cobrança pela regra do catálogo.</b>
+              )}{' '}
+              {s.situacao === 'faturadas'
+                ? 'A regra não muda mais: a OS operacional já foi faturada.'
+                : 'Ela acompanha o catálogo até a OS operacional ser faturada.'}
+            </>
+          )}
         </span>
       </p>
       {s.liberada_para_cobranca_em ? (

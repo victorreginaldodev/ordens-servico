@@ -283,9 +283,9 @@ const CatalogoOperacionalFormPage = () => {
             <div className="flex gap-2 rounded-md border border-warning bg-warning-subtle px-4 py-3 text-sm text-warning-strong">
               <Info className="size-4 mt-0.5 shrink-0" aria-hidden />
               <span>
-                A regra vale também para as OS operacionais deste serviço ainda não faturadas: as finalizadas que
-                passarem a cobrar vão para "Para faturar", e as que deixarem de cobrar saem da fila. As já faturadas
-                não mudam.
+                A regra vale para as OS operacionais criadas pela regra do catálogo e ainda não faturadas: as
+                finalizadas que passarem a cobrar vão para "Para faturar", e as que deixarem de cobrar saem da fila.
+                As OS operacionais anteriores à regra do catálogo e as já faturadas não mudam.
               </span>
             </div>
 

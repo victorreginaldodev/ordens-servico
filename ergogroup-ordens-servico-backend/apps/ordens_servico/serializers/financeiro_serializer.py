@@ -2,6 +2,7 @@
 from rest_framework import serializers
 
 from apps.ordens_servico.models import FormaPagamento, LiberarEm, OrigemLancamento, TipoCondicao
+from apps.ordens_servico.models.ordem_servico_operacional import RegraDeCobranca
 from apps.ordens_servico.serializers.execucao_serializer import ETAPAS
 from apps.ordens_servico.serializers.linha_do_tempo_serializer import EventoDaLinhaDoTempoSerializer
 from apps.ordens_servico.serializers.ordem_servico_serializer import AndamentoSerializer
@@ -83,6 +84,11 @@ class LinhaDeCobrancaOperacionalSerializer(serializers.Serializer):
     cliente_id = serializers.IntegerField()
     cliente_nome = serializers.CharField()
     catalogo_operacional_nome = serializers.CharField(help_text='O item do catálogo operacional: o que cobrar.')
+    regra_de_cobranca = serializers.ChoiceField(
+        choices=RegraDeCobranca.choices,
+        help_text='`catalogo`: segue o catálogo; `legado`: anterior à regra do catálogo, cobrança congelada.',
+    )
+    revisao_cliente = serializers.BooleanField(help_text='Só histórico do sistema anterior.')
     quantidade = serializers.IntegerField()
     descricao = serializers.CharField(allow_null=True)
     responsavel_nome = serializers.CharField(allow_null=True)
@@ -182,7 +188,7 @@ class MarcoDaOperacionalSerializer(serializers.Serializer):
 
 
 class SituacaoFinanceiraOperacionalSerializer(LinhaDeCobrancaOperacionalSerializer):
-    gera_cobranca = serializers.BooleanField(help_text='A regra atual do catálogo e dos clientes isentos; não muda depois de faturada.')
+    gera_cobranca = serializers.BooleanField(help_text='Se gera cobrança: pela regra do catálogo ou, nas anteriores a ela, a decisão gravada.')
     cliente = ClienteDoResumoSerializer()
     detalhe_pendencias = PendenciaDaOrdemSerializer(many=True)
     historico = MarcoDaOperacionalSerializer(many=True, help_text='Do mais recente ao mais antigo.')

@@ -1,4 +1,7 @@
+from io import StringIO
 from unittest import mock
+
+from django.core.management import call_command
 
 from django.urls import reverse
 from rest_framework import status
@@ -10,7 +13,7 @@ from apps.organizacoes.apoio_testes import Perfil, criar_usuario, setor_padrao
 from apps.organizacoes.models import Funcao, FuncaoPermissao, Organizacao
 from apps.organizacoes.permissoes import Permissao
 from apps.ordens_servico.models import OrdemServicoOperacional
-from apps.ordens_servico.models.ordem_servico_operacional import StatusOrdemServicoOperacional as S
+from apps.ordens_servico.models.ordem_servico_operacional import RegraDeCobranca, StatusOrdemServicoOperacional as S
 
 
 class RegraDeCobrancaDoCatalogoOperacionalTestCase(APITestCase):
@@ -240,3 +243,96 @@ class PermissaoDeGerenciarCatalogoOperacionalTestCase(APITestCase):
         self.assertTrue(funcoes)
         for funcao in Funcao.objects.filter(pk__in=funcoes):
             self.assertIn(Permissao.CATALOGO_OPERACIONAL_GERENCIAR, funcao.codigos_permissao)
+
+
+class ComandoReaplicarRegraTestCase(APITestCase):
+    def test_aplica_a_regra_marcada_fora_da_api(self):
+        tecnico = criar_usuario(Perfil.TECNICO)
+        catalogo = CatalogoOperacional.objects.create(nome='Inclusão de função')
+        oso = OrdemServicoOperacional.objects.create(
+            cliente=Cliente.objects.create(nome='Cliente'), catalogo_operacional=catalogo, responsavel=tecnico,
+            status=S.FINALIZADA,
+        )
+        CatalogoOperacional.objects.filter(pk=catalogo.pk).update(gera_cobranca=True)
+
+        call_command('reaplicar_regra_de_cobranca', '--simular', stdout=StringIO())
+        oso.refresh_from_db()
+        self.assertFalse(oso.gera_cobranca)
+
+        call_command('reaplicar_regra_de_cobranca', stdout=StringIO())
+        oso.refresh_from_db()
+        self.assertTrue(oso.gera_cobranca)
+        self.assertIsNotNone(oso.data_liberacao_cobranca)
+
+
+class OsosAnterioresARegraDoCatalogoTestCase(APITestCase):
+    """As OSOs que já existiam quando a regra do catálogo entrou ficam congeladas (ADR 0011, revisão de 20/10/2026)."""
+
+    def setUp(self):
+        self.diretor = criar_usuario(Perfil.DIRETOR)
+        self.tecnico = criar_usuario(Perfil.TECNICO)
+        self.cliente = Cliente.objects.create(nome='Cliente')
+        self.catalogo = CatalogoOperacional.objects.create(nome='Inclusão de função')
+        self.url = reverse('catalogos-operacionais-detail', args=[self.catalogo.pk])
+
+    def legado(self, **campos):
+        oso = OrdemServicoOperacional.objects.create(
+            cliente=self.cliente, catalogo_operacional=self.catalogo, responsavel=self.tecnico, **campos,
+        )
+        OrdemServicoOperacional.objects.filter(pk=oso.pk).update(regra_de_cobranca=RegraDeCobranca.LEGADO)
+        oso.refresh_from_db()
+        return oso
+
+    def test_catalogo_passar_a_cobrar_nao_mexe_nas_antigas(self):
+        antiga = self.legado(status=S.FINALIZADA)
+        self.client.force_authenticate(user=self.diretor)
+
+        self.client.patch(self.url, {'gera_cobranca': True}, format='json')
+        self.catalogo.refresh_from_db()
+        nova = OrdemServicoOperacional.objects.create(
+            cliente=self.cliente, catalogo_operacional=self.catalogo, responsavel=self.tecnico, status=S.FINALIZADA,
+        )
+
+        antiga.refresh_from_db()
+        self.assertEqual((antiga.gera_cobranca, antiga.data_liberacao_cobranca), (False, None))
+        self.assertEqual(nova.regra_de_cobranca, RegraDeCobranca.CATALOGO)
+        self.assertTrue(nova.gera_cobranca)
+        self.assertIsNotNone(nova.data_liberacao_cobranca)
+
+    def test_antiga_que_gerava_cobranca_continua_mesmo_com_catalogo_sem_cobranca(self):
+        antiga = self.legado(status=S.EM_ANDAMENTO)
+        OrdemServicoOperacional.objects.filter(pk=antiga.pk).update(gera_cobranca=True, revisao_cliente=True)
+        antiga.refresh_from_db()
+
+        antiga.status = S.FINALIZADA
+        antiga.save()
+        self.client.force_authenticate(user=self.diretor)
+        self.client.patch(self.url, {'gera_cobranca': False}, format='json')
+
+        antiga.refresh_from_db()
+        self.assertTrue(antiga.gera_cobranca)
+        self.assertIsNotNone(antiga.data_liberacao_cobranca)
+
+    def test_comando_nao_mexe_nas_antigas(self):
+        antiga = self.legado(status=S.FINALIZADA)
+        CatalogoOperacional.objects.filter(pk=self.catalogo.pk).update(gera_cobranca=True)
+
+        call_command('reaplicar_regra_de_cobranca', stdout=StringIO())
+
+        antiga.refresh_from_db()
+        self.assertFalse(antiga.gera_cobranca)
+
+    def test_revisao_do_cliente_nao_e_editavel_pela_api(self):
+        antiga = self.legado(status=S.EM_ANDAMENTO)
+        self.client.force_authenticate(user=self.diretor)
+
+        self.client.patch(
+            reverse('ordens-servico-operacionais-detail', args=[antiga.pk]),
+            {'revisao_cliente': True, 'gera_cobranca': True, 'regra_de_cobranca': 'catalogo'}, format='json',
+        )
+
+        antiga.refresh_from_db()
+        self.assertEqual(
+            (antiga.revisao_cliente, antiga.gera_cobranca, antiga.regra_de_cobranca),
+            (False, False, RegraDeCobranca.LEGADO),
+        )

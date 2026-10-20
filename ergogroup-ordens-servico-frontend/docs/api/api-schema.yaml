@@ -2060,6 +2060,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/TarefasRecebidas'
           description: ''
+  /api/financeiro/auditoria-operacionais/:
+    get:
+      operationId: financeiro_auditoria_operacionais_retrieve
+      description: 'Todas as OS operacionais com `regra_de_cobranca = legado`, sem
+        filtro: a decisão de cobrança gravada (e a "Revisão do cliente"), a execução,
+        a liberação, o lançamento, o que a regra do catálogo diria hoje e os alertas
+        de inconsistência, com a contagem de cada alerta. Exige `financeiro.ver_valores`
+        e `auditoria.ver`.'
+      summary: Auditoria das OS operacionais anteriores à regra do catálogo
+      tags:
+      - financeiro
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditoriaOperacional'
+          description: ''
+  /api/financeiro/auditoria-operacionais/excel/:
+    get:
+      operationId: financeiro_auditoria_operacionais_excel_retrieve
+      description: O mesmo conteúdo da auditoria em `.xlsx`, com as abas "OS operacionais",
+        "Não cobradas por cliente", "Não cobradas por mês", "Resumo por serviço" e
+        "Sobre". Com `cliente`, só as OS operacionais desse cliente. Exige `financeiro.ver_valores`
+        e `auditoria.ver`.
+      summary: Auditoria das OS operacionais em Excel
+      parameters:
+      - in: query
+        name: cliente
+        schema:
+          type: integer
+        description: Só as OS operacionais deste cliente.
+      tags:
+      - financeiro
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/financeiro/cobrancas/:
     get:
       operationId: financeiro_cobrancas_retrieve
@@ -4196,6 +4246,42 @@ components:
       - responsaveis
       - servico_id
       - vendido_por_nome
+    AlertaDaAuditoria:
+      type: object
+      properties:
+        codigo:
+          $ref: '#/components/schemas/Codigo04bEnum'
+        rotulo:
+          type: string
+        explicacao:
+          type: string
+        quantidade:
+          type: integer
+      required:
+      - codigo
+      - explicacao
+      - quantidade
+      - rotulo
+    AlertasEnum:
+      enum:
+      - revisao_sem_cobranca
+      - cobrada_sem_gerar
+      - cobrada_sem_nf
+      - catalogo_cobra_nao_cobrada
+      - finalizada_sem_termino
+      - termino_sem_finalizar
+      - termino_antes_do_inicio
+      - possivel_duplicidade
+      type: string
+      description: |-
+        * `revisao_sem_cobranca` - revisao_sem_cobranca
+        * `cobrada_sem_gerar` - cobrada_sem_gerar
+        * `cobrada_sem_nf` - cobrada_sem_nf
+        * `catalogo_cobra_nao_cobrada` - catalogo_cobra_nao_cobrada
+        * `finalizada_sem_termino` - finalizada_sem_termino
+        * `termino_sem_finalizar` - termino_sem_finalizar
+        * `termino_antes_do_inicio` - termino_antes_do_inicio
+        * `possivel_duplicidade` - possivel_duplicidade
     Andamento:
       type: object
       properties:
@@ -4233,6 +4319,32 @@ components:
       required:
       - setor
       - setor_nome
+    AuditoriaOperacional:
+      type: object
+      properties:
+        gerado_em:
+          type: string
+          format: date-time
+        data_de_corte:
+          type: string
+          format: date
+          description: Entram as OS operacionais criadas antes desta data.
+        total:
+          type: integer
+        alertas:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertaDaAuditoria'
+        osos:
+          type: array
+          items:
+            $ref: '#/components/schemas/OsoDaAuditoria'
+      required:
+      - alertas
+      - data_de_corte
+      - gerado_em
+      - osos
+      - total
     BlankEnum:
       enum:
       - ''
@@ -4806,6 +4918,26 @@ components:
       - operacionais_em_alerta
       - ordens
       - situacao
+    Codigo04bEnum:
+      enum:
+      - revisao_sem_cobranca
+      - cobrada_sem_gerar
+      - cobrada_sem_nf
+      - catalogo_cobra_nao_cobrada
+      - finalizada_sem_termino
+      - termino_sem_finalizar
+      - termino_antes_do_inicio
+      - possivel_duplicidade
+      type: string
+      description: |-
+        * `revisao_sem_cobranca` - revisao_sem_cobranca
+        * `cobrada_sem_gerar` - cobrada_sem_gerar
+        * `cobrada_sem_nf` - cobrada_sem_nf
+        * `catalogo_cobra_nao_cobrada` - catalogo_cobra_nao_cobrada
+        * `finalizada_sem_termino` - finalizada_sem_termino
+        * `termino_sem_finalizar` - termino_sem_finalizar
+        * `termino_antes_do_inicio` - termino_antes_do_inicio
+        * `possivel_duplicidade` - possivel_duplicidade
     CodigoDaConferenciaEnum:
       enum:
       - sync_conclusao
@@ -5146,6 +5278,14 @@ components:
       - tarefas
       - terminado_por_nome
       - ultima_movimentacao_em
+    DeveriaSerCobradaEnum:
+      enum:
+      - catalogo_sem_revisao
+      - revisao_sem_cobranca
+      type: string
+      description: |-
+        * `catalogo_sem_revisao` - catalogo_sem_revisao
+        * `revisao_sem_cobranca` - revisao_sem_cobranca
     DistribuicaoTempoOS:
       type: object
       properties:
@@ -5808,6 +5948,17 @@ components:
         catalogo_operacional_nome:
           type: string
           description: 'O item do catálogo operacional: o que cobrar.'
+        regra_de_cobranca:
+          allOf:
+          - $ref: '#/components/schemas/RegraDeCobrancaEnum'
+          description: |-
+            `catalogo`: segue o catálogo; `legado`: anterior à regra do catálogo, cobrança congelada.
+
+            * `legado` - Anterior à regra do catálogo
+            * `catalogo` - Regra do catálogo
+        revisao_cliente:
+          type: boolean
+          description: Só histórico do sistema anterior.
         quantidade:
           type: integer
         descricao:
@@ -5890,7 +6041,9 @@ components:
       - prazo
       - quantidade
       - referencia_lancamento
+      - regra_de_cobranca
       - responsavel_nome
+      - revisao_cliente
       - situacao
       - status
     LinhaDeTarefa:
@@ -6703,6 +6856,15 @@ components:
         gera_cobranca:
           type: boolean
           readOnly: true
+        regra_de_cobranca:
+          allOf:
+          - $ref: '#/components/schemas/RegraDeCobrancaEnum'
+          readOnly: true
+          description: |-
+            De onde vem a decisão de cobrar: a regra do catálogo ou a anterior a ela (congelada).
+
+            * `legado` - Anterior à regra do catálogo
+            * `catalogo` - Regra do catálogo
         data_liberacao_cobranca:
           type: string
           format: date-time
@@ -6767,6 +6929,7 @@ components:
       - numero_nf
       - prioridade_display
       - referencia_lancamento
+      - regra_de_cobranca
       - responsavel
       - responsavel_nome
       - revisao_cliente
@@ -6810,6 +6973,14 @@ components:
           type: boolean
         gera_cobranca:
           type: boolean
+        regra_de_cobranca:
+          allOf:
+          - $ref: '#/components/schemas/RegraDeCobrancaEnum'
+          description: |-
+            De onde vem a decisão de cobrar: a regra do catálogo ou a anterior a ela (congelada).
+
+            * `legado` - Anterior à regra do catálogo
+            * `catalogo` - Regra do catálogo
         data_liberacao_cobranca:
           type: string
           format: date-time
@@ -7169,6 +7340,140 @@ components:
       description: |-
         * `manual` - Manual
         * `integracao` - Integração
+    OsoDaAuditoria:
+      type: object
+      properties:
+        id:
+          type: integer
+        cliente_id:
+          type: integer
+        cliente_nome:
+          type: string
+        cliente_documento:
+          type: string
+          nullable: true
+        cliente_tipo_inscricao:
+          type: string
+          nullable: true
+        servico:
+          type: string
+          description: Item do catálogo operacional.
+        quantidade:
+          type: integer
+        descricao:
+          type: string
+          nullable: true
+        responsavel_nome:
+          type: string
+          nullable: true
+        status:
+          type: string
+        data_recebimento:
+          type: string
+          format: date
+          nullable: true
+        data_inicio:
+          type: string
+          format: date
+          nullable: true
+        data_termino:
+          type: string
+          format: date
+          nullable: true
+        dias_ate_terminar:
+          type: integer
+          nullable: true
+        mes_referencia:
+          type: string
+          description: AAAA-MM do término (sem término, do recebimento).
+        revisao_cliente:
+          type: boolean
+          description: O que o técnico marcou no sistema anterior.
+        liberada_em:
+          type: string
+          format: date-time
+          nullable: true
+        liberada_por_nome:
+          type: string
+          nullable: true
+        catalogo_cobra_hoje:
+          type: boolean
+        cliente_isento_hoje:
+          type: boolean
+        cobraria_hoje:
+          type: boolean
+          description: 'Pela regra do catálogo de hoje: cobra e cliente não isento.'
+        situacao_cobranca:
+          $ref: '#/components/schemas/SituacaoCobrancaEnum'
+        cobrada:
+          type: boolean
+        referencia:
+          type: string
+          nullable: true
+          description: Referência do lançamento ou a NF antiga.
+        numero_nf_original:
+          type: string
+          nullable: true
+        data_lancamento:
+          type: string
+          format: date
+          nullable: true
+        faturada_por_nome:
+          type: string
+          nullable: true
+        deveria_ser_cobrada:
+          nullable: true
+          description: |-
+            Finalizada e não cobrada, e: `catalogo_sem_revisao` (catálogo cobrável, cliente não isento, sem "Revisão do cliente") ou `revisao_sem_cobranca` (revisão marcada). Nulo quando não se aplica.
+
+            * `catalogo_sem_revisao` - catalogo_sem_revisao
+            * `revisao_sem_cobranca` - revisao_sem_cobranca
+          oneOf:
+          - $ref: '#/components/schemas/DeveriaSerCobradaEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        alertas:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertasEnum'
+        alteracoes_registradas:
+          type: integer
+          description: Registros na auditoria (desde 30/06/2026).
+        ultima_alteracao:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - alertas
+      - alteracoes_registradas
+      - catalogo_cobra_hoje
+      - cliente_documento
+      - cliente_id
+      - cliente_isento_hoje
+      - cliente_nome
+      - cliente_tipo_inscricao
+      - cobrada
+      - cobraria_hoje
+      - data_inicio
+      - data_lancamento
+      - data_recebimento
+      - data_termino
+      - descricao
+      - deveria_ser_cobrada
+      - dias_ate_terminar
+      - faturada_por_nome
+      - id
+      - liberada_em
+      - liberada_por_nome
+      - mes_referencia
+      - numero_nf_original
+      - quantidade
+      - referencia
+      - responsavel_nome
+      - revisao_cliente
+      - servico
+      - situacao_cobranca
+      - status
+      - ultima_alteracao
     OutroServicoDaOS:
       type: object
       properties:
@@ -7878,6 +8183,14 @@ components:
       - user_agent
       - usuario
       - usuario_nome
+    RegraDeCobrancaEnum:
+      enum:
+      - legado
+      - catalogo
+      type: string
+      description: |-
+        * `legado` - Anterior à regra do catálogo
+        * `catalogo` - Regra do catálogo
     ResponsavelDoServico:
       type: object
       properties:
@@ -8720,6 +9033,18 @@ components:
       required:
       - nome
       - organizacao
+    SituacaoCobrancaEnum:
+      enum:
+      - nao_gera
+      - nao_liberada
+      - a_cobrar
+      - cobrada
+      type: string
+      description: |-
+        * `nao_gera` - nao_gera
+        * `nao_liberada` - nao_liberada
+        * `a_cobrar` - a_cobrar
+        * `cobrada` - cobrada
     SituacaoDaListaDeCobrancasEnum:
       enum:
       - a_faturar
@@ -8928,6 +9253,17 @@ components:
         catalogo_operacional_nome:
           type: string
           description: 'O item do catálogo operacional: o que cobrar.'
+        regra_de_cobranca:
+          allOf:
+          - $ref: '#/components/schemas/RegraDeCobrancaEnum'
+          description: |-
+            `catalogo`: segue o catálogo; `legado`: anterior à regra do catálogo, cobrança congelada.
+
+            * `legado` - Anterior à regra do catálogo
+            * `catalogo` - Regra do catálogo
+        revisao_cliente:
+          type: boolean
+          description: Só histórico do sistema anterior.
         quantidade:
           type: integer
         descricao:
@@ -8991,8 +9327,8 @@ components:
             $ref: '#/components/schemas/CodigoDaConferenciaEnum'
         gera_cobranca:
           type: boolean
-          description: A regra atual do catálogo e dos clientes isentos; não muda
-            depois de faturada.
+          description: 'Se gera cobrança: pela regra do catálogo ou, nas anteriores
+            a ela, a decisão gravada.'
         cliente:
           $ref: '#/components/schemas/ClienteDoResumo'
         detalhe_pendencias:
@@ -9029,7 +9365,9 @@ components:
       - prazo
       - quantidade
       - referencia_lancamento
+      - regra_de_cobranca
       - responsavel_nome
+      - revisao_cliente
       - situacao
       - status
     SituacaoPrazoEnum:

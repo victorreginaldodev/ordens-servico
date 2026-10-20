@@ -11,6 +11,15 @@ class StatusOrdemServicoOperacional(models.TextChoices):
     FINALIZADA = 'finalizada', 'Finalizada'
 
 
+class RegraDeCobranca(models.TextChoices):
+    """De onde vem a decisão de cobrar a OSO (ADR 0011, revisão de 20/10/2026)."""
+    # As OSOs que já existiam quando a regra do catálogo entrou: a cobrança é a que estava gravada (no legado, a
+    # "Revisão do cliente" marcada pelo técnico) e não muda mais, nem quando o catálogo muda.
+    LEGADO = 'legado', 'Anterior à regra do catálogo'
+    # As criadas depois: a cobrança segue sempre a regra do catálogo e dos clientes isentos, até serem faturadas.
+    CATALOGO = 'catalogo', 'Regra do catálogo'
+
+
 class OrdemServicoOperacional(models.Model):
     cliente = models.ForeignKey(
         'clientes.Cliente',
@@ -37,8 +46,13 @@ class OrdemServicoOperacional(models.Model):
     status = models.CharField(max_length=15, choices=StatusOrdemServicoOperacional.choices, default=StatusOrdemServicoOperacional.NAO_INICIADO)
     criada_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
+    # Só histórico do sistema anterior: não é editável e não decide a cobrança.
     revisao_cliente = models.BooleanField(default=False)
     gera_cobranca = models.BooleanField(default=False)
+    regra_de_cobranca = models.CharField(
+        max_length=10, choices=RegraDeCobranca.choices, default=RegraDeCobranca.CATALOGO,
+        help_text='De onde vem a decisão de cobrar: a regra do catálogo ou a anterior a ela (congelada).',
+    )
     data_liberacao_cobranca = models.DateTimeField(null=True, blank=True)
     liberada_cobranca_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -72,9 +86,12 @@ class OrdemServicoOperacional(models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        # Enquanto não é faturada, a OSO segue a regra atual do catálogo e dos clientes isentos (revisão de
-        # 19/10/2026 do ADR 0011). Depois de faturada, a cobrança não muda mais. `revisao_cliente` não entra.
-        if not self.cobranca_realizada and self.catalogo_operacional_id and self.cliente_id:
+        # Regra do catálogo (as criadas desde 20/10/2026): segue o catálogo e os clientes isentos até ser faturada.
+        # Anterior à regra do catálogo: a cobrança gravada não muda. `revisao_cliente` nunca entra na decisão.
+        if (
+            self.regra_de_cobranca == RegraDeCobranca.CATALOGO and not self.cobranca_realizada
+            and self.catalogo_operacional_id and self.cliente_id
+        ):
             self.gera_cobranca = self.catalogo_operacional.gera_cobranca_para(self.cliente_id)
         if self.gera_cobranca and self.status == StatusOrdemServicoOperacional.FINALIZADA:
             if self.data_liberacao_cobranca is None:

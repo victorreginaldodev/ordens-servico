@@ -26,7 +26,7 @@ class OrdemServicoOperacionalListSerializer(serializers.ModelSerializer):
             'id', 'cliente', 'cliente_nome', 'catalogo_operacional', 'catalogo_operacional_nome',
             'responsavel', 'responsavel_nome', 'status', 'status_display',
             'prioridade', 'prioridade_display', 'prazo',
-            'revisao_cliente', 'gera_cobranca', 'data_liberacao_cobranca',
+            'revisao_cliente', 'gera_cobranca', 'regra_de_cobranca', 'data_liberacao_cobranca',
             'liberada_cobranca_por', 'liberada_cobranca_por_nome',
             'cobranca_realizada', 'numero_nf', 'referencia_lancamento', 'data_cobranca',
             'cobranca_realizada_por', 'cobranca_realizada_por_nome',
@@ -69,7 +69,7 @@ class OrdemServicoOperacionalSerializer(serializers.ModelSerializer):
             'responsavel', 'responsavel_nome', 'quantidade', 'descricao',
             'prioridade', 'prioridade_display', 'prazo',
             'data_recebimento', 'data_inicio', 'data_termino',
-            'status', 'status_display', 'revisao_cliente', 'gera_cobranca',
+            'status', 'status_display', 'revisao_cliente', 'gera_cobranca', 'regra_de_cobranca',
             'data_liberacao_cobranca', 'liberada_cobranca_por',
             'liberada_cobranca_por_nome', 'cobranca_realizada', 'numero_nf',
             'referencia_lancamento', 'data_cobranca',
@@ -78,7 +78,7 @@ class OrdemServicoOperacionalSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'criada_em', 'atualizado_em',
-            'revisao_cliente', 'gera_cobranca', 'data_liberacao_cobranca',
+            'revisao_cliente', 'gera_cobranca', 'regra_de_cobranca', 'data_liberacao_cobranca',
             'liberada_cobranca_por', 'cobranca_realizada_por',
             # Cobrança só é registrada pelo endpoint dedicado, que valida a liberação.
             'cobranca_realizada', 'numero_nf', 'referencia_lancamento', 'data_cobranca',

@@ -62,11 +62,13 @@ class OrdemServicoOperacionalAdmin(admin.ModelAdmin):
         'prioridade', 'prazo',
         'gera_cobranca', 'cobranca_realizada', 'cobranca_realizada_por', 'data_recebimento',
     ]
-    list_filter = ['status', 'prioridade', 'cobranca_realizada', 'revisao_cliente', 'gera_cobranca']
+    list_filter = ['status', 'prioridade', 'cobranca_realizada', 'regra_de_cobranca', 'gera_cobranca']
     search_fields = ['cliente__nome', 'catalogo_operacional__nome', 'responsavel__nome_completo']
     raw_id_fields = ['cliente', 'catalogo_operacional', 'responsavel', 'liberada_cobranca_por', 'cobranca_realizada_por']
     readonly_fields = [
         'data_inicio', 'data_termino', 'criada_em', 'atualizado_em',
         'gera_cobranca', 'data_liberacao_cobranca',
         'liberada_cobranca_por', 'cobranca_realizada_por',
+        # A cobrança vem da regra (catálogo ou anterior a ele); a revisão do cliente é só histórico.
+        'revisao_cliente', 'regra_de_cobranca',
     ]

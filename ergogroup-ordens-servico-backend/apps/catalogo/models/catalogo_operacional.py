@@ -32,8 +32,9 @@ class CatalogoOperacional(models.Model):
         ).exists()
 
     def reaplicar_regra_de_cobranca(self):
-        """Aplica a regra atual às OS operacionais deste serviço ainda não faturadas (ADR 0011, revisão de
-        19/10/2026). As já faturadas não mudam.
+        """Aplica a regra atual às OS operacionais deste serviço criadas pela regra do catálogo e ainda não
+        faturadas (ADR 0011, revisões de 19 e 20/10/2026). As faturadas e as anteriores à regra do catálogo
+        (`RegraDeCobranca.LEGADO`) não mudam.
 
         - Passou a cobrar: a OSO gera cobrança; se já foi finalizada, é liberada agora para o financeiro.
         - Deixou de cobrar (ou o cliente ficou isento): a OSO não gera cobrança e sai da fila.
@@ -42,9 +43,11 @@ class CatalogoOperacional(models.Model):
         liberação pelo `save()` mandaria um e-mail para cada uma. Devolve quantas mudaram em cada sentido.
         """
         from apps.ordens_servico.models import OrdemServicoOperacional
-        from apps.ordens_servico.models.ordem_servico_operacional import StatusOrdemServicoOperacional
+        from apps.ordens_servico.models.ordem_servico_operacional import RegraDeCobranca, StatusOrdemServicoOperacional
 
-        pendentes = OrdemServicoOperacional.objects.filter(catalogo_operacional=self, cobranca_realizada=False)
+        pendentes = OrdemServicoOperacional.objects.filter(
+            catalogo_operacional=self, cobranca_realizada=False, regra_de_cobranca=RegraDeCobranca.CATALOGO,
+        )
         isentos = list(self.clientes_isentos_cobranca.values_list('pk', flat=True))
         if self.gera_cobranca:
             cobram = pendentes.exclude(cliente_id__in=isentos)

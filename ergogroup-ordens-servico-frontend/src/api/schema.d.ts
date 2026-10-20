@@ -904,6 +904,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/financeiro/auditoria-operacionais/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Auditoria das OS operacionais anteriores à regra do catálogo
+         * @description Todas as OS operacionais com `regra_de_cobranca = legado`, sem filtro: a decisão de cobrança gravada (e a "Revisão do cliente"), a execução, a liberação, o lançamento, o que a regra do catálogo diria hoje e os alertas de inconsistência, com a contagem de cada alerta. Exige `financeiro.ver_valores` e `auditoria.ver`.
+         */
+        get: operations["financeiro_auditoria_operacionais_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financeiro/auditoria-operacionais/excel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Auditoria das OS operacionais em Excel
+         * @description O mesmo conteúdo da auditoria em `.xlsx`, com as abas "OS operacionais", "Não cobradas por cliente", "Não cobradas por mês", "Resumo por serviço" e "Sobre". Com `cliente`, só as OS operacionais desse cliente. Exige `financeiro.ver_valores` e `auditoria.ver`.
+         */
+        get: operations["financeiro_auditoria_operacionais_excel_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/financeiro/cobrancas/": {
         parameters: {
             query?: never;
@@ -1637,6 +1677,24 @@ export interface components {
             dias_sem_movimentacao: number;
             responsaveis: string[];
         };
+        AlertaDaAuditoria: {
+            codigo: components["schemas"]["Codigo04bEnum"];
+            rotulo: string;
+            explicacao: string;
+            quantidade: number;
+        };
+        /**
+         * @description * `revisao_sem_cobranca` - revisao_sem_cobranca
+         *     * `cobrada_sem_gerar` - cobrada_sem_gerar
+         *     * `cobrada_sem_nf` - cobrada_sem_nf
+         *     * `catalogo_cobra_nao_cobrada` - catalogo_cobra_nao_cobrada
+         *     * `finalizada_sem_termino` - finalizada_sem_termino
+         *     * `termino_sem_finalizar` - termino_sem_finalizar
+         *     * `termino_antes_do_inicio` - termino_antes_do_inicio
+         *     * `possivel_duplicidade` - possivel_duplicidade
+         * @enum {string}
+         */
+        AlertasEnum: "revisao_sem_cobranca" | "cobrada_sem_gerar" | "cobrada_sem_nf" | "catalogo_cobra_nao_cobrada" | "finalizada_sem_termino" | "termino_sem_finalizar" | "termino_antes_do_inicio" | "possivel_duplicidade";
         Andamento: {
             total: number;
             novo: number;
@@ -1650,6 +1708,18 @@ export interface components {
         Atuacao: {
             setor: number;
             setor_nome: string;
+        };
+        AuditoriaOperacional: {
+            /** Format: date-time */
+            gerado_em: string;
+            /**
+             * Format: date
+             * @description Entram as OS operacionais criadas antes desta data.
+             */
+            data_de_corte: string;
+            total: number;
+            alertas: components["schemas"]["AlertaDaAuditoria"][];
+            osos: components["schemas"]["OsoDaAuditoria"][];
         };
         /** @enum {unknown} */
         BlankEnum: "";
@@ -1862,6 +1932,18 @@ export interface components {
             operacionais_em_alerta: number;
         };
         /**
+         * @description * `revisao_sem_cobranca` - revisao_sem_cobranca
+         *     * `cobrada_sem_gerar` - cobrada_sem_gerar
+         *     * `cobrada_sem_nf` - cobrada_sem_nf
+         *     * `catalogo_cobra_nao_cobrada` - catalogo_cobra_nao_cobrada
+         *     * `finalizada_sem_termino` - finalizada_sem_termino
+         *     * `termino_sem_finalizar` - termino_sem_finalizar
+         *     * `termino_antes_do_inicio` - termino_antes_do_inicio
+         *     * `possivel_duplicidade` - possivel_duplicidade
+         * @enum {string}
+         */
+        Codigo04bEnum: "revisao_sem_cobranca" | "cobrada_sem_gerar" | "cobrada_sem_nf" | "catalogo_cobra_nao_cobrada" | "finalizada_sem_termino" | "termino_sem_finalizar" | "termino_antes_do_inicio" | "possivel_duplicidade";
+        /**
          * @description * `sync_conclusao` - sync_conclusao
          *     * `sync_venda` - sync_venda
          *     * `sync_servico` - sync_servico
@@ -1997,6 +2079,12 @@ export interface components {
             /** @description Serviço aberto, sem ciência de recebimento, e a pessoa distribui no setor. */
             pode_confirmar_recebimento: boolean;
         };
+        /**
+         * @description * `catalogo_sem_revisao` - catalogo_sem_revisao
+         *     * `revisao_sem_cobranca` - revisao_sem_cobranca
+         * @enum {string}
+         */
+        DeveriaSerCobradaEnum: "catalogo_sem_revisao" | "revisao_sem_cobranca";
         DistribuicaoTempoOS: {
             ate_7: number;
             de_8_a_15: number;
@@ -2283,6 +2371,13 @@ export interface components {
             cliente_nome: string;
             /** @description O item do catálogo operacional: o que cobrar. */
             catalogo_operacional_nome: string;
+            /** @description `catalogo`: segue o catálogo; `legado`: anterior à regra do catálogo, cobrança congelada.
+             *
+             *     * `legado` - Anterior à regra do catálogo
+             *     * `catalogo` - Regra do catálogo */
+            regra_de_cobranca: components["schemas"]["RegraDeCobrancaEnum"];
+            /** @description Só histórico do sistema anterior. */
+            revisao_cliente: boolean;
             quantidade: number;
             descricao: string | null;
             responsavel_nome: string | null;
@@ -2608,6 +2703,11 @@ export interface components {
             readonly status_display: string;
             readonly revisao_cliente: boolean;
             readonly gera_cobranca: boolean;
+            /** @description De onde vem a decisão de cobrar: a regra do catálogo ou a anterior a ela (congelada).
+             *
+             *     * `legado` - Anterior à regra do catálogo
+             *     * `catalogo` - Regra do catálogo */
+            readonly regra_de_cobranca: components["schemas"]["RegraDeCobrancaEnum"];
             /** Format: date-time */
             readonly data_liberacao_cobranca: string | null;
             readonly liberada_cobranca_por: number | null;
@@ -2640,6 +2740,11 @@ export interface components {
             prazo?: string | null;
             revisao_cliente?: boolean;
             gera_cobranca?: boolean;
+            /** @description De onde vem a decisão de cobrar: a regra do catálogo ou a anterior a ela (congelada).
+             *
+             *     * `legado` - Anterior à regra do catálogo
+             *     * `catalogo` - Regra do catálogo */
+            regra_de_cobranca?: components["schemas"]["RegraDeCobrancaEnum"];
             /** Format: date-time */
             data_liberacao_cobranca?: string | null;
             liberada_cobranca_por?: number | null;
@@ -2777,6 +2882,55 @@ export interface components {
          * @enum {string}
          */
         OrigemLancamentoEnum: "manual" | "integracao";
+        OsoDaAuditoria: {
+            id: number;
+            cliente_id: number;
+            cliente_nome: string;
+            cliente_documento: string | null;
+            cliente_tipo_inscricao: string | null;
+            /** @description Item do catálogo operacional. */
+            servico: string;
+            quantidade: number;
+            descricao: string | null;
+            responsavel_nome: string | null;
+            status: string;
+            /** Format: date */
+            data_recebimento: string | null;
+            /** Format: date */
+            data_inicio: string | null;
+            /** Format: date */
+            data_termino: string | null;
+            dias_ate_terminar: number | null;
+            /** @description AAAA-MM do término (sem término, do recebimento). */
+            mes_referencia: string;
+            /** @description O que o técnico marcou no sistema anterior. */
+            revisao_cliente: boolean;
+            /** Format: date-time */
+            liberada_em: string | null;
+            liberada_por_nome: string | null;
+            catalogo_cobra_hoje: boolean;
+            cliente_isento_hoje: boolean;
+            /** @description Pela regra do catálogo de hoje: cobra e cliente não isento. */
+            cobraria_hoje: boolean;
+            situacao_cobranca: components["schemas"]["SituacaoCobrancaEnum"];
+            cobrada: boolean;
+            /** @description Referência do lançamento ou a NF antiga. */
+            referencia: string | null;
+            numero_nf_original: string | null;
+            /** Format: date */
+            data_lancamento: string | null;
+            faturada_por_nome: string | null;
+            /** @description Finalizada e não cobrada, e: `catalogo_sem_revisao` (catálogo cobrável, cliente não isento, sem "Revisão do cliente") ou `revisao_sem_cobranca` (revisão marcada). Nulo quando não se aplica.
+             *
+             *     * `catalogo_sem_revisao` - catalogo_sem_revisao
+             *     * `revisao_sem_cobranca` - revisao_sem_cobranca */
+            deveria_ser_cobrada: (components["schemas"]["DeveriaSerCobradaEnum"] | components["schemas"]["NullEnum"]) | null;
+            alertas: components["schemas"]["AlertasEnum"][];
+            /** @description Registros na auditoria (desde 30/06/2026). */
+            alteracoes_registradas: number;
+            /** Format: date-time */
+            ultima_alteracao: string | null;
+        };
         OutroServicoDaOS: {
             id: number;
             catalogo_nome: string | null;
@@ -3067,6 +3221,12 @@ export interface components {
             readonly ip: string | null;
             readonly user_agent: string | null;
         };
+        /**
+         * @description * `legado` - Anterior à regra do catálogo
+         *     * `catalogo` - Regra do catálogo
+         * @enum {string}
+         */
+        RegraDeCobrancaEnum: "legado" | "catalogo";
         ResponsavelDoServico: {
             nome: string | null;
             status: string;
@@ -3358,6 +3518,14 @@ export interface components {
             ativo: boolean;
         };
         /**
+         * @description * `nao_gera` - nao_gera
+         *     * `nao_liberada` - nao_liberada
+         *     * `a_cobrar` - a_cobrar
+         *     * `cobrada` - cobrada
+         * @enum {string}
+         */
+        SituacaoCobrancaEnum: "nao_gera" | "nao_liberada" | "a_cobrar" | "cobrada";
+        /**
          * @description * `a_faturar` - a_faturar
          *     * `faturadas` - faturadas
          *     * `previsao` - previsao
@@ -3444,6 +3612,13 @@ export interface components {
             cliente_nome: string;
             /** @description O item do catálogo operacional: o que cobrar. */
             catalogo_operacional_nome: string;
+            /** @description `catalogo`: segue o catálogo; `legado`: anterior à regra do catálogo, cobrança congelada.
+             *
+             *     * `legado` - Anterior à regra do catálogo
+             *     * `catalogo` - Regra do catálogo */
+            regra_de_cobranca: components["schemas"]["RegraDeCobrancaEnum"];
+            /** @description Só histórico do sistema anterior. */
+            revisao_cliente: boolean;
             quantidade: number;
             descricao: string | null;
             responsavel_nome: string | null;
@@ -3474,7 +3649,7 @@ export interface components {
             /** Format: date-time */
             criada_em: string;
             pendencias: components["schemas"]["CodigoDaConferenciaEnum"][];
-            /** @description A regra atual do catálogo e dos clientes isentos; não muda depois de faturada. */
+            /** @description Se gera cobrança: pela regra do catálogo ou, nas anteriores a ela, a decisão gravada. */
             gera_cobranca: boolean;
             cliente: components["schemas"]["ClienteDoResumo"];
             detalhe_pendencias: components["schemas"]["PendenciaDaOrdem"][];
@@ -5454,6 +5629,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TarefasRecebidas"];
+                };
+            };
+        };
+    };
+    financeiro_auditoria_operacionais_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditoriaOperacional"];
+                };
+            };
+        };
+    };
+    financeiro_auditoria_operacionais_excel_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Só as OS operacionais deste cliente. */
+                cliente?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
                 };
             };
         };

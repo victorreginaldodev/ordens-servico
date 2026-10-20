@@ -29,6 +29,38 @@ por aquele serviço formam uma lista menor de exceções.
 
    O recálculo grava direto no banco, sem um e-mail de liberação por OSO. Qualquer gravação de uma OSO não
    faturada também aplica a regra atual. O fluxo não usa `revisao_cliente` em nenhum ponto.
+
+   **Revisto de novo em 20/10/2026 (decisão do usuário):** o recálculo vale **só para as OSOs criadas pela regra
+   do catálogo**. Cada OSO guarda `regra_de_cobranca`:
+   - `legado` (anterior à regra do catálogo): todas as OSOs que existiam quando a regra entrou (migração
+     `ordens_servico/0057`). A cobrança gravada (no sistema anterior, decidida pela "Revisão do cliente") fica
+     congelada: mudar o catálogo, salvar a OSO ou rodar o comando não a altera. Se ela já gerava cobrança e for
+     finalizada depois, continua sendo liberada para o financeiro;
+   - `catalogo` (padrão das novas): segue sempre a regra do catálogo e dos clientes isentos até ser faturada,
+     inclusive quando o catálogo muda.
+
+   A página **Auditoria das OS operacionais** (`/cobrancas/auditoria-operacionais`, com exportação para Excel) lista
+   todas as OSOs **criadas antes de 20/10/2026** (corte determinístico pela data, `DATA_DE_CORTE`), sem filtro, com a
+   decisão gravada, o que chegou ao financeiro e o que a regra do catálogo diria hoje (proposta aprovada
+   pelo usuário em 20/10/2026, sem o tipo de cliente; revista no mesmo dia). O foco é o que **deveria ter sido
+   cobrado e não foi** (`deveria_ser_cobrada`), sempre OSO finalizada e não cobrada:
+   - `catalogo_sem_revisao`: o catálogo marca o serviço como cobrável, o cliente não é isento e a "Revisão do
+     cliente" não foi marcada (a cobrança nunca chegou ao financeiro);
+   - `revisao_sem_cobranca`: a revisão foi marcada e a cobrança não foi registrada.
+
+   A tela tem filtro por cliente (vale para o resumo, os gráficos, os alertas, a tabela e o Excel), o resumo (OSOs e
+   unidades de cada motivo, clientes afetados e período) e os gráficos de `catalogo_sem_revisao` por mês (mês do
+   término; sem término, do recebimento) e por cliente (com um cliente escolhido, por serviço). O Excel ganhou as
+   abas "Não cobradas por cliente" e "Não cobradas por mês". Os alertas de qualidade de dados (cobrada sem gerar, sem NF, datas, duplicidade) saíram da tela e do Excel a pedido do usuário; o campo `alertas` continua na API. A OSO não tem valor no sistema: a medida é a quantidade
+   de OSOs e de unidades (soma de `quantidade`).
+
+   `revisao_cliente` não é editável (API somente leitura, admin somente leitura, fora do formulário) e não dispara
+   nada. Os dados do banco de dev recalculados em 19/10/2026 (468 passaram a cobrar e 27 deixaram) foram
+   restaurados ao estado anterior em 20/10/2026.
+
+   Quando a regra mudar sem passar pela API ou pelo admin (ex.: catálogo configurado com uma versão anterior do
+   sistema), rode `python manage.py reaplicar_regra_de_cobranca` (`--simular` mostra o que mudaria); ele só alcança as OSOs
+   `catalogo`.
 5. `revisao_cliente` deixa de controlar a cobrança e é somente leitura na API, preservado por compatibilidade e
    pelo histórico existente.
 6. Quando uma OSO cobrada é finalizada, a liberação para cobrança continua automática. O registro posterior da

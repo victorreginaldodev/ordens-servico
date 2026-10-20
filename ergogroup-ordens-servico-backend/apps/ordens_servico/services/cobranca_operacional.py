@@ -81,6 +81,8 @@ def linha(oso, pendencias=None):
         'cliente_id': oso.cliente_id,
         'cliente_nome': oso.cliente.nome,
         'catalogo_operacional_nome': oso.catalogo_operacional.nome,
+        'regra_de_cobranca': oso.regra_de_cobranca,
+        'revisao_cliente': oso.revisao_cliente,
         'quantidade': oso.quantidade,
         'descricao': oso.descricao,
         'responsavel_nome': nome(oso.responsavel),
