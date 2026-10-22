@@ -199,13 +199,13 @@ export function OperationalOrderForm({ open, onOpenChange, editId }: Operational
                 </Select>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Responsável</p>
+                <p className="text-xs text-muted-foreground mb-1">Responsável pela execução</p>
                 <Select
                   value={form.responsavel ? String(form.responsavel) : ''}
                   onValueChange={(v) => setForm({ ...form, responsavel: Number(v) })}
                 >
                   <SelectTrigger className="bg-background border-border">
-                    <SelectValue placeholder="Selecione o responsável" />
+                    <SelectValue placeholder="Selecione o responsável pela execução" />
                   </SelectTrigger>
                   <SelectContent>
                     {responsaveis.map((p) => (

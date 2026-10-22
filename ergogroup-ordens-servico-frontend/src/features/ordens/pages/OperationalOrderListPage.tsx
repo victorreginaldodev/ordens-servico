@@ -70,7 +70,7 @@ const VIEWS: DataTableView<OperationalOrderItem>[] = [
 const FACETS: DataTableFacet<OperationalOrderItem>[] = [
   { columnId: 'cliente', label: 'Cliente', getValue: (o) => nomeDoCliente(o), searchable: true },
   { columnId: 'servico', label: 'Serviço', getValue: (o) => nomeDoServico(o), searchable: true },
-  { columnId: 'responsavel', label: 'Responsável', getValue: (o) => o.responsavelNome, searchable: true },
+  { columnId: 'responsavel', label: 'Responsável pela execução', getValue: (o) => o.responsavelNome, searchable: true },
   { columnId: 'status', label: 'Status' },
   { columnId: 'prioridade', label: 'Prioridade' },
   { columnId: 'cobranca', label: 'Cobrança', getValue: situacaoDeCobranca, options: SITUACAO_DE_COBRANCA },
@@ -107,7 +107,7 @@ const OperationalOrderListPage = () => {
       }),
       col.texto<OperationalOrderItem>('servico', 'Serviço', nomeDoServico, { width: '240px' }),
       {
-        ...col.pessoa<OperationalOrderItem>('responsavel', 'Responsável', (o) => o.responsavelNome, { width: '200px' }),
+        ...col.pessoa<OperationalOrderItem>('responsavel', 'Responsável pela execução', (o) => o.responsavelNome, { width: '200px' }),
         cell: ({ row }: { row: { original: OperationalOrderItem } }) => (
           <PessoaChip nome={row.original.responsavelNome} variant="full" />
         ),
